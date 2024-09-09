@@ -9,7 +9,12 @@ spring:
     password: ${LOCAL_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+    fail-on-missing-locations: true
