@@ -1,4 +1,4 @@
-package com.ssafy.newstock.member;
+package com.ssafy.newstock.member.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
