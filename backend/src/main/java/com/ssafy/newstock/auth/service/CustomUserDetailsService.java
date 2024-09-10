@@ -1,8 +1,8 @@
 package com.ssafy.newstock.auth.service;
 
 import com.ssafy.newstock.auth.supports.CustomUserDetails;
-import com.ssafy.newstock.member.Member;
-import com.ssafy.newstock.member.MemberRepository;
+import com.ssafy.newstock.member.domain.Member;
+import com.ssafy.newstock.member.repository.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

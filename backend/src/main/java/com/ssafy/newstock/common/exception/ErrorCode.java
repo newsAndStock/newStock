@@ -14,6 +14,7 @@ public enum ErrorCode {
     ENTITY_NOT_FOUND("4004", "엔티티 없음", HttpStatus.BAD_REQUEST),
     ILLEGAL_ARGUMENT("4005", "적절하지 않은 인자", HttpStatus.BAD_REQUEST),
     MISSING_TOKEN("4006", "토큰 없음", HttpStatus.UNAUTHORIZED),
+    INVALID_REQUEST_PARAMS("4007", "잘못된 요청 파라미터", HttpStatus.BAD_REQUEST),
     INTERNAL_SERVER_ERROR("5000", "서버 에러", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;

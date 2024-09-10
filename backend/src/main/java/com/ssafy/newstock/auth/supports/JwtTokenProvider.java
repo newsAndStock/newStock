@@ -1,7 +1,7 @@
 package com.ssafy.newstock.auth.supports;
 
 import com.ssafy.newstock.auth.service.CustomUserDetailsService;
-import com.ssafy.newstock.member.Member;
+import com.ssafy.newstock.member.domain.Member;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

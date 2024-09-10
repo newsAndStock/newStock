@@ -1,6 +1,6 @@
 package com.ssafy.newstock.auth.supports;
 
-import com.ssafy.newstock.member.Member;
+import com.ssafy.newstock.member.domain.Member;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

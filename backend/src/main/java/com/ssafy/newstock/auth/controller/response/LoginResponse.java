@@ -1,6 +1,6 @@
 package com.ssafy.newstock.auth.controller.response;
 
-import com.ssafy.newstock.member.Member;
+import com.ssafy.newstock.member.domain.Member;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
