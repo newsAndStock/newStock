@@ -24,19 +24,7 @@ spring:
           starttls:
             enable: true
 
-  profiles:
-    active: local
-    group:
-      local: local, common, secret
-      blue: blue,common, secret
-      green: green, common, secret
 
-  profiles:
-    active: local
-    group:
-      local: local, common, secret
-      blue: blue,common, secret
-      green: green, common, secret
 
   profiles:
     active: local
