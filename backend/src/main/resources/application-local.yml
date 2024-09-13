@@ -18,3 +18,9 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
     fail-on-missing-locations: true
+
+server:
+  port: 8080
+  address: localhost
+
+serverName: local_server
