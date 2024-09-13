@@ -7,7 +7,7 @@ spring:
     url: jdbc:mariadb://maria-1.clwm8q0y4es7.ap-northeast-2.rds.amazonaws.com:3306/ssafy
     username: ${DEV_NAME}
     password: ${DEV_PASSWORD}
-  jpa:add
+  jpa:
     hibernate:
       ddl-auto: none
     properties:
