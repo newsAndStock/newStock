@@ -31,6 +31,13 @@ spring:
       blue: blue,common, secret
       green: green, common, secret
 
+  profiles:
+    active: local
+    group:
+      local: local, common, secret
+      blue: blue,common, secret
+      green: green, common, secret
+
 jwt:
   secret-key: ${SECRET_KEY}
   refresh-key: ${REFRESH_KEY}
@@ -40,29 +47,3 @@ server:
   env: blue
 
 
----
-
-spring:
-  config:
-    activate:
-      on-profile: blue
-
-server:
-  port: 8080
-  address: 0.0.0.0
-
-serverName: blue_server
-
----
-spring:
-  config:
-    activate:
-      on-profile: green
-
-server:
-  port: 8081
-  address: 0.0.0.0
-
-serverName: green_server
-
----
