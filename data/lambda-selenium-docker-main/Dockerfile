@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.9 as stage
+FROM public.ecr.aws/lambda/python:3.9 AS stage
 
 RUN yum install -y -q sudo unzip
 ENV CHROMIUM_VERSION=1002910
@@ -7,7 +7,7 @@ ENV CHROMIUM_VERSION=1002910
 COPY install-browser.sh /tmp/
 RUN /usr/bin/bash /tmp/install-browser.sh
 
-FROM public.ecr.aws/lambda/python:3.9 as base
+FROM public.ecr.aws/lambda/python:3.9 AS base
 
 COPY chrome-deps.txt /tmp/
 RUN yum install -y $(cat /tmp/chrome-deps.txt)
