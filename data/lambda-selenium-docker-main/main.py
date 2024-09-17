@@ -2,6 +2,7 @@ import os
 import json
 import time
 import logging
+import boto3
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -11,8 +12,26 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementClickInterceptedException
 from datetime import datetime, timedelta
 
+s3_client = boto3.client('s3')
 logger = logging.getLogger()
 logger.setLevel("INFO")
+
+def save_to_s3(crawled_data, save_date):
+    s3_bucket_name = os.environ['S3_BUCKET_NAME']
+    s3_object_prefix = os.environ['S3_OBJECT_PREFIX']
+    # S3에 저장될 객체 이름 설정
+    s3_object_key = f"{s3_object_prefix}{save_date}.json"
+
+    try:
+        s3_client.put_object(
+            Bucket=s3_bucket_name,
+            Key=s3_object_key,
+            Body=json.dumps(crawled_data, ensure_ascii=False),
+            ContentType='application/json'
+        )
+        logger.info(f"크롤링한 데이터를 S3 버킷 '{s3_bucket_name}'에 저장했습니다: {s3_object_key}")
+    except Exception as e:
+        logger.error(f"S3에 데이터 저장 중 오류 발생: {str(e)}")
 
 def handler(event, context):
     chrome_options = Options()
@@ -27,11 +46,15 @@ def handler(event, context):
     service = Service(executable_path="/opt/chromedriver")
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
+    # 크롤링한 데이터를 저장할 리스트
+    crawled_data = []
+
     try:
         # Lambda는 UTC 시간을 사용하므로, 한국 시간으로 변환
         utc_now = datetime.utcnow()
         kst_now = utc_now + timedelta(hours=9)
         today = kst_now.strftime("%Y%m%d")
+        save_date = kst_now.strftime("%Y%m%d%H")
 
         # 웹 사이트 열기 (네이버 뉴스 금융 카테고리)
         URL = f"https://news.naver.com/breakingnews/section/101/259?date={today}"
@@ -62,8 +85,8 @@ def handler(event, context):
         # 최대 div 인덱스 계산 (현재 페이지에 로드된 div 그룹 수)
         max_div_index = len(driver.find_elements(By.XPATH, '//*[@id="newsct"]/div[2]/div/div[1]/div'))
 
-        for idx in range(1, max_div_index + 1):  # div는 1부터 시작
-            for li in range(1, 7):  # li는 1부터 6까지 반복
+        for idx in range(1, max_div_index + 1):
+            for li in range(1, 7):  # li는 1부터 6까지
                 try:
                     specific_article_xpath = f'//*[@id="newsct"]/div[2]/div/div[1]/div[{idx}]/ul/li[{li}]/div/div/div[2]/a/strong'
                     specific_article = WebDriverWait(driver, 10).until(
@@ -80,27 +103,15 @@ def handler(event, context):
                         minutes_ago = int(post_time.split("분전")[0])
                         if not (1 <= minutes_ago <= 59):  # "1분 전" ~ "59분 전"
                             logger.info("분 전 범위가 맞지 않음. 크롤링 종료.")
-                            driver.quit()
-                            return {
-                                "statusCode": 200,
-                                "body": "크롤링이 범위에 맞지 않아 종료되었습니다."
-                            }
+                            break
                     elif "시간전" in post_time:
                         hours_ago = int(post_time.split("시간전")[0])
                         if not (1 <= hours_ago <= 2):  # "1시간 전" ~ "2시간 전"
                             logger.info("시간 전 범위가 맞지 않음. 크롤링 종료.")
-                            driver.quit()
-                            return {
-                                "statusCode": 200,
-                                "body": "크롤링이 범위에 맞지 않아 종료되었습니다."
-                            }
+                            break
                     else:
                         logger.info("시간 형식이 다름. 크롤링 종료.")
-                        driver.quit()
-                        return {
-                            "statusCode": 200,
-                            "body": "크롤링이 범위에 맞지 않아 종료되었습니다."
-                        }
+                        break
 
                     driver.execute_script("arguments[0].click();", specific_article)
                     time.sleep(5)
@@ -137,6 +148,15 @@ def handler(event, context):
                     except NoSuchElementException:
                         image_url = "null"
 
+                    # 크롤링한 데이터를 리스트에 추가
+                    crawled_data.append({
+                        "title": title,
+                        "date": date,
+                        "content": content,
+                        "press": press,
+                        "image_url": image_url
+                    })
+
                     logger.info(f"제목: {title}\n날짜: {date}\n본문: {content}\n신문사: {press}\n이미지 URL: {image_url}\n")
 
                     # 이전 페이지로 돌아가기
@@ -152,8 +172,9 @@ def handler(event, context):
 
     finally:
         driver.quit()
+    save_to_s3(crawled_data, save_date)
 
     return {
         "statusCode": 200,
-        "body": "크롤링이 완료되었습니다."
+        "body": "크롤링이 완료, 데이터가 S3에 저장완료."
     }
