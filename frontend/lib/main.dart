@@ -4,8 +4,6 @@ import 'package:frontend/screens/loading_screen.dart';
 
 void main() async {
   await dotenv.load(fileName: "assets/env/.env");
-  String apiServerUrl = dotenv.get("API_SERVER_URL");
-  print(apiServerUrl);
   runApp(const App());
 }
 
