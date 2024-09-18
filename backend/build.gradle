@@ -43,6 +43,11 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	//Webclient
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'	//Swagger
 }
 
 tasks.named('test') {

@@ -41,4 +41,10 @@ jwt:
 server:
   env: blue
 
+kis:
+  prod: ${PROD}
+  cano-real: ${CANO_REAL}
+  prod-appkey: ${PROD_APPKEY}
+  prod-appsecret: ${PROD_APPSECRET}
+
 
