@@ -60,4 +60,8 @@ public class MemberService {
         member.updatePassword(passwordEncoder.encode(temporaryPassword));
         temporaryPasswordMap.remove(id);
     }
+
+    public Member findById(Long id) {
+        return memberRepository.findById(id).orElse(null);
+    }
 }
