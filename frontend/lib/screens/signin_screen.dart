@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/find_password_screen.dart';
+import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/signup_screen.dart';
 
 class SigninScreen extends StatelessWidget {
@@ -75,7 +76,12 @@ class SigninScreen extends StatelessWidget {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            // 로그인 로직 처리
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MainScreen(),
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
