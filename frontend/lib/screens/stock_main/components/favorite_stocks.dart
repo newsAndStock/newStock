@@ -9,14 +9,19 @@ class FavoriteStocks extends StatelessWidget {
         Text('관심종목',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
+        SizedBox(
+          height: 105, // 높이 조정
+          child: ListView(
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+            scrollDirection: Axis.horizontal,
             children: [
               _buildFavoriteStockItem('티디에스팜', '42,200원', '+0.5%'),
               SizedBox(width: 12),
               _buildFavoriteStockItem('아이스크림미디어', '24,500원', '-23.2%'),
-              // 더 많은 관심종목 아이템을 추가할 수 있습니다.
+              SizedBox(width: 12),
+              _buildFavoriteStockItem('가나다라마바사아자차카타파하', '24,500원', '-23.2%'),
+              SizedBox(width: 12),
+              _buildFavoriteStockItem('아이스크림미디어', '24,500원', '-23.2%'),
             ],
           ),
         ),
@@ -27,16 +32,17 @@ class FavoriteStocks extends StatelessWidget {
   Widget _buildFavoriteStockItem(String name, String price, String change) {
     final isPositive = !change.startsWith('-');
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: 165,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.5),
             spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 1),
+            blurRadius: 5,
+            offset: const Offset(0, 2), // 그림자의 위치 변경
           ),
         ],
       ),
@@ -44,9 +50,12 @@ class FavoriteStocks extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(width: 8),
+              Text(
+                name.length > 8 ? name.substring(0, 8) : name,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Icon(Icons.favorite, color: Colors.purple, size: 16),
             ],
           ),

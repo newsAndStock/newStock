@@ -70,70 +70,83 @@ class _MarketIndexState extends State<MarketIndex>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MarketIndexPage()),
-        );
-      },
-      child: Container(
-        height: 80,
-        padding: const EdgeInsets.all(11),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
+    return Center(
+      child: FractionallySizedBox(
+        widthFactor: 0.85,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MarketIndexPage()),
+            );
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3), // 그림자의 위치 변경
+                ),
+              ],
             ),
-          ],
-        ),
-        child: AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _animation.value,
-              child: Transform.translate(
-                offset: Offset(0, 20 * (1 - _animation.value)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _indices[widget.currentIndex]['name'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _animation.value,
+                  child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - _animation.value)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _indices[widget.currentIndex]['value']
-                              .toStringAsFixed(2),
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${_indices[widget.currentIndex]['change'] > 0 ? '+' : ''}${_indices[widget.currentIndex]['change'].toStringAsFixed(2)} (${_indices[widget.currentIndex]['changePercent'].toStringAsFixed(1)}%)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: _indices[widget.currentIndex]['change'] > 0
-                                ? Colors.red
-                                : Colors.blue,
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '   ' + _indices[widget.currentIndex]['name'],
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                // Text(
+                                //   _indices[widget.currentIndex]['value']
+                                //       .toStringAsFixed(2),
+                                //   style: const TextStyle(fontSize: 16),
+                                // ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  // ${_indices[widget.currentIndex]['change'] > 0 ? '+' : ''}${_indices[widget.currentIndex]['change'].toStringAsFixed(2)}
+                                  '${_indices[widget.currentIndex]['value']} (${_indices[widget.currentIndex]['changePercent'].toStringAsFixed(1)}%)   ',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: _indices[widget.currentIndex]
+                                                ['change'] >
+                                            0
+                                        ? Colors.red
+                                        : Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
