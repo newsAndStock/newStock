@@ -1,6 +1,7 @@
 package com.ssafy.newstock.trading.controller;
 
 import com.ssafy.newstock.auth.supports.JwtTokenProvider;
+import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.trading.controller.request.SellRequest;
@@ -41,19 +42,14 @@ public class TradingController {
     })
     @PostMapping("/sell-market")
     public ResponseEntity<SellResponse> sellByMarket(@Valid @RequestBody SellRequest sellRequest,
-                                                     @RequestHeader("Authorization") String token) {
+                                                     @LoginMember Long memberId) {
 
-        Member member = getMember(token);
+        Member member = memberService.findById(memberId);
         SellResponse sellResponse = tradingService.sellByMarket(member, sellRequest);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(sellResponse);
     }
 
-    private Member getMember(String token) {
-        String accessToken = token.substring(7);
-        Long memberId = jwtTokenProvider.getMemberIdFromAccessToken(accessToken);
-        return memberService.findById(memberId);
-    }
 
 
 }
