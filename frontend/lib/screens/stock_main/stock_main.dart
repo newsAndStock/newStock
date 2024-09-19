@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/main_screen.dart';
 import 'dart:async';
 import 'components/search_bar.dart';
 import 'components/account_summary.dart';
@@ -41,46 +42,106 @@ class _StockMainPageState extends State<StockMainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Stock Main Page')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MainScreen(), // 검색 페이지로 이동
+                      ),
+                    );
+                  },
+                  child: Container(
+                    height: 20, // Adjust this size for the logo
+                    child: Image.asset(
+                      'assets/images/NEWstock.png', // Ensure this is the correct path to your image
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to notifications page
+                  },
+                  child: Container(
+                    height: 30, // Adjust the size for the notification icon
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      size: 30, // You can adjust the size of the icon
+                      color: Colors.black, // Change color if necessary
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SearchPage()),
-                );
-              },
-              child: AbsorbPointer(
-                child: SearchBarStock(),
+            SizedBox(height: 20),
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPage()),
+                    );
+                  },
+                  child: AbsorbPointer(
+                    child: SearchBarStock(),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MyPage()),
-                );
-              },
-              child: AccountSummary(),
+
+            const SizedBox(height: 25),
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MyPage()),
+                    );
+                  },
+                  child: AccountSummary(),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 25),
             MarketIndex(currentIndex: _currentIndex),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => StockDetailPage(stockName: '삼성전자')),
-                );
-              },
-              child: SizedBox(
-                height: 150,
-                child: FavoriteStocks(),
+            const SizedBox(height: 25),
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              StockDetailPage(stockName: '삼성전자')),
+                    );
+                  },
+                  child: SizedBox(
+                    height: 150,
+                    child: FavoriteStocks(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 12),

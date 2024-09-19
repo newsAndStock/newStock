@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:candlesticks/candlesticks.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'stock_trading_page.dart';
 
 class StockDetailPage extends StatefulWidget {
   final String stockName;
@@ -209,7 +210,17 @@ class _StockDetailPageState extends State<StockDetailPage>
       child: ElevatedButton(
         child: Text('거래하기'),
         onPressed: () {
-          // 거래 기능 구현
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StockTradingPage(
+                stockName: widget.stockName,
+                currentPrice: 74500, // Replace with actual current price
+                priceChange: 300, // Replace with actual price change
+                priceChangePercentage: 0.4, // Replace with actual percentage
+              ),
+            ),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.deepPurple,
