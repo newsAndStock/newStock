@@ -58,8 +58,7 @@ public class KisService {
                     .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(5)))
                     .block();
 
-            String tokenResponse = parseResponse(jsonResponse, "access_token");
-            token=parseResponse(tokenResponse,"access_token");
+            token = parseResponse(jsonResponse, "access_token");
         } catch (Exception e) {
             // 예외 발생 시 로그 출력 또는 알림 전송
             System.err.println("Failed to retrieve token at scheduled time: " + e.getMessage());
@@ -83,7 +82,7 @@ public class KisService {
     public String getCurrentStockPrice(String stockCode) {
 
         String url = "/uapi/domestic-stock/v1/quotations/inquire-price";
-        
+
 
         String jsonResponse= webClient
                 .get()
@@ -100,7 +99,6 @@ public class KisService {
                 .bodyToMono(String.class)
                 .block();
 
-        System.out.println(jsonResponse);
         return parseResponse(jsonResponse,"stck_prpr");
     }
 }
