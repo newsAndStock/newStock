@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/screens/find_password_screen.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/signup_screen.dart';
+import 'package:frontend/screens/stock_main/stock_main.dart';
 
 class SigninScreen extends StatelessWidget {
   const SigninScreen({super.key});
@@ -154,6 +155,30 @@ class SigninScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                // 성원 주식페이지 테스트 링크
+                const Text("주식페이지로 이동할까요?"),
+                GestureDetector(
+                  onTap: () {
+                    // SignUpScreen으로 이동
+                    print("Button clicked");
+                    print("Attempting to navigate to StockMainPage");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StockMainPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "주식페이지로 이동",
+                    style: TextStyle(
+                      color: Color(0xFF3A2E6A),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ]),
             ],
           ),
         ),
