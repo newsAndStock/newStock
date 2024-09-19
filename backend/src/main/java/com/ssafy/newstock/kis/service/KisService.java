@@ -2,6 +2,9 @@ package com.ssafy.newstock.kis.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.newstock.kis.domain.ProdToken;
+import com.ssafy.newstock.kis.repository.ProdTokenRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,8 +14,10 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @EnableScheduling
 @Service
@@ -27,9 +32,19 @@ public class KisService {
     private String appSecret;
 
     private final WebClient webClient;
+    private final ProdTokenRepository prodTokenRepository;
 
-    public KisService(WebClient webClient) {
+    public KisService(WebClient webClient, ProdTokenRepository prodTokenRepository) {
+
         this.webClient = webClient;
+        this.prodTokenRepository=prodTokenRepository;
+    }
+
+    @PostConstruct
+    public void initToken() {
+        // 서버가 시작될 때 DB에서 토큰 불러오기
+        Optional<ProdToken> prodToken = prodTokenRepository.findLatest();
+        prodToken.ifPresent(value -> token = value.getValue());
     }
 
     @Scheduled(cron = "0 0 0 * * *")
@@ -58,7 +73,10 @@ public class KisService {
                     .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(5)))
                     .block();
 
+
             token = parseResponse(jsonResponse, "access_token");
+            prodTokenRepository.save(new ProdToken(token,LocalDate.now()));
+
         } catch (Exception e) {
             // 예외 발생 시 로그 출력 또는 알림 전송
             System.err.println("Failed to retrieve token at scheduled time: " + e.getMessage());

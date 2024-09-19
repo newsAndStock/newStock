@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/sign-up", "/admin", "/login", "/refresh", "/check-email", "/check-nickname",
                                 "/send-email", "/reset-password", "/reset-password-success", "/env", "/hc",
                                 "/swagger-ui.html","/swagger-ui/**","/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
