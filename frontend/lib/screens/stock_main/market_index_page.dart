@@ -6,6 +6,7 @@ class MarketIndexPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('주요지수'),
         backgroundColor: Colors.white,
