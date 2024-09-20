@@ -221,30 +221,6 @@ class _SigninScreenState extends State<SigninScreen> {
                   ),
                 ],
               ),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                // 성원 주식페이지 테스트 링크
-                const Text("주식페이지로 이동할까요?"),
-                GestureDetector(
-                  onTap: () {
-                    // SignUpScreen으로 이동
-                    print("Button clicked");
-                    print("Attempting to navigate to StockMainPage");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StockMainPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "주식페이지로 이동",
-                    style: TextStyle(
-                      color: Color(0xFF3A2E6A),
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ]),
             ],
           ),
         ),

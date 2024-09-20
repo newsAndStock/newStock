@@ -68,6 +68,7 @@ flutter:
     - assets/images/quiz.png
     - assets/images/stock.png
     - assets/images/news.png
+    - assets/images/newsarticle.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
