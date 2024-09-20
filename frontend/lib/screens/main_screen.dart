@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/news/news_main.dart';
+import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
 import 'package:frontend/widgets/common/image_button.dart';
 
@@ -140,7 +142,14 @@ class MainScreen extends StatelessWidget {
                         description: '뉴스톡에서 쉽고 안전하게',
                         title: '주식 모의투자',
                         imagePath: 'assets/images/stock.png',
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const StockMainPage(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 
@@ -148,7 +157,14 @@ class MainScreen extends StatelessWidget {
                         description: '뉴스톡과 함께하는',
                         title: '경제신문 읽기',
                         imagePath: 'assets/images/news.png',
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NewsMainScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 

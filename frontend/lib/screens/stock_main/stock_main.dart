@@ -5,8 +5,6 @@ import 'components/search_bar.dart';
 import 'components/account_summary.dart';
 import 'components/market_index.dart';
 import 'components/favorite_stocks.dart';
-import 'components/stock_news.dart';
-import 'components/domestic_stocks.dart';
 import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
