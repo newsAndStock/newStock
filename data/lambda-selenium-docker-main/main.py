@@ -126,6 +126,7 @@ def handler(event, context):
                     image_url = driver.find_element(By.CSS_SELECTOR, '#img1').get_attribute('src') if driver.find_element(By.CSS_SELECTOR, '#img1') else "null"
 
                     crawled_data.append({
+                        "category": "금융",
                         "title": title,
                         "date": date,
                         "content": content,
