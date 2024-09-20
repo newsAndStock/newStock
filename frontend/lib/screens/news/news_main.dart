@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/news/news_all.dart';
+import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/widgets/common/news_card.dart';
 import 'package:frontend/widgets/common/news_category.dart';
 
@@ -161,19 +162,22 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20), // 좌우 간격 추가
                 children: [
                   NewsCard(
-                    imageUrl: 'https://via.placeholder.com/150',
+                    imageUrl:
+                        'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202305/31/e48e559b-086b-40d5-8686-7583f09e5a95.jpg',
                     title: '도로공사-카카오모빌리티 협약',
                     onPressed: () => {},
                   ),
                   const SizedBox(width: 20), // 카드 간 간격 추가
                   NewsCard(
-                    imageUrl: 'https://via.placeholder.com/150',
+                    imageUrl:
+                        'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202305/31/e48e559b-086b-40d5-8686-7583f09e5a95.jpg',
                     title: '공공 민간 협력 기반 교통안전 서비스',
                     onPressed: () => {},
                   ),
                   const SizedBox(width: 20), // 카드 간 간격 추가
                   NewsCard(
-                    imageUrl: 'https://via.placeholder.com/150',
+                    imageUrl:
+                        'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202305/31/e48e559b-086b-40d5-8686-7583f09e5a95.jpg',
                     title: '정책상호공유 및 서비스 업무협약',
                     onPressed: () => {},
                   ),
@@ -238,11 +242,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                         '부동산',
                         '글로벌 경제',
                         '경제 일반'
-                      ], // 카테고리 리스트 전달
-                      selectedCategory: selectedCategory, // 선택된 카테고리 전달
+                      ],
+                      selectedCategory: selectedCategory,
                       onCategorySelected: (category) {
                         setState(() {
-                          selectedCategory = category; // 선택된 카테고리 변경
+                          selectedCategory = category;
                         });
                       },
                     ),
@@ -275,25 +279,39 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: newsList.length,
                       itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedNewsIndex = index; // 뉴스 항목 선택
-                            });
-                          },
-                          child: Column(
-                            children: [
-                              buildNewsListTile(newsList[index], index),
-                              if (index !=
-                                  newsList.length - 1) // 마지막 항목은 구분선 없음
-                                Divider(
-                                  color: Colors.grey.shade300,
-                                  thickness: 0.5,
-                                  indent: 20,
-                                  endIndent: 20,
-                                ),
-                            ],
-                          ),
+                        return Column(
+                          children: [
+                            // 뉴스 항목에만 패딩 적용
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: GestureDetector(
+                                onTap: () {
+                                  // 뉴스 상세 페이지로 이동
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => NewsDetailScreen(
+                                        title: newsList[index],
+                                        dateTime: '2024-11-22',
+                                        content: '111111111111111111',
+                                        imageUrl:
+                                            'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202305/31/e48e559b-086b-40d5-8686-7583f09e5a95.jpg',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child:
+                                    buildNewsListTile(newsList[index], index),
+                              ),
+                            ),
+                            if (index != newsList.length - 1) // 마지막 항목은 구분선 없음
+                              Divider(
+                                color: Colors.grey.shade300,
+                                thickness: 0.5,
+                                indent: 20, // 좌우 패딩만큼 간격 맞추기
+                                endIndent: 20,
+                              ),
+                          ],
                         );
                       },
                     ),
@@ -310,9 +328,8 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
 
   Widget buildNewsListTile(String title, int index) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+      padding: const EdgeInsets.all(10.0),
       child: Container(
-        padding: const EdgeInsets.all(15.0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
