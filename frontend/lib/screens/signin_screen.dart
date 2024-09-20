@@ -1,11 +1,82 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/api/member_api_service.dart';
 import 'package:frontend/screens/find_password_screen.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/signup_screen.dart';
 import 'package:frontend/screens/stock_main/stock_main.dart';
 
-class SigninScreen extends StatelessWidget {
+class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
+
+  @override
+  State<SigninScreen> createState() => _SigninScreenState();
+}
+
+class _SigninScreenState extends State<SigninScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  static const storage = FlutterSecureStorage();
+  String? errorMessage;
+  dynamic userInfo = '';
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _asyncMethod();
+    });
+  }
+
+  _asyncMethod() async {
+    // read 함수로 key값에 맞는 정보를 불러오고 데이터타입은 String 타입
+    // 데이터가 없을때는 null을 반환
+    userInfo = await storage.read(key: 'login');
+
+    // user의 정보가 있다면 로그인 후 들어가는 첫 페이지로 넘어가게 합니다.
+    if (userInfo != null) {
+      Navigator.pushNamed(context, '/main');
+    } else {
+      print('로그인이 필요합니다');
+    }
+  }
+
+  Future<void> _login() async {
+    setState(() {
+      isLoading = true;
+    });
+    final email = emailController.text;
+    final password = passwordController.text;
+    try {
+      final response = await MemberApiService().login(email, password);
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+
+        String accessToken = data['accessToken'];
+        String refreshToken = data['refreshToken'];
+
+        await storage.write(key: 'accessToken', value: accessToken);
+        await storage.write(key: 'refreshToken', value: refreshToken);
+      } else {
+        // 회원가입 실패 시 처리
+        setState(() {
+          errorMessage = "회원가입 실패: ${jsonDecode(response.body)['message']}";
+        });
+      }
+    } catch (e) {
+      print(e);
+    } finally {
+      String? token = await storage.read(key: 'accessToken');
+      print("accessToken $token");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +131,7 @@ class SigninScreen extends StatelessWidget {
                       _buildCustomTextField(
                         hintText: "이메일을 입력해주세요",
                         isPassword: false,
+                        controller: emailController,
                       ), // 이메일 필드
                       const SizedBox(height: 20),
                       const Text(
@@ -70,20 +142,14 @@ class SigninScreen extends StatelessWidget {
                       _buildCustomTextField(
                         hintText: "비밀번호를 입력해주세요",
                         isPassword: true,
+                        controller: passwordController,
                       ), // 비밀번호 필드
                       const SizedBox(height: 20),
                       // 로그인 버튼
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MainScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
@@ -190,6 +256,7 @@ class SigninScreen extends StatelessWidget {
   Widget _buildCustomTextField({
     required String hintText,
     required bool isPassword,
+    required TextEditingController controller,
   }) {
     final FocusNode focusNode = FocusNode();
     return Focus(
@@ -198,6 +265,7 @@ class SigninScreen extends StatelessWidget {
         builder: (context) {
           final hasFocus = focusNode.hasFocus;
           return TextField(
+            controller: controller,
             obscureText: isPassword,
             decoration: InputDecoration(
               hintText: hintText,
