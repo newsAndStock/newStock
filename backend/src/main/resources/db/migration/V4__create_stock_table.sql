@@ -1,4 +1,4 @@
-CREATE TABLE Stock (
+CREATE TABLE IF NOT EXISTS Stock (
     Stock_code VARCHAR(20) NOT NULL,
     name VARCHAR(255),
     market VARCHAR(100),
