@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/widgets/common/news_category.dart';
+import 'package:frontend/models/news/news_model.dart';
+import 'package:frontend/services/news/news_service.dart';
 
 class NewsAllScreen extends StatefulWidget {
   const NewsAllScreen({Key? key}) : super(key: key);
@@ -11,35 +13,28 @@ class NewsAllScreen extends StatefulWidget {
 
 class _NewsAllScreenState extends State<NewsAllScreen> {
   String selectedCategory = '금융'; // 기본 선택된 카테고리
+  late Future<List<News>> futureNewsList; // Future 타입으로 뉴스 리스트 설정
+  List<News> filteredNewsList = []; // 필터링된 뉴스 리스트
 
-  // 뉴스 데이터
-  final Map<String, List<String>> newsByCategory = {
-    '금융': [
-      '저축은행, 적자는 늘었지만 연체율은 줄었다..."내년 상반기 저점 통과"',
-      'LG엔솔, 40만 원선 돌파 ... 2차 전지株 일제히 강세',
-      '금융시장 회복세, 경제지표 상승',
-      '금리 인하 기대감 상승',
-      '경제 전문가들, 금융시장 낙관'
-    ],
-    '증권': [
-      '카카오 주가 급등 ... 증권사들 분석 강화',
-      '주식시장, 새로운 변곡점 도달',
-      '코스피 3,000선 회복 기대',
-      '테슬라 주식, 장기 투자 매력도 상승'
-    ],
-    '부동산': [
-      '서울 부동산 가격 다시 상승세',
-      '부동산 시장, 규제 완화로 활성화 예상',
-      '전세 가격, 하락세 멈춰',
-      '부동산 전문가, 가격 반등 예상'
-    ],
-  };
+  @override
+  void initState() {
+    super.initState();
+    futureNewsList = NewsService().fetchNews(); // 뉴스 데이터 로드
+    _filterNewsByCategory(selectedCategory); // 기본 카테고리로 필터링
+  }
+
+  // 선택된 카테고리로 뉴스 필터링
+  void _filterNewsByCategory(String category) async {
+    final allNews = await NewsService().fetchNews();
+    setState(() {
+      filteredNewsList = allNews
+          .where((news) => news.category == category)
+          .toList(); // 카테고리별 필터링
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 현재 선택된 카테고리에 따른 뉴스 리스트
-    List<String> newsList = newsByCategory[selectedCategory]?.toList() ?? [];
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -71,6 +66,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                     onCategorySelected: (category) {
                       setState(() {
                         selectedCategory = category;
+                        _filterNewsByCategory(category); // 카테고리 변경 시 필터링
                       });
                     },
                   ),
@@ -79,44 +75,58 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
             ),
           ),
           const SizedBox(height: 10),
+          // 뉴스 리스트
           Expanded(
-            child: ListView.builder(
-              itemCount: newsList.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    // 뉴스 항목에만 패딩 적용
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 5),
-                      child: GestureDetector(
-                        onTap: () {
-                          // 뉴스 상세 페이지로 이동
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NewsDetailScreen(
-                                title: newsList[index],
-                                dateTime: '2024-11-22',
-                                content: '22222221111111',
-                                imageUrl:
-                                    'https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202305/31/e48e559b-086b-40d5-8686-7583f09e5a95.jpg',
-                              ),
+            child: FutureBuilder<List<News>>(
+              future: futureNewsList,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('뉴스가 없습니다.'));
+                } else {
+                  return ListView.builder(
+                    itemCount: filteredNewsList.length,
+                    itemBuilder: (context, index) {
+                      final news = filteredNewsList[index];
+                      return Column(
+                        children: [
+                          // 뉴스 항목에만 패딩 적용
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 5),
+                            child: GestureDetector(
+                              onTap: () {
+                                // 뉴스 상세 페이지로 이동
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => NewsDetailScreen(
+                                      title: news.title,
+                                      dateTime: news.date,
+                                      content: news.content,
+                                      imageUrl: news.imageUrl,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: buildNewsListTile(news),
                             ),
-                          );
-                        },
-                        child: buildNewsListTile(newsList[index]),
-                      ),
-                    ),
-                    if (index != newsList.length - 1) // 마지막 항목은 구분선 없음
-                      Divider(
-                        color: Colors.grey.shade300,
-                        thickness: 0.5,
-                        indent: 20, // 좌우 패딩만큼 간격 맞추기
-                        endIndent: 20,
-                      ),
-                  ],
-                );
+                          ),
+                          if (index != filteredNewsList.length - 1)
+                            Divider(
+                              color: Colors.grey.shade300,
+                              thickness: 0.5,
+                              indent: 20, // 좌우 패딩만큼 간격 맞추기
+                              endIndent: 20,
+                            ),
+                        ],
+                      );
+                    },
+                  );
+                }
               },
             ),
           ),
@@ -125,7 +135,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
     );
   }
 
-  Widget buildNewsListTile(String title) {
+  Widget buildNewsListTile(News news) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -144,7 +154,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  news.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -153,14 +163,14 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                   overflow: TextOverflow.ellipsis, // 내용이 길면 생략 표시
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  '2024.08.30, 오후 12:29', // 임시 날짜와 시간 정보
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                Text(
+                  news.date, // 뉴스 데이터에서 날짜 가져오기
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  '서울경제 | 4시간 전',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                Text(
+                  news.press, // 뉴스 데이터에서 신문사 이름 가져오기
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
@@ -172,8 +182,8 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
             height: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/newsarticle.png'), // 이미지 경로 수정
+              image: DecorationImage(
+                image: NetworkImage(news.imageUrl), // 뉴스 이미지 URL 사용
                 fit: BoxFit.cover,
               ),
             ),
