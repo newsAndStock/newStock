@@ -8,6 +8,7 @@ import 'components/favorite_stocks.dart';
 import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
+import 'package:frontend/screens/notification_screen.dart';
 
 class StockMainPage extends StatefulWidget {
   const StockMainPage({Key? key}) : super(key: key);
@@ -69,7 +70,13 @@ class _StockMainPageState extends State<StockMainPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // Navigate to notifications page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NotificationScreen(), // 알림 페이지로 이동
+                      ),
+                    );
                   },
                   child: Container(
                     height: 30, // Adjust the size for the notification icon
