@@ -1,4 +1,4 @@
-CREATE TABLE trading (
+CREATE TABLE IF NOT EXISTS trading (
      id BIGINT AUTO_INCREMENT PRIMARY KEY,
      stock_code VARCHAR(255) NOT NULL,
      quantity INT NOT NULL,
