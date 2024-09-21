@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.newstock.kis.domain.ProdToken;
 import com.ssafy.newstock.kis.repository.ProdTokenRepository;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 @EnableScheduling
 @Service
+@Getter
 public class KisService {
 
     private String token;
