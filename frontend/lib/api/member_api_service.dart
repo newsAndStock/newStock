@@ -44,4 +44,30 @@ class MemberApiService {
     );
     return response;
   }
+
+  // 이메일 중복 체크
+  Future<http.Response> checkEmail(String email) async {
+    final url = Uri.parse('$apiServerUrl/check-email');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+    return response;
+  }
+
+  // 닉네임 중복 체크
+  Future<http.Response> checkNickname(String nickName) async {
+    final url = Uri.parse('$apiServerUrl/check-nickname?nickname=$nickName');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+    return response;
+  }
 }
