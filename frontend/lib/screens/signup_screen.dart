@@ -17,9 +17,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
-
+  String? emailCheckMessage;
+  String? nickNameCheckMessage;
   bool isLoading = false;
   String? errorMessage;
+  //이메일, 닉네임 중복 확인
+  bool isEmailChecked = false;
+  bool isNickNameChecked = false;
 
   // 회원가입 로직
   Future<void> _signUp() async {
@@ -42,6 +46,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    // 이메일, 닉네임 중복 확인이 완료되지 않은 경우
+    if (!isEmailChecked || !isNickNameChecked) {
+      setState(() {
+        errorMessage = "이메일과 닉네임 중복 확인을 완료해주세요.";
+        isLoading = false;
+      });
+      return;
+    }
+
     // API 호출
     try {
       final response =
@@ -57,17 +70,68 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else {
         // 회원가입 실패 시 처리
         setState(() {
-          errorMessage = "회원가입 실패: ${jsonDecode(response.body)['message']}";
+          errorMessage = "회원가입 실패";
         });
       }
     } catch (e, stackTrace) {
       setState(() {
-        errorMessage = "오류가 발생했습니다: $e";
+        errorMessage = "회원가입에 오류가 발생했습니다";
       });
       print(stackTrace); // 스택 트레이스 출력
     } finally {
       setState(() {
         isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _checkemail() async {
+    final email = emailController.text;
+    try {
+      final response = await MemberApiService().checkEmail(email);
+      if (response.statusCode == 200) {
+        print(response.body);
+        final isAvailable = jsonDecode(response.body) as bool;
+        print(isAvailable);
+        setState(() {
+          if (!isAvailable) {
+            emailCheckMessage = "사용 가능한 이메일입니다.";
+            isEmailChecked = true;
+          } else {
+            emailCheckMessage = "이미 사용 중인 이메일입니다.";
+            isEmailChecked = false;
+          }
+        });
+      }
+    } catch (e, stackTrace) {
+      print(stackTrace);
+      setState(() {
+        emailCheckMessage = "이메일 중복 확인 중 오류가 발생했습니다.";
+      });
+    }
+  }
+
+  Future<void> _checknickname() async {
+    final nickName = nickNameController.text;
+    try {
+      final response = await MemberApiService().checkNickname(nickName);
+      if (response.statusCode == 200) {
+        final isAvailable = jsonDecode(response.body) as bool;
+
+        setState(() {
+          if (!isAvailable) {
+            nickNameCheckMessage = "사용 가능한 닉네임입니다.";
+            isNickNameChecked = true;
+          } else {
+            nickNameCheckMessage = "이미 사용 중인 닉네임입니다.";
+            isNickNameChecked = false;
+          }
+        });
+      }
+    } catch (e, stackTrace) {
+      print(stackTrace);
+      setState(() {
+        nickNameCheckMessage = "닉네임 중복 확인 중 오류가 발생했습니다.";
       });
     }
   }
@@ -111,7 +175,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         hintText: "이메일을 입력해주세요",
                         buttonText: "중복확인",
                         controller: emailController,
+                        onPressed: _checkemail,
                       ),
+                      if (emailCheckMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5.0),
+                          child: Text(emailCheckMessage!,
+                              style: TextStyle(
+                                  color: isEmailChecked
+                                      ? Colors.green
+                                      : Colors.red)),
+                        ),
                       const SizedBox(height: 10),
                       const Text("닉네임 *", style: TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
@@ -119,8 +193,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         hintText: "닉네임을 입력해주세요",
                         buttonText: "중복확인",
                         controller: nickNameController,
+                        onPressed: _checknickname,
                       ),
-                      const SizedBox(height: 20),
+                      if (nickNameCheckMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5.0),
+                          child: Text(nickNameCheckMessage!,
+                              style: TextStyle(
+                                  color: isNickNameChecked
+                                      ? Colors.green
+                                      : Colors.red)),
+                        ),
+                      const SizedBox(height: 15),
                       const Text("비밀번호 *", style: TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
                       _buildCustomTextField(
@@ -176,6 +260,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required String hintText,
     required String buttonText,
     required TextEditingController controller,
+    required VoidCallback onPressed,
   }) {
     final FocusNode focusNode = FocusNode();
     return Stack(
@@ -222,9 +307,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           right: 5,
           top: 0,
           child: ElevatedButton(
-            onPressed: () {
-              // 중복 확인 버튼 클릭 시 처리 로직
-            },
+            onPressed: onPressed,
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),

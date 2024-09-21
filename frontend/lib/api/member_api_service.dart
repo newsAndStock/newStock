@@ -4,7 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class MemberApiService {
-  static String apiServerUrl = dotenv.get("API_SEREVER_URL");
+  static String apiServerUrl = dotenv.get("API_SERVER_URL");
 
   // 로그인
   Future<http.Response> login(String email, String password) async {
@@ -47,7 +47,7 @@ class MemberApiService {
 
   // 이메일 중복 체크
   Future<http.Response> checkEmail(String email) async {
-    final url = Uri.parse('$apiServerUrl/check-email');
+    final url = Uri.parse('$apiServerUrl/check-email?email=$email');
 
     final response = await http.get(
       url,
@@ -59,15 +59,19 @@ class MemberApiService {
   }
 
   // 닉네임 중복 체크
-  Future<http.Response> checkNickname(String nickName) async {
-    final url = Uri.parse('$apiServerUrl/check-nickname?nickname=$nickName');
-
+  Future<http.Response> checkNickname(String nickname) async {
+    // 명시적으로 한글을 URL 인코딩하여 전송
+    final encodedNickname = Uri.encodeQueryComponent(nickname);
+    final url =
+        Uri.parse('$apiServerUrl/check-nickname?nickname=$encodedNickname');
+    print(url);
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
       },
     );
+    print(response.body);
     return response;
   }
 }

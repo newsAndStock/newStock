@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/screens/news/news_main.dart';
+import 'package:frontend/screens/signin_screen.dart';
 import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
 import 'package:frontend/widgets/common/image_button.dart';
@@ -9,6 +11,8 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const secureStorage = FlutterSecureStorage();
+
     return Scaffold(
       backgroundColor: const Color(0xFF3A2E6A), // 배경색
       body: Stack(
@@ -191,6 +195,12 @@ class MainScreen extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: () async {
                               // await
+                              await secureStorage.delete(key: "accessToken");
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const SigninScreen()),
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
