@@ -13,7 +13,7 @@ import 'package:frontend/models/news/news_model.dart';
 import 'package:frontend/widgets/common/news_searchbar.dart';
 
 class NewsMainScreen extends StatefulWidget {
-  const NewsMainScreen({Key? key}) : super(key: key);
+  const NewsMainScreen({super.key});
 
   @override
   _NewsMainScreenState createState() => _NewsMainScreenState();
@@ -71,11 +71,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MainScreen(), // 검색 페이지로 이동
+                        builder: (context) => const MainScreen(), // 검색 페이지로 이동
                       ),
                     );
                   },
-                  child: Container(
+                  child: SizedBox(
                     height: 20, // Adjust this size for the logo
                     child: Image.asset(
                       'assets/images/NEWstock.png', // Ensure this is the correct path to your image
@@ -89,11 +89,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            NotificationScreen(), // 알림 페이지로 이동
+                            const NotificationScreen(), // 알림 페이지로 이동
                       ),
                     );
                   },
-                  child: Container(
+                  child: const SizedBox(
                     height: 30, // Adjust the size for the notification icon
                     child: Icon(
                       Icons.notifications_outlined,
@@ -121,10 +121,10 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => NewsSearchScreen()),
+                              builder: (context) => const NewsSearchScreen()),
                         );
                       },
-                      child: AbsorbPointer(
+                      child: const AbsorbPointer(
                         child: NewsSearchbar(),
                       ),
                     ),
@@ -246,9 +246,9 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                                 ),
                               ],
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
+                              children: [
                                 Text(
                                   '스크랩 기사 바로가기',
                                   style: TextStyle(
@@ -275,7 +275,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                           child: Row(
                             children: [
                               NewsCategory(
-                                categories: [
+                                categories: const [
                                   '금융',
                                   '증권',
                                   '산업/재계',
