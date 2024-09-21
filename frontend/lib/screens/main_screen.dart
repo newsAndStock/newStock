@@ -14,23 +14,23 @@ class MainScreen extends StatelessWidget {
       body: Stack(
         children: [
           // 상단 - 날짜, 자산 정보, 수익률
-          Positioned(
+          const Positioned(
             top: 80,
             left: 30,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '2024년 9월 13일 금요일',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
 
                 // 자산 정보
-                const Text(
+                Text(
                   '띵슈롱님의 자산',
                   style: TextStyle(
                     color: Colors.white,
@@ -39,7 +39,7 @@ class MainScreen extends StatelessWidget {
                   ),
                 ),
 
-                const Text(
+                Text(
                   '12,360,000원',
                   style: TextStyle(
                     color: Colors.white,
@@ -47,8 +47,8 @@ class MainScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 5),
-                const Text(
+                SizedBox(height: 5),
+                Text(
                   '수익률 0%\n랭킹 500위',
                   style: TextStyle(
                     color: Colors.white,
@@ -183,6 +183,27 @@ class MainScreen extends StatelessWidget {
                         subscription: '퀴즈 풀고 포인트 받자!',
                         imagePath: 'assets/images/quiz.png',
                         onPressed: () {},
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              // await
+                            },
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              backgroundColor: const Color(0xFF3A2E6A),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: const Text("로그아웃",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16)),
+                          ),
+                        ),
                       ),
                     ],
                   ),

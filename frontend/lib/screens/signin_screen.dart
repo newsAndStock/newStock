@@ -17,7 +17,8 @@ class SigninScreen extends StatefulWidget {
 class _SigninScreenState extends State<SigninScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  static const storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
+
   String? errorMessage;
   dynamic userInfo = '';
   bool isLoading = false;
@@ -33,14 +34,16 @@ class _SigninScreenState extends State<SigninScreen> {
   _asyncMethod() async {
     // read 함수로 key값에 맞는 정보를 불러오고 데이터타입은 String 타입
     // 데이터가 없을때는 null을 반환
-    userInfo = await storage.read(key: 'login');
+    userInfo = await storage.read(key: 'accessToken');
 
     // user의 정보가 있다면 로그인 후 들어가는 첫 페이지로 넘어가게 합니다.
     if (userInfo != null) {
-      Navigator.pushNamed(context, '/main');
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainScreen()));
     } else {
       print('로그인이 필요합니다');
     }
+    setState(() {});
   }
 
   Future<void> _login() async {
@@ -57,17 +60,20 @@ class _SigninScreenState extends State<SigninScreen> {
 
         String accessToken = data['accessToken'];
         String refreshToken = data['refreshToken'];
+        print(accessToken);
 
         await storage.write(key: 'accessToken', value: accessToken);
         await storage.write(key: 'refreshToken', value: refreshToken);
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainScreen()));
       } else {
-        // 회원가입 실패 시 처리
+        print("로그인 실패");
         setState(() {
-          errorMessage = "회원가입 실패: ${jsonDecode(response.body)['message']}";
+          isLoading = true;
         });
       }
-    } catch (e) {
-      print(e);
+    } catch (e, stackTrace) {
+      print(stackTrace); // 스택 트레이스 출력
     } finally {
       String? token = await storage.read(key: 'accessToken');
       print("accessToken $token");

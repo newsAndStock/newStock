@@ -49,6 +49,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (response.statusCode == 201) {
         // 회원가입 성공 처리 - 로그인 화면으로 이동
+        print(response.body);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const SigninScreen()),
@@ -59,10 +60,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           errorMessage = "회원가입 실패: ${jsonDecode(response.body)['message']}";
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       setState(() {
         errorMessage = "오류가 발생했습니다: $e";
       });
+      print(stackTrace); // 스택 트레이스 출력
     } finally {
       setState(() {
         isLoading = false;
