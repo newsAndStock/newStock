@@ -24,6 +24,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   //이메일, 닉네임 중복 확인
   bool isEmailChecked = false;
   bool isNickNameChecked = false;
+  // 이메일 형식 체크를 위한 정규식
+  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
   // 회원가입 로직
   Future<void> _signUp() async {
@@ -87,6 +89,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _checkemail() async {
     final email = emailController.text;
+    // 이메일 형식 확인
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        emailCheckMessage = "이메일 형식이 올바르지 않습니다!";
+      });
+      return; // 이메일 형식이 올바르지 않으면 API 요청을 보내지 않음
+    }
+
     try {
       final response = await MemberApiService().checkEmail(email);
       if (response.statusCode == 200) {
