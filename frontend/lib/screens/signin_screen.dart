@@ -70,6 +70,7 @@ class _SigninScreenState extends State<SigninScreen> {
         print("로그인 실패");
         setState(() {
           isLoading = true;
+          errorMessage = "이메일 또는 비밀번호를 확인하세요!!";
         });
       }
     } catch (e, stackTrace) {
@@ -169,7 +170,17 @@ class _SigninScreenState extends State<SigninScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      // 에러 메시지 표시
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Center(
+                            child: Text(
+                              errorMessage!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ),
                       // 비밀번호 찾기 링크
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
