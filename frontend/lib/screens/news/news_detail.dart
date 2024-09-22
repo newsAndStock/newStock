@@ -129,7 +129,11 @@ class NewsDetailScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const NewsScrapScreen(),
+                    builder: (context) => NewsScrapScreen(
+                      title: title,
+                      dateTime: dateTime,
+                      content: content,
+                    ),
                   ),
                 );
               },
