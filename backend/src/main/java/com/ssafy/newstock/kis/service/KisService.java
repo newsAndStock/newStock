@@ -17,6 +17,7 @@ import reactor.util.retry.Retry;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,8 +46,10 @@ public class KisService {
     @PostConstruct
     public void initToken() {
         // 서버가 시작될 때 DB에서 토큰 불러오기
-        Optional<ProdToken> prodToken = prodTokenRepository.findLatest();
-        prodToken.ifPresent(value -> token = value.getValue());
+        List<ProdToken> prodTokens = prodTokenRepository.findLatest();
+        if (!prodTokens.isEmpty()) {
+            token = prodTokens.get(0).getValue(); // 최신 토큰의 값 가져오기
+        }
     }
 
     @Scheduled(cron = "0 0 0 * * *")
