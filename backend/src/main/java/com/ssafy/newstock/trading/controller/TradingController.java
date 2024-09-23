@@ -30,10 +30,19 @@ public class TradingController {
 
 
         Member member = memberService.findById(1L);
+        System.out.println("sell-market 출력테스트");
         SellResponse sellResponse = tradingService.sellByMarket(member, sellRequest);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(sellResponse);
     }
+
+    @PostMapping("/sell")
+    public String sell(@RequestBody SellRequest sellRequest){
+
+        return sellRequest.getStockCode();
+    }
+
+
 
 
 
