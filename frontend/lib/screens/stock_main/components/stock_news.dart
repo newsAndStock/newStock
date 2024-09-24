@@ -16,7 +16,7 @@ class RecommendedNews extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 12),
           Expanded(
-            child: ListView(
+            child: Column(
               children: [
                 _buildNewsItem(
                   'LG엔솔, 40만 원선 돌파 ... 2차 전지株 일제히 강세',

@@ -5,6 +5,8 @@ import 'components/search_bar.dart';
 import 'components/account_summary.dart';
 import 'components/market_index.dart';
 import 'components/favorite_stocks.dart';
+import 'components/stock_news.dart';
+import 'components/stock_newsComponent.dart';
 import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
@@ -150,7 +152,15 @@ class _StockMainPageState extends State<StockMainPage> {
               ),
             ),
             const SizedBox(height: 12),
-            // SizedBox(height: 300, child: RecommendedNews())
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: SizedBox(
+                  height: 400, // 원하는 높이로 조정
+                  child: NewsPageComponent(),
+                ),
+              ),
+            ),
 
             // RecommendedNews(),
             // DomesticStocks(),
