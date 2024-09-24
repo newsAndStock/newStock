@@ -1,4 +1,4 @@
-CREATE TABLE stock_recent_search_word (
+CREATE TABLE IF NOT EXISTS stock_recent_search_word (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     keyword VARCHAR(255) NOT NULL,
     date DATETIME NOT NULL,
