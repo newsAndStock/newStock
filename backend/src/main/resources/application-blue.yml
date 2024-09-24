@@ -14,6 +14,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
 
+  flyway:
+    enabled: false  # Flyway 비활성화
+
 server:
   port: 8080
   address: 0.0.0.0
