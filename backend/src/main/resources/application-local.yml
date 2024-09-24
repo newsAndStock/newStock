@@ -18,6 +18,9 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
     fail-on-missing-locations: true
+  batch:
+    jdbc:
+      initialize-schema: always
 
 server:
   port: 8080

@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Component
@@ -30,8 +32,7 @@ public class WebClientUtil {
         uriSpec.uri(uri)
                 .header("authorization", "Bearer " + kisService.getToken())
                 .header("appkey", appKey)
-                .header("appsecret", appSecret)
-                .header("tr_id", "FHKST03010100");
+                .header("appsecret", appSecret);
 
         if (additionalHeaders != null) {
             additionalHeaders.forEach(uriSpec::header);
@@ -39,6 +40,7 @@ public class WebClientUtil {
 
         return uriSpec.retrieve()
                 .bodyToMono(String.class)
+                .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))
                 .block();
     }
 }
