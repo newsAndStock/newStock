@@ -62,7 +62,9 @@ class _StockTradingPageState extends State<StockTradingPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(widget.stockName),
         actions: [
           IconButton(
@@ -75,12 +77,33 @@ class _StockTradingPageState extends State<StockTradingPage>
       ),
       body: Column(
         children: [
-          _buildStockInfo(),
+          Row(children: [
+            SizedBox(
+              width: 50,
+            ),
+            _buildStockInfo(),
+          ]),
           TabBar(
             controller: _tabController,
             tabs: [
-              Tab(text: '매수'),
-              Tab(text: '매도'),
+              Tab(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16), // 라벨 좌우 여백 추가
+                  child: Text(
+                    '매수',
+                    style: TextStyle(fontSize: 16), // 글씨 크기 증가
+                  ),
+                ),
+              ),
+              Tab(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16), // 라벨 좌우 여백 추가
+                  child: Text(
+                    '매도',
+                    style: TextStyle(fontSize: 16), // 글씨 크기 증가
+                  ),
+                ),
+              ),
             ],
           ),
           Expanded(
@@ -105,15 +128,12 @@ class _StockTradingPageState extends State<StockTradingPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${widget.currentPrice.toStringAsFixed(0)}원',
+            '74,500원',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
-            '${widget.priceChange > 0 ? '+' : ''}${widget.priceChange.toStringAsFixed(0)}원 (${widget.priceChangePercentage.toStringAsFixed(2)}%)',
-            style: TextStyle(
-              fontSize: 16,
-              color: widget.priceChange > 0 ? Colors.red : Colors.blue,
-            ),
+            '+300원 (0.4%)',
+            style: TextStyle(fontSize: 16, color: Colors.red),
           ),
         ],
       ),
@@ -129,13 +149,46 @@ class _StockTradingPageState extends State<StockTradingPage>
             child: IntrinsicHeight(
               child: Column(
                 children: [
-                  _buildAvailableBalance(),
-                  _buildOrderTypeSelector(),
-                  _isMarketOrder
-                      ? _buildMarketOrderPrice()
-                      : _buildLimitOrderPrice(),
-                  _buildQuantityInput(),
-                  _buildTotalAmount(),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _buildAvailableBalance(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _buildOrderTypeSelector(),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _isMarketOrder
+                        ? _buildMarketOrderPrice()
+                        : _buildLimitOrderPrice(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(40)),
+                        color: Color(0xffF1F5F9),
+                      ),
+                      child: Column(
+                        children: [
+                          FractionallySizedBox(
+                              widthFactor: 0.85, child: _buildQuantityInput()),
+                          FractionallySizedBox(
+                              widthFactor: 0.95, child: _buildTotalAmount()),
+                        ],
+                      ),
+                    ),
+                  ),
                   if (_showKeypad) Expanded(child: _buildKeypad()),
                   if (!_isMarketOrder && _showPriceVolumeChart)
                     Expanded(child: _buildPriceVolumeChart()),
@@ -150,67 +203,192 @@ class _StockTradingPageState extends State<StockTradingPage>
 
   Widget _buildSellTab() {
     // Similar to _buildBuyTab(), but with sell-specific modifications
-    return Container(); // Placeholder
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _buildAvailableBalance(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _buildOrderTypeSelector(),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: _isMarketOrder
+                        ? _buildMarketOrderPrice()
+                        : _buildLimitOrderPrice(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: 0.9,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(40)),
+                        color: Color(0xffF1F5F9),
+                      ),
+                      child: Column(
+                        children: [
+                          FractionallySizedBox(
+                              widthFactor: 0.85, child: _buildQuantityInput()),
+                          FractionallySizedBox(
+                              widthFactor: 0.95, child: _buildTotalAmount()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ); // Placeholder
   }
 
   Widget _buildAvailableBalance() {
     return Container(
       padding: EdgeInsets.all(16),
-      color: Colors.deepPurple,
+      decoration: BoxDecoration(
+          color: Color(0xFF3A2E6A),
+          borderRadius: BorderRadius.all(Radius.circular(40))),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text('명슈릉님의 가용자산', style: TextStyle(color: Colors.white)),
-          Text('1,000,000원',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          SizedBox(
+            width: 15,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('띵슈롱님의 가용자산',
+                  style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text('1,000,000원',
+                  style: TextStyle(color: Colors.white, fontSize: 23)),
+            ],
+          )
         ],
       ),
     );
   }
 
   Widget _buildOrderTypeSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: RadioListTile<bool>(
-            title: Text('시장가'),
-            value: true,
-            groupValue: _isMarketOrder,
-            onChanged: (value) => setState(() => _isMarketOrder = value!),
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+          color: Color(0xffF1F5F9)),
+      child: Row(
+        children: [
+          Expanded(
+            child: RadioListTile<bool>(
+              title: Text('시장가'),
+              value: true,
+              groupValue: _isMarketOrder,
+              onChanged: (value) => setState(() => _isMarketOrder = value!),
+            ),
           ),
-        ),
-        Expanded(
-          child: RadioListTile<bool>(
-            title: Text('지정가'),
-            value: false,
-            groupValue: _isMarketOrder,
-            onChanged: (value) => setState(() => _isMarketOrder = value!),
+          Expanded(
+            child: RadioListTile<bool>(
+              title: Text('지정가'),
+              value: false,
+              groupValue: _isMarketOrder,
+              onChanged: (value) => setState(() => _isMarketOrder = value!),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildMarketOrderPrice() {
-    return ListTile(
-      title: Text('시장가로 즉시 체결됩니다.'),
-      subtitle: Text('※ 현재 보이는 가격과 다를 수 있어요!'),
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40)),
+          color: Color(0xffF1F5F9)),
+      child: ListTile(
+        title: Text('시장가로 즉시 체결됩니다.'),
+        subtitle: Text('※ 현재 보이는 가격과 다를 수 있어요!'),
+      ),
     );
   }
 
   Widget _buildLimitOrderPrice() {
     return Column(
       children: [
-        TextField(
-          controller: _limitPriceController,
-          decoration: InputDecoration(
-            labelText: '지정가',
-            suffixText: '원',
+        Container(
+          height: 80, // 시장가 탭의 높이와 일치하도록 조정
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40),
+            ),
+            color: Color(0xffF1F5F9),
           ),
-          keyboardType: TextInputType.number,
-          onChanged: (value) =>
-              setState(() => _limitPrice = double.tryParse(value) ?? 0),
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _limitPriceController,
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              setState(() =>
+                                  _limitPrice = double.tryParse(value) ?? 0);
+                            },
+                          ),
+                        ),
+                        // Text(
+                        //   '원',
+                        //   style: TextStyle(
+                        //       fontSize: 24, fontWeight: FontWeight.bold),
+                        // ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '나의 평균 구매가 72,800원',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
         SizedBox(height: 16),
       ],
@@ -223,16 +401,20 @@ class _StockTradingPageState extends State<StockTradingPage>
         border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        children: [
-          for (var i = 0; i < 7; i++)
-            _buildPriceVolumeRow(
-              sellVolume: 48459 - i * 1000,
-              price: 74800 - i * 100,
-              buyVolume: 71096 + i * 100000,
-              isCurrentPrice: i == 3,
-            ),
-        ],
+      // 높이 제한을 설정합니다. 필요에 따라 조정하세요.
+      height: 240, // 예시 높이
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            for (var i = 0; i < 7; i++)
+              _buildPriceVolumeRow(
+                sellVolume: 48459 - i * 1000,
+                price: 74800 - i * 100,
+                buyVolume: 71096 + i * 100000,
+                isCurrentPrice: i == 3,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -371,10 +553,13 @@ class _StockTradingPageState extends State<StockTradingPage>
 
   Widget _buildBuyButton() {
     return ElevatedButton(
-      child: Text('매수하기'),
+      child: Text(
+        '매수하기',
+        style: TextStyle(color: Colors.white),
+      ),
       onPressed: () => _showConfirmationSheet(),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Color(0xFF3A2E6A),
         minimumSize: Size(double.infinity, 50),
       ),
     );
@@ -385,26 +570,89 @@ class _StockTradingPageState extends State<StockTradingPage>
       context: context,
       builder: (BuildContext context) {
         return Container(
+          decoration: BoxDecoration(
+            color: Color(0xFF3A2E6A),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
           padding: EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('주문 확인',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                '삼성전자',
+                style: TextStyle(color: Colors.white, fontSize: 15),
+              ),
+              SizedBox(
+                height: 5,
+              ),
+              Text(
+                '구매 1,000주',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 16),
-              Text('삼성전자 구매 1,000주'),
-              Text('주당 구매가 74,300원'),
-              Text('수수료 (0.015%) 11,205원'),
-              Text('총 주문 금액 74,311,205원'),
+              FractionallySizedBox(
+                  widthFactor: 0.8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '주당 구매가',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      Text(
+                        '74,300원',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      )
+                    ],
+                  )),
+              FractionallySizedBox(
+                  widthFactor: 0.8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '수수료(0.015%)',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      Text(
+                        '11,205원',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      )
+                    ],
+                  )),
+              FractionallySizedBox(
+                  widthFactor: 0.8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '총 주문 금액',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      Text(
+                        '74,311,205원',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      )
+                    ],
+                  )),
               SizedBox(height: 16),
               ElevatedButton(
-                child: Text('매수하기'),
+                child: Text(
+                  '매수하기',
+                  style: TextStyle(color: Colors.black),
+                ),
                 onPressed: () {
                   // Implement buy logic
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Colors.white,
                   minimumSize: Size(double.infinity, 50),
                 ),
               ),
