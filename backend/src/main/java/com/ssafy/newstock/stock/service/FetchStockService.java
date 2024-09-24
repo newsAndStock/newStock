@@ -38,9 +38,14 @@ public class FetchStockService {
                 "fid_org_adj_prc", "1"
         );
 
+        Map<String, String> headers = Map.of(
+                "tr_id", "FHKST03010100"
+        );
+
         try {
             log.info("주식 데이터 가져오기: {}, period: {}, startDate: {}, endDate: {}", stockCode, period, startDate, endDate);
-            return webClientUtil.sendRequest(url, queryParams, null);
+            Thread.sleep(100);
+            return webClientUtil.sendRequest(url, queryParams, headers);
         } catch (Exception ex) {
             throw new RuntimeException("주식 데이터 가져오기 실패: " + stockCode, ex);
         }
