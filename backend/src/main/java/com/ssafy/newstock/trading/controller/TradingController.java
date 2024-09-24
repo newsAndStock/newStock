@@ -26,21 +26,16 @@ public class TradingController {
 
     @PostMapping("/sell-market")
     public ResponseEntity<SellResponse> sellByMarket(@Valid @RequestBody SellRequest sellRequest,
-                                                     @RequestHeader("Authorization") String token) {
+                                                     @LoginMember Long memberId) {
 
-
-        Member member = memberService.findById(1L);
-        System.out.println("sell-market 출력테스트");
+        Member member = memberService.findById(memberId);
         SellResponse sellResponse = tradingService.sellByMarket(member, sellRequest);
 
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(sellResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(sellResponse);
     }
 
-    @PostMapping("/sell")
-    public String sell(@RequestBody SellRequest sellRequest){
 
-        return sellRequest.getStockCode();
-    }
+
 
 
 
