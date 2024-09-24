@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/screens/attendance/attendance_screen.dart';
 import 'package:frontend/screens/news/news_main.dart';
+import 'package:frontend/screens/quiz/quiz_screen.dart';
 import 'package:frontend/screens/signin_screen.dart';
 import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
@@ -84,7 +86,14 @@ class MainScreen extends StatelessWidget {
                   title: '출석 챌린지',
                   subscription: '룰렛 돌리고 랜덤포인트 받자!',
                   imagePath: 'assets/images/checkin.png',
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AttendanceScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -93,7 +102,14 @@ class MainScreen extends StatelessWidget {
                   title: '퀴즈 챌린지',
                   subscription: '퀴즈 풀고 포인트 받자!',
                   imagePath: 'assets/images/quiz.png',
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -177,7 +193,14 @@ class MainScreen extends StatelessWidget {
                         title: '출석 챌린지',
                         subscription: '룰렛 돌리고 랜덤포인트 받자!',
                         imagePath: 'assets/images/checkin.png',
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AttendanceScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 
@@ -186,7 +209,14 @@ class MainScreen extends StatelessWidget {
                         title: '퀴즈 챌린지',
                         subscription: '퀴즈 풀고 포인트 받자!',
                         imagePath: 'assets/images/quiz.png',
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const QuizScreen(),
+                            ),
+                          );
+                        },
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),

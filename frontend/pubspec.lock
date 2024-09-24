@@ -465,10 +465,34 @@ packages:
     dependency: transitive
     description:
       name: quill_native_bridge
-      sha256: "16b1ee5fba1a66331efc9b175e57e2fa79ea029297355e38ef8d67b6bd34449b"
+      sha256: ba19b639c0fa5d4cadb58465cfdba439d8bffb5b2ccbbc76ff15af8124dcdd7e
       url: "https://pub.dev"
     source: hosted
-    version: "10.7.4"
+    version: "10.7.6"
+  quill_native_bridge_platform_interface:
+    dependency: transitive
+    description:
+      name: quill_native_bridge_platform_interface
+      sha256: f2219420890d51a260f6e71ef098428a07b4edc50148f66a0b137767a5b6fb7d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1-dev.0"
+  quill_native_bridge_web:
+    dependency: transitive
+    description:
+      name: quill_native_bridge_web
+      sha256: "2524e9f74a6ebb386776aa55d4d49a917610f6883a487fb433583d899699dfd4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1-dev.1"
+  quill_native_bridge_windows:
+    dependency: transitive
+    description:
+      name: quill_native_bridge_windows
+      sha256: "997daa116473b0f153ebb4e64478658f5020b80c2a4860ddf11c0117712155cf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1-dev.0"
   quiver:
     dependency: transitive
     description:
@@ -477,6 +501,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.2"
+  roulette:
+    dependency: "direct main"
+    description:
+      name: roulette
+      sha256: "5480d2657c1269a51f2c1fdaa34f363d098025c7148469a22b4e0cf343f05655"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -574,10 +606,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_macos
-      sha256: "9a1a42d5d2d95400c795b2914c36fdcb525870c752569438e4ebb09a2b5d90de"
+      sha256: "769549c999acdb42b8bcfa7c43d72bf79a382ca7441ab18a808e101149daf672"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.2.1"
   url_launcher_platform_interface:
     dependency: transitive
     description:
@@ -626,6 +658,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  wheel_chooser:
+    dependency: "direct main"
+    description:
+      name: wheel_chooser
+      sha256: "3fee36f081f321c58a0b7b4afcdd92599f2ca520b3a1420084774e6b19cca1d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.2"
   win32:
     dependency: transitive
     description:

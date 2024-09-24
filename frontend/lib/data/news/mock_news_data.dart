@@ -1,5 +1,3 @@
-// lib/data/news/mock_news_data.dart
-
 const mockNewsData = [
   {
     "category": "금융",

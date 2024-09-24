@@ -112,7 +112,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                                   ),
                                 );
                               },
-                              child: buildNewsListTile(news),
+                              child: buildNewsListTile(news, index),
                             ),
                           ),
                           if (index != filteredNewsList.length - 1)
@@ -135,60 +135,59 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
     );
   }
 
-  Widget buildNewsListTile(News news) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.transparent, // 투명 보더
-          width: 2, // 보더 두께 설정
+  Widget buildNewsListTile(News news, int index) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // 왼쪽: 제목과 작성일자
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  news.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 왼쪽: 제목과 작성일자
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    news.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2, // 제목이 두 줄을 넘지 않도록 설정
-                  overflow: TextOverflow.ellipsis, // 내용이 길면 생략 표시
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  news.date, // 뉴스 데이터에서 날짜 가져오기
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  news.press, // 뉴스 데이터에서 신문사 이름 가져오기
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          // 오른쪽: 썸네일
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: NetworkImage(news.imageUrl), // 뉴스 이미지 URL 사용
-                fit: BoxFit.cover,
+                  const SizedBox(height: 5),
+                  Text(
+                    news.date,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    news.press,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            // 오른쪽: 썸네일
+            Container(
+              width: 120,
+              height: 90,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                  image: NetworkImage(news.imageUrl),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
