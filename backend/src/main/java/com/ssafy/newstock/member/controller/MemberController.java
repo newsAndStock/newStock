@@ -1,5 +1,6 @@
 package com.ssafy.newstock.member.controller;
 
+import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.member.controller.request.SignUpRequest;
 import com.ssafy.newstock.member.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,5 +44,16 @@ public class MemberController {
                               HttpServletResponse response) throws IOException {
         memberService.resetPassword(email, id);
         response.sendRedirect("/reset-password-success");
+    }
+
+    @PostMapping("/attendance")
+    public ResponseEntity<Void> checkAttendance(@LoginMember Long memberId, @RequestParam Long point) {
+        memberService.checkAttendance(memberId, point);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/attendance")
+    public List<String> getAttendance(@LoginMember Long memberId, @RequestParam int month) {
+        return memberService.getAttendance(memberId, month);
     }
 }

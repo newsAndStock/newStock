@@ -43,4 +43,8 @@ public class Member {
     public void updatePassword(String password) {
         this.password = password;
     }
+
+    public void plusDeposit(Long deposit) {
+        this.deposit += deposit;
+    }
 }
