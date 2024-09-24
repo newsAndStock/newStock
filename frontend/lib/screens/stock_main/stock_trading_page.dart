@@ -286,28 +286,76 @@ class _StockTradingPageState extends State<StockTradingPage>
     );
   }
 
+  // Widget _buildOrderTypeSelector() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //         borderRadius: BorderRadius.only(
+  //             topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+  //         color: Color(0xffF1F5F9)),
+  //     child: Row(
+  //       children: [
+  //         Expanded(
+  //           child: RadioListTile<bool>(
+  //             title: Text('시장가'),
+  //             value: true,
+  //             groupValue: _isMarketOrder,
+  //             onChanged: (value) => setState(() => _isMarketOrder = value!),
+  //           ),
+  //         ),
+  //         Expanded(
+  //           child: RadioListTile<bool>(
+  //             title: Text('지정가'),
+  //             value: false,
+  //             groupValue: _isMarketOrder,
+  //             onChanged: (value) => setState(() => _isMarketOrder = value!),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget _buildOrderTypeSelector() {
     return Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40), topRight: Radius.circular(40)),
-          color: Color(0xffF1F5F9)),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+        color: Color(0xffF1F5F9),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Expanded(
-            child: RadioListTile<bool>(
-              title: Text('시장가'),
-              value: true,
-              groupValue: _isMarketOrder,
-              onChanged: (value) => setState(() => _isMarketOrder = value!),
+          GestureDetector(
+            onTap: () => setState(() => _isMarketOrder = true),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                '시장가',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight:
+                      _isMarketOrder ? FontWeight.bold : FontWeight.normal,
+                  color: _isMarketOrder ? Colors.black : Colors.grey,
+                ),
+              ),
             ),
           ),
-          Expanded(
-            child: RadioListTile<bool>(
-              title: Text('지정가'),
-              value: false,
-              groupValue: _isMarketOrder,
-              onChanged: (value) => setState(() => _isMarketOrder = value!),
+          SizedBox(width: 4),
+          Text('|'),
+          SizedBox(width: 4),
+          GestureDetector(
+            onTap: () => setState(() => _isMarketOrder = false),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                '지정가',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight:
+                      !_isMarketOrder ? FontWeight.bold : FontWeight.normal,
+                  color: !_isMarketOrder ? Colors.black : Colors.grey,
+                ),
+              ),
             ),
           ),
         ],
@@ -474,11 +522,31 @@ class _StockTradingPageState extends State<StockTradingPage>
       focusNode: _quantityFocusNode,
       decoration: InputDecoration(
         labelText: '주문수량',
-        suffixText: '주',
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        labelStyle: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       ),
       keyboardType: TextInputType.number,
-      onChanged: (value) =>
-          setState(() => _quantity = int.tryParse(value) ?? 0),
+      style: TextStyle(
+        fontSize: 27,
+        color: Colors.black,
+      ),
+      onChanged: (value) {
+        if (!value.endsWith('주')) {
+          _quantityController.value = TextEditingValue(
+            text: value + '주',
+            selection: TextSelection.collapsed(offset: value.length),
+          );
+        }
+        setState(
+            () => _quantity = int.tryParse(value.replaceAll('주', '')) ?? 0);
+      },
     );
   }
 
@@ -487,8 +555,11 @@ class _StockTradingPageState extends State<StockTradingPage>
         ? widget.currentPrice * _quantity
         : _limitPrice * _quantity;
     return ListTile(
-      title: Text('주문금액'),
-      trailing: Text('${totalAmount.toStringAsFixed(0)}원'),
+      // title: Text('주문금액'),
+      trailing: Text(
+        '예상 금액 ${totalAmount.toStringAsFixed(0)} 원',
+        style: TextStyle(color: Color(0xff312E81), fontSize: 18),
+      ),
     );
   }
 
@@ -503,19 +574,24 @@ class _StockTradingPageState extends State<StockTradingPage>
           if (index == 9) {
             return TextButton(
               onPressed: _setMaxQuantity,
-              child: Text('최대'),
+              child: Text('최대',
+                  style: TextStyle(fontSize: 24, color: Colors.black)),
             );
           }
-          if (index == 10) return Center(child: Text('0'));
+          if (index == 10)
+            return Center(
+                child: Text('0',
+                    style: TextStyle(fontSize: 24, color: Colors.black)));
           if (index == 11) {
             return TextButton(
               onPressed: _deleteLastDigit,
-              child: Icon(Icons.backspace),
+              child: Icon(Icons.backspace, color: Colors.black),
             );
           }
           return TextButton(
             onPressed: () => _updateQuantity(index + 1),
-            child: Text('${index + 1}'),
+            child: Text('${index + 1}',
+                style: TextStyle(fontSize: 24, color: Colors.black)),
           );
         }),
       ),
@@ -547,7 +623,11 @@ class _StockTradingPageState extends State<StockTradingPage>
       } else {
         _quantity = int.parse('$_quantity$digit').clamp(0, 999999);
       }
-      _quantityController.text = _quantity.toString();
+      // 여기서 '주'를 추가합니다.
+      _quantityController.value = TextEditingValue(
+        text: '${_quantity} 주',
+        selection: TextSelection.collapsed(offset: _quantity.toString().length),
+      );
     });
   }
 
