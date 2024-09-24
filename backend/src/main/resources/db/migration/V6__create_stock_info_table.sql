@@ -1,4 +1,4 @@
-CREATE TABLE stock_info (
+CREATE TABLE IF NOT EXISTS stock_info (
                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
                             date VARCHAR(255) NOT NULL,
                             highest_price VARCHAR(255) NOT NULL,
