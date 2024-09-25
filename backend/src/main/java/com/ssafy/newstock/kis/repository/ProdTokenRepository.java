@@ -4,11 +4,10 @@ import com.ssafy.newstock.kis.domain.ProdToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface ProdTokenRepository extends JpaRepository<ProdToken,Long> {
 
-    @Query(value = "SELECT p FROM ProdToken p ORDER BY p.createdAt DESC")
-    List<ProdToken> findLatest();
+    @Query(value = "SELECT * FROM prod_token ORDER BY created_at DESC LIMIT 1", nativeQuery = true)
+    Optional<ProdToken> findLatest();
 }
