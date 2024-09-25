@@ -13,7 +13,8 @@ import static lombok.AccessLevel.PROTECTED;
 @NoArgsConstructor(access = PROTECTED)
 public class Member {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "email", nullable = false, unique = true)
@@ -46,5 +47,9 @@ public class Member {
 
     public void plusDeposit(Long deposit) {
         this.deposit += deposit;
+    }
+
+    public void minusDeposit(Long deposit) {
+        this.deposit -= deposit;
     }
 }

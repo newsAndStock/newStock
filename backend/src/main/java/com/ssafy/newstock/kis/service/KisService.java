@@ -91,7 +91,7 @@ public class KisService {
             token = parseResponseToken(jsonResponse, "access_token");
             log.info("token: {}, 발급일: {}", token, LocalDate.now());
             prodTokenRepository.save(new ProdToken(token,LocalDate.now()));
-
+            initToken();
         } catch (Exception e) {
             // 예외 발생 시 로그 출력 또는 알림 전송
             System.err.println("Failed to retrieve token at scheduled time: " + e.getMessage());
