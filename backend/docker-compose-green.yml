@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks: 
+      - newstock-net
+  green:
+    image: ${imageTag}
+    container_name: green
+    ports:
+            - "8081:8081"
+    environment:
+            - PROFILES=green
+            - ENV=green
+            - DEV_NAME=admin
+            - DEV_PASSWORD=ssafyssafy
+            - GMAIL_PASSWORD=gvuy pfql mlbd rmrl
+            - GMAIL_USERNAME=leejh0799@gmail.com
+            - REFRESH_KEY=refresh
+            - SECRET_KEY=secret
+            - PROD=https://openapi.koreainvestment.com:9443
+            - PROD_APPKEY=PSxM6gVFgCsfXSfJqwvtrjnuY0beo4G9dQTd
+            - PROD_APPSECRET=DSzIBtdHTYBtLhRT7xOYc3KYPy9a92PWKRLFyufBSlv1voXzJh3FNGlgrch4lipoVatGwuptXL1Xcsj8xkZhC5naWtocPRImHZGwZce6FKASo6Zmu6/6C3+IYGjnnPPfM29ZDHUXZ0kmD30reGGUg3W7SbC1QrPwSB3jPdgeDNXsB+RB+FA=
+    networks:
+      - newstock-net
+      
+networks:
+  newstock-net:
+    driver: bridge
