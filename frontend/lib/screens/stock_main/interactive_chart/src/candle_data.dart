@@ -46,6 +46,7 @@ class CandleData {
     List<double?>? trends,
   }) : this.trends = List.unmodifiable(trends ?? []);
 
+  // 이동평균을 구하는 코드 지금은 7일기준이동평균
   static List<double?> computeMA(List<CandleData> data, [int period = 7]) {
     // If data is not at least twice as long as the period, return nulls.
     if (data.length < period * 2) return List.filled(data.length, null);

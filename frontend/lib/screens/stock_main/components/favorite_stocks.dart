@@ -56,7 +56,7 @@ class FavoriteStocks extends StatelessWidget {
                 name.length > 8 ? name.substring(0, 8) : name,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Icon(Icons.favorite, color: Colors.purple, size: 16),
+              Icon(Icons.favorite, color: Color(0xff312E81), size: 16),
             ],
           ),
           SizedBox(height: 8),
