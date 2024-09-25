@@ -11,7 +11,7 @@ services:
     image: ${imageTag}
     container_name: blue
     ports:
-            - "8080:8080"
+            - "8082:8082"
     environment:
             - PROFILES=blue
             - ENV=blue
