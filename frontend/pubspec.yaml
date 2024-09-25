@@ -38,7 +38,7 @@ dependencies:
   flutter_quill: ^10.7.5
   wheel_chooser: ^1.0.1
   roulette: ^0.1.5
-
+  table_calendar: ^3.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
