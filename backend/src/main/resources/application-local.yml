@@ -18,6 +18,9 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
     fail-on-missing-locations: true
+  data:
+    redis:
+      url: 127.0.0.1:6379
   batch:
     jdbc:
       initialize-schema: always
