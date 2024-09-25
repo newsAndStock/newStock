@@ -70,7 +70,7 @@ class ChartStyle {
       fontSize: 16,
       color: Colors.white,
     ),
-    this.priceGainColor = Colors.green,
+    this.priceGainColor = Colors.blue,
     this.priceLossColor = Colors.red,
     this.volumeColor = Colors.grey,
     this.trendLineStyles = const [],

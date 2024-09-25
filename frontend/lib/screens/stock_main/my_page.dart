@@ -152,9 +152,10 @@ class MyPage extends StatelessWidget {
       child: Card(
         margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.white,
+        elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(40),
-          side: BorderSide(color: Colors.grey.shade300, width: 1),
+          borderRadius: BorderRadius.circular(20),
+          // side: BorderSide(color: Colors.grey.shade300, width: 1),
         ),
         child: Padding(
           padding: EdgeInsets.all(16),

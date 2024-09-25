@@ -6,6 +6,17 @@ import 'package:frontend/screens/stock_main/interactive_chart/interactive_chart.
 import 'stock_trading_page.dart';
 import 'interactive_chart/mock_data.dart';
 
+class StockData {
+  final DateTime date;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+  final int volume;
+
+  StockData(this.date, this.open, this.high, this.low, this.close, this.volume);
+}
+
 class StockDetailPage extends StatefulWidget {
   final String stockName;
 
@@ -19,6 +30,7 @@ class _StockDetailPageState extends State<StockDetailPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _showCandlesticks = true;
+  bool _showLineChart = true;
   String _selectedPeriod = '1일';
   final List<CandleData> _data = MockDataTesla.candles;
 
@@ -26,6 +38,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _showLineChart = true;
   }
 
   @override
@@ -108,6 +121,36 @@ class _StockDetailPageState extends State<StockDetailPage>
       ),
       bottomNavigationBar: _buildBottomButton(),
     );
+  }
+
+  List<StockData> generateMockStockData() {
+    final random = Random();
+    final List<StockData> stockData = [];
+    DateTime currentDate = DateTime.now().subtract(Duration(days: 30));
+    double lastClose = 100.0;
+
+    for (int i = 0; i < 30; i++) {
+      final change = (random.nextDouble() - 0.5) * 5;
+      final open = lastClose;
+      final close = (open + change).clamp(80.0, 120.0);
+      final high = max(open, close) + random.nextDouble() * 2;
+      final low = min(open, close) - random.nextDouble() * 2;
+      final volume = random.nextInt(10000) + 5000;
+
+      stockData.add(StockData(
+        currentDate,
+        open,
+        high,
+        low,
+        close,
+        volume,
+      ));
+
+      lastClose = close;
+      currentDate = currentDate.add(Duration(days: 1));
+    }
+
+    return stockData;
   }
 
   Widget _buildStockInfo() {
@@ -237,45 +280,207 @@ class _StockDetailPageState extends State<StockDetailPage>
     }
   }
 
-  Widget _buildLineChart() {
-    final List<FlSpot> spots = List.generate(
-      30,
-      (index) => FlSpot(index.toDouble(), 74000 + (index * 100)),
-    );
+  // Widget _buildLineChart() {
+  //   final List<FlSpot> spots = List.generate(
+  //     30,
+  //     (index) => FlSpot(index.toDouble(), 74000 + (index * 100)),
+  //   );
 
-    return LineChart(
-      LineChartData(
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: Colors.blue,
-            barWidth: 2,
-            dotData: FlDotData(show: false),
+  //   return LineChart(
+  //     LineChartData(
+  //       lineBarsData: [
+  //         LineChartBarData(
+  //           spots: spots,
+  //           isCurved: true,
+  //           color: Colors.blue,
+  //           barWidth: 2,
+  //           dotData: FlDotData(show: false),
+  //         ),
+  //       ],
+  //       titlesData: FlTitlesData(show: false),
+  //       borderData: FlBorderData(show: false),
+  //       gridData: FlGridData(show: false),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildLineChart() {
+    final List<StockData> stockData = generateMockStockData();
+
+    final List<FlSpot> spots = stockData.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.close);
+    }).toList();
+
+    // 최고가와 최저가 찾기
+    double maxPrice = spots.map((spot) => spot.y).reduce(max);
+    double minPrice = spots.map((spot) => spot.y).reduce(min);
+    int maxIndex = spots.indexWhere((spot) => spot.y == maxPrice);
+    int minIndex = spots.indexWhere((spot) => spot.y == minPrice);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            '삼성전자',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-        ],
-        titlesData: FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        gridData: FlGridData(show: false),
-      ),
+        ),
+        Expanded(
+          child: Stack(
+            children: [
+              CustomPaint(
+                size: Size.infinite,
+                painter: PointPainter(
+                  maxIndex: maxIndex,
+                  minIndex: minIndex,
+                  maxPrice: maxPrice,
+                  minPrice: minPrice,
+                  spots: spots,
+                  minX: 0,
+                  maxX: spots.length.toDouble() - 1,
+                  minY: minPrice * 0.95,
+                  maxY: maxPrice * 1.05,
+                ),
+              ),
+              LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: Colors.blue,
+                      barWidth: 2,
+                      dotData: FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    bottomTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      // tooltipBgColor: Colors.blueAccent,
+                      getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                        return touchedBarSpots.map((barSpot) {
+                          final flSpot = barSpot;
+                          return LineTooltipItem(
+                            '${stockData[flSpot.x.toInt()].date.day}/${stockData[flSpot.x.toInt()].date.month}\n${flSpot.y.toStringAsFixed(2)}',
+                            const TextStyle(color: Colors.white),
+                          );
+                        }).toList();
+                      },
+                    ),
+                    handleBuiltInTouches: true,
+                    getTouchedSpotIndicator:
+                        (LineChartBarData barData, List<int> spotIndexes) {
+                      return spotIndexes.map((spotIndex) {
+                        return TouchedSpotIndicatorData(
+                          FlLine(
+                            color: Colors.orange, // 세로선 색상
+                            strokeWidth: 2, // 세로선 두께
+                            dashArray: [5, 5], // 점선 패턴 (5픽셀 선, 5픽셀 간격)
+                          ),
+                          FlDotData(
+                            getDotPainter: (spot, percent, barData, index) {
+                              return FlDotCirclePainter(
+                                radius: 8,
+                                color: Colors.deepOrange,
+                                strokeWidth: 2,
+                                strokeColor: Colors.white,
+                              );
+                            },
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                  extraLinesData: ExtraLinesData(
+                    extraLinesOnTop: true,
+                    horizontalLines: [],
+                  ),
+                  minX: 0,
+                  maxX: spots.length.toDouble() - 1,
+                  minY: minPrice * 0.95, // 그래프 하단에 여유 공간을 주기 위해
+                  maxY: maxPrice * 1.05, // 그래프 상단에 여유 공간을 주기 위해
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
+
+  // Widget _buildChartTab() {
+  //   return Column(
+  //     children: [
+  //       // Padding(
+  //       //   padding: const EdgeInsets.all(16.0),
+  //       //   child: Text(
+  //       //     '주가 추이',
+  //       //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //       //   ),
+  //       // ),
+  //       Expanded(
+  //         // child: _buildChartSection(),
+  //         // child: InteractiveChart(candles: _data),
+  //         child: _buildLineChart(),
+  //       ),
+  //       // _buildPeriodSelector(),
+  //     ],
+  //   );
+  // }
 
   Widget _buildChartTab() {
     return Column(
       children: [
-        // Padding(
-        //   padding: const EdgeInsets.all(16.0),
-        //   child: Text(
-        //     '주가 추이',
-        //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        //   ),
-        // ),
-        Expanded(
-          // child: _buildChartSection(),
-          child: InteractiveChart(candles: _data),
+        Container(
+          height: 50,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                child: Text('라인 차트'),
+                onPressed: () {
+                  setState(() {
+                    _showLineChart = true;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _showLineChart ? Colors.blue : Colors.grey,
+                ),
+              ),
+              ElevatedButton(
+                child: Text('캔들스틱 차트'),
+                onPressed: () {
+                  setState(() {
+                    _showLineChart = false;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: !_showLineChart ? Colors.blue : Colors.grey,
+                ),
+              ),
+            ],
+          ),
         ),
-        // _buildPeriodSelector(),
+        Expanded(
+          child: _showLineChart
+              ? _buildLineChart()
+              : InteractiveChart(candles: _data),
+        ),
+        _buildPeriodSelector(),
       ],
     );
   }
@@ -372,4 +577,75 @@ class _StockDetailPageState extends State<StockDetailPage>
       ),
     );
   }
+}
+
+class PointPainter extends CustomPainter {
+  final int maxIndex;
+  final int minIndex;
+  final double maxPrice;
+  final double minPrice;
+  final List<FlSpot> spots;
+  final double minX;
+  final double maxX;
+  final double minY;
+  final double maxY;
+
+  PointPainter({
+    required this.maxIndex,
+    required this.minIndex,
+    required this.maxPrice,
+    required this.minPrice,
+    required this.spots,
+    required this.minX,
+    required this.maxX,
+    required this.minY,
+    required this.maxY,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
+    final textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    void drawPoint(int index, double price, String label) {
+      final x = (index - minX) / (maxX - minX) * size.width;
+      final y = size.height - ((price - minY) / (maxY - minY) * size.height);
+
+      canvas.drawCircle(Offset(x, y), 4, paint);
+
+      textPainter.text = TextSpan(
+        text: '$label: ${price.toStringAsFixed(0)}',
+        style: TextStyle(color: Colors.blue, fontSize: 10),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 20));
+    }
+
+    void drawPointBelow(int index, double price, String label) {
+      final x = (index - minX) / (maxX - minX) * size.width;
+      final y = size.height - ((price - minY) / (maxY - minY) * size.height);
+
+      canvas.drawCircle(Offset(x, y), 4, paint);
+
+      textPainter.text = TextSpan(
+        text: '$label: ${price.toStringAsFixed(0)}',
+        style: TextStyle(color: Colors.blue, fontSize: 10),
+      );
+      textPainter.layout();
+
+      textPainter.paint(canvas, Offset(x - textPainter.width / 2, y + 8));
+    }
+
+    drawPoint(maxIndex, maxPrice, '최고가');
+    drawPointBelow(minIndex, minPrice, '최저가');
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

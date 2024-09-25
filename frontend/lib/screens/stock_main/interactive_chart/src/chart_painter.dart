@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'candle_data.dart';
 import 'painter_params.dart';
 
+// 아래에 일자 써주는 함수
 typedef TimeLabelGetter = String Function(int timestamp, int visibleDataCount);
+// 옆에 가격 띄워주는 함수
 typedef PriceLabelGetter = String Function(double price);
+// 아마 클릭했을 때 인포 띄워주는 함수
 typedef OverlayInfoGetter = Map<String, String> Function(CandleData candle);
 
 class ChartPainter extends CustomPainter {
