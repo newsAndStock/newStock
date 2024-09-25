@@ -6,6 +6,7 @@ import com.ssafy.newstock.member.domain.Attendance;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.AttendanceRepository;
 import com.ssafy.newstock.member.repository.MemberRepository;
+import com.ssafy.newstock.trading.domain.OrderType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -89,5 +90,15 @@ public class MemberService {
     public Member findById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("회원(memberId: " + memberId + ")이 존재하지 않습니다."));
+    }
+
+    public void updateDeposit(Long memberId, Long change, OrderType orderType){
+        Member member = findById(memberId);
+        if(orderType.equals(OrderType.SELL)){
+            member.plusDeposit(change);
+        }else{
+            member.minusDeposit(change);
+        }
+        memberRepository.save(member);
     }
 }

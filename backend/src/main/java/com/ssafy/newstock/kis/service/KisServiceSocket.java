@@ -2,6 +2,9 @@ package com.ssafy.newstock.kis.service;
 
 import com.ssafy.newstock.kis.domain.SocketItem;
 import com.ssafy.newstock.kis.domain.TradeItem;
+import com.ssafy.newstock.member.service.MemberService;
+import com.ssafy.newstock.memberstocks.service.MemberStocksService;
+import com.ssafy.newstock.trading.domain.OrderType;
 import com.ssafy.newstock.trading.domain.TradeQueue;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -26,8 +29,15 @@ public class KisServiceSocket {
     private static final Logger log = LoggerFactory.getLogger(KisServiceSocket.class);
     private final ReactorNettyWebSocketClient webSocketClient = new ReactorNettyWebSocketClient();
     private final int CURRENT_PRICE_SOCKET_MOUNT = 46;
+    private final MemberStocksService memberStocksService;
+    private final MemberService memberService;
     private WebSocketSession session;
     private TradeQueue tradeQueue=TradeQueue.getInstance();
+
+    public KisServiceSocket(MemberStocksService memberStocksService, MemberService memberService) {
+        this.memberStocksService = memberStocksService;
+        this.memberService = memberService;
+    }
 
     public void connectWebsocket(Runnable onConnected) {
         URI url = URI.create("ws://ops.koreainvestment.com:21000");
@@ -139,6 +149,8 @@ public class KisServiceSocket {
                     sellItems.peek().trade(socketItem.getMount());
                     if(sellItems.peek().getRemaining()>0)continue;
                     TradeItem complete=sellItems.poll();
+                    memberStocksService.sellComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
+                    memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.SELL);
                     log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
 
                 }

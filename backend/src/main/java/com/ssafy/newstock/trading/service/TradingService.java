@@ -5,6 +5,8 @@ import com.ssafy.newstock.kis.service.KisService;
 import com.ssafy.newstock.kis.service.KisServiceSocket;
 import com.ssafy.newstock.kis.domain.TradeItem;
 import com.ssafy.newstock.member.domain.Member;
+import com.ssafy.newstock.member.service.MemberService;
+import com.ssafy.newstock.memberstocks.service.MemberStocksService;
 import com.ssafy.newstock.trading.controller.request.SellRequest;
 import com.ssafy.newstock.trading.controller.response.SellResponse;
 import com.ssafy.newstock.trading.domain.OrderType;
@@ -35,13 +37,18 @@ public class TradingService {
     private final KisServiceSocket kisServiceSocket;
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private final TradeQueue tradeQueue=TradeQueue.getInstance();
+    private final MemberStocksService memberStocksService;
+    private final MemberService memberService;
 
     //시장가 거래는 거래 즉시 완료됨.
     public SellResponse sellByMarket(Member member, SellRequest sellRequest) {
 
+        checkHoldings(member, sellRequest);
         Trading trading = sellRequest.toEntity(member, TradeType.MARKET);
         trading.confirmBid(getStockPrPr(sellRequest.getStockCode()));
         trading.tradeComplete(LocalDateTime.now());
+        memberStocksService.sellComplete(member.getId(),sellRequest.getStockCode(),sellRequest.getQuantity(),trading.getBid());
+        memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.SELL);
         tradingRepository.save(trading);
 
         return new SellResponse(trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
@@ -51,11 +58,18 @@ public class TradingService {
         return Integer.parseInt(kisService.getCurrentStockPrice(stockCode));
     }
 
+    private void checkHoldings(Member member, SellRequest sellRequest){
+        long holdings=memberStocksService.getHoldingsByMemberAndStockCode(member.getId(),sellRequest.getStockCode());
+        if(holdings<sellRequest.getQuantity()){
+            throw new IllegalArgumentException("Holdings not enough");
+        }
+    }
+
 
     public boolean sellByLimit(Member member, SellRequest sellRequest) throws JsonProcessingException {
 
+        checkHoldings(member, sellRequest);
         Trading trading = sellRequest.toEntity(member, TradeType.LIMIT);
-
         int marketPrice=getStockPrPr(sellRequest.getStockCode());
         //현재 시장가보다 싸게 올릴수는 없다.
         if(marketPrice>trading.getBid()){
