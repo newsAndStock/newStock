@@ -6,11 +6,17 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+<<<<<<< HEAD
+    network_mode: host  # Host 모드 사용
+    volumes:
+      - redisVolume:/data
+=======
     networks: 
       - newstock-net
     volumes:
       - redisVolume:/data
     restart: always
+>>>>>>> 20d36a403067252e69b545444c62de440b4c4566
   blue:
     image: ${imageTag}
     container_name: blue
@@ -28,8 +34,7 @@ services:
             - PROD=https://openapi.koreainvestment.com:9443
             - PROD_APPKEY=PSxM6gVFgCsfXSfJqwvtrjnuY0beo4G9dQTd
             - PROD_APPSECRET=DSzIBtdHTYBtLhRT7xOYc3KYPy9a92PWKRLFyufBSlv1voXzJh3FNGlgrch4lipoVatGwuptXL1Xcsj8xkZhC5naWtocPRImHZGwZce6FKASo6Zmu6/6C3+IYGjnnPPfM29ZDHUXZ0kmD30reGGUg3W7SbC1QrPwSB3jPdgeDNXsB+RB+FA=
-    networks: 
-      - newstock-net
+    network_mode: host  # Host 모드 사용
   
 networks:
   newstock-net:
