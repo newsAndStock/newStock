@@ -5,9 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
-public class TopVolumeResponse {
-    private String stockName;  // 한글 종목명
-    private String stockCode;  // 종목 코드
+@NoArgsConstructor
+public class FavoriteStockResponse {
+    private String stockCode;
+    private String name;
+    private String market;
+    private String industry;
 }
