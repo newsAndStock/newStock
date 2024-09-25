@@ -6,6 +6,8 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    environment:
+      - TZ=Asia/Seoul  # 한국 시간대로 설정
     network_mode: host  # Host 모드 사용
   blue:
     image: ${imageTag}

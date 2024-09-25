@@ -14,7 +14,8 @@ WORKDIR /app
 COPY ${JAR_FILE} app.jar
 
 # 컨테이너 외부에서 접근할 포트 8080 열기
-EXPOSE 8080
+EXPOSE 8081
+EXPOSE 8082
 
 # 컨테이너 시작 시 애플리케이션 실행
-ENTRYPOINT ["java", "-Dspring.profiles.active=${PROFILES}","-Dserver.env=${ENV}","-Dfile.encoding=UTF-8", "-jar", "app.jar"]
+ENTRYPOINT ["java","-Duser.timezone=Asia/Seoul", "-Dspring.profiles.active=${PROFILES}","-Dserver.env=${ENV}","-Dfile.encoding=UTF-8", "-jar", "app.jar"]
