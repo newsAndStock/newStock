@@ -181,6 +181,9 @@ class _SigninScreenState extends State<SigninScreen> {
                             ),
                           ),
                         ),
+                      SizedBox(
+                        height: 10,
+                      ),
                       // 비밀번호 찾기 링크
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -211,7 +214,7 @@ class _SigninScreenState extends State<SigninScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
               // 회원가입 링크
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -229,29 +232,6 @@ class _SigninScreenState extends State<SigninScreen> {
                     },
                     child: const Text(
                       "회원가입하러 가기",
-                      style: TextStyle(
-                        color: Color(0xFF3A2E6A),
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("개발용임 나중에 지우쇼 "),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "메인페이지",
                       style: TextStyle(
                         color: Color(0xFF3A2E6A),
                         decoration: TextDecoration.underline,

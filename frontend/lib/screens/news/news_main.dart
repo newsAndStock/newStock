@@ -5,7 +5,7 @@ import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
 import 'package:frontend/screens/news/news_search.dart';
 import 'package:frontend/screens/notification_screen.dart';
-import 'package:frontend/services/news/news_service.dart';
+import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
 import 'package:frontend/models/news/news_model.dart';

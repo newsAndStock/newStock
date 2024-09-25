@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/news/news_model.dart';
 import 'package:frontend/screens/news/news_detail.dart';
-import 'package:frontend/services/news/news_service.dart';
+import 'package:frontend/api/news_api_service.dart';
 
 class NewsSearchResultScreen extends StatefulWidget {
   final String searchTerm;
