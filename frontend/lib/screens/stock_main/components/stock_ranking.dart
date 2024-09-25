@@ -1,61 +1,68 @@
 import 'package:flutter/material.dart';
 
-class NewsItem {
-  final String title;
-  final String source;
-  final String timeAgo;
-  final String imageUrl;
+class StockItem {
+  final String name;
+  final String code;
+  final String price;
+  final String change;
+  final String changePercentage;
+  final String logoUrl;
 
-  NewsItem({
-    required this.title,
-    required this.source,
-    required this.timeAgo,
-    required this.imageUrl,
+  StockItem({
+    required this.name,
+    required this.code,
+    required this.price,
+    required this.change,
+    required this.changePercentage,
+    required this.logoUrl,
   });
 }
 
-class NewsComponent extends StatelessWidget {
-  final NewsItem newsItem;
+class StockComponent extends StatelessWidget {
+  final StockItem stockItem;
 
-  const NewsComponent({Key? key, required this.newsItem}) : super(key: key);
+  const StockComponent({Key? key, required this.stockItem}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              stockItem.logoUrl,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  newsItem.title,
+                  stockItem.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(newsItem.source,
-                        style: TextStyle(color: Colors.grey[600])),
-                    const SizedBox(width: 8),
-                    Text(newsItem.timeAgo,
-                        style: TextStyle(color: Colors.grey[600])),
-                  ],
-                ),
+                Text(stockItem.code, style: TextStyle(color: Colors.grey[600])),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              newsItem.imageUrl,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                stockItem.price,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${stockItem.change} (${stockItem.changePercentage})',
+                style: TextStyle(color: Colors.red),
+              ),
+            ],
           ),
         ],
       ),
@@ -63,19 +70,19 @@ class NewsComponent extends StatelessWidget {
   }
 }
 
-class NewsPageComponent extends StatefulWidget {
+class StockPageComponent extends StatefulWidget {
   final double? height;
-  const NewsPageComponent({Key? key, this.height}) : super(key: key);
+  const StockPageComponent({Key? key, this.height}) : super(key: key);
 
   @override
-  _NewsPageComponentState createState() => _NewsPageComponentState();
+  _StockPageComponentState createState() => _StockPageComponentState();
 }
 
-class _NewsPageComponentState extends State<NewsPageComponent>
+class _StockPageComponentState extends State<StockPageComponent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _categories = ['삼성전자', 'SK하이닉스', '유한양행', '한미약품', 'LG에너지솔'];
-  String selectedCategory = '삼성전자';
+  final List<String> _categories = ['상승', '하락', '인기', '거래량', '거래대금'];
+  String selectedCategory = '상승';
 
   @override
   void initState() {
@@ -89,28 +96,41 @@ class _NewsPageComponentState extends State<NewsPageComponent>
     super.dispose();
   }
 
-  List<NewsItem> _getNewsForCategory(String category) {
+  List<StockItem> _getStocksForCategory(String category) {
     // 테스트 데이터
     return [
-      NewsItem(
-        title: 'LG엔솔, 40만 원선 돌파... 2차 전지株 일제히 강세',
-        source: '서울경제',
-        timeAgo: '4시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
+      StockItem(
+        name: '삼성전자',
+        code: '005930',
+        price: '74,300원',
+        change: '+300원',
+        changePercentage: '0.41%',
+        logoUrl: 'https://via.placeholder.com/40',
       ),
-      NewsItem(
-        title: '삼성전자, 신제품 출시 예정... 스마트폰 시장 주도권 노려',
-        source: '한국경제',
-        timeAgo: '2시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
+      StockItem(
+        name: '삼성전자',
+        code: '005930',
+        price: '74,300원',
+        change: '+300원',
+        changePercentage: '0.41%',
+        logoUrl: 'https://via.placeholder.com/40',
       ),
-      NewsItem(
-        title: '일론머스크, 화성 진짜 갈까? 다시 한 번 X 업로드',
-        source: '가짜뉴스',
-        timeAgo: '2시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
+      StockItem(
+        name: '삼성전자',
+        code: '005930',
+        price: '74,300원',
+        change: '+300원',
+        changePercentage: '0.41%',
+        logoUrl: 'https://via.placeholder.com/40',
       ),
-      // 더 많은 테스트 아이템 추가...
+      StockItem(
+        name: '삼성전자',
+        code: '005930',
+        price: '74,300원',
+        change: '+300원',
+        changePercentage: '0.41%',
+        logoUrl: 'https://via.placeholder.com/40',
+      ),
     ];
   }
 
@@ -190,10 +210,10 @@ class _NewsPageComponentState extends State<NewsPageComponent>
               ),
               child: ListView.separated(
                 padding: const EdgeInsets.all(16.0),
-                itemCount: _getNewsForCategory(selectedCategory).length,
+                itemCount: _getStocksForCategory(selectedCategory).length,
                 separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) => NewsComponent(
-                  newsItem: _getNewsForCategory(selectedCategory)[index],
+                itemBuilder: (context, index) => StockComponent(
+                  stockItem: _getStocksForCategory(selectedCategory)[index],
                 ),
               ),
             ),

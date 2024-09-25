@@ -7,6 +7,7 @@ import 'components/market_index.dart';
 import 'components/favorite_stocks.dart';
 import 'components/stock_news.dart';
 import 'components/stock_newsComponent.dart';
+import 'components/stock_ranking.dart';
 import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
@@ -152,12 +153,31 @@ class _StockMainPageState extends State<StockMainPage> {
               ),
             ),
             const SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 33),
+              child: Text('관련 뉴스',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
             Center(
               child: FractionallySizedBox(
                 widthFactor: 0.85,
                 child: SizedBox(
                   height: 400, // 원하는 높이로 조정
                   child: NewsPageComponent(),
+                ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 33),
+              child: Text('국내 실시간 랭킹',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: SizedBox(
+                  height: 400, // 원하는 높이로 조정
+                  child: StockPageComponent(),
                 ),
               ),
             ),

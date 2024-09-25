@@ -6,7 +6,7 @@ import 'package:frontend/screens/news/news_my_scrap.dart';
 import 'package:frontend/screens/news/news_search.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:frontend/services/news/news_service.dart';
-import 'package:frontend/widgets/common/news_category.dart';
+import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
 import 'package:frontend/models/news/news_model.dart';
 import 'package:frontend/widgets/news/news_searchbar.dart';
