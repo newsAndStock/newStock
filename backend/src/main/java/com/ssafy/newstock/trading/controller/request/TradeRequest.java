@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class SellRequest {
+public class TradeRequest {
 
     @NotBlank(message = "종목은 필수")
     private String stockCode;
@@ -25,8 +25,8 @@ public class SellRequest {
 
     private LocalDateTime orderTime;
 
-    public Trading toEntity(Member member, TradeType tradeType) {
-        return new Trading(stockCode, quantity, bid, OrderType.SELL, orderTime, member, tradeType);
+    public Trading toEntity(Member member, OrderType orderType, TradeType tradeType) {
+        return new Trading(stockCode, quantity, bid, orderType, orderTime, member, tradeType);
     }
 
 

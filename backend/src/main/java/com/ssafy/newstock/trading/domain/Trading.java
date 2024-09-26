@@ -35,7 +35,7 @@ public class Trading {
     @Column(name = "order_time", nullable = false)
     private LocalDateTime orderTime;
 
-    @Column(name = "order_complete_time", nullable = false)
+    @Column(name = "order_complete_time")
     private LocalDateTime orderCompleteTime;
 
     @ManyToOne
@@ -45,6 +45,9 @@ public class Trading {
     @Enumerated(EnumType.STRING)
     @Column(name = "trade_type", nullable = false)
     private TradeType tradeType;
+
+    @Column(name="is_completed", nullable = false)
+    private boolean isCompleted=false;
 
     public Trading(String stockCode, int quantity, int bid, OrderType orderType, LocalDateTime orderTime, Member member, TradeType tradeType) {
         this.stockCode = stockCode;
@@ -57,11 +60,14 @@ public class Trading {
     }
 
     public void tradeComplete(LocalDateTime orderCompleteTime) {
+
         this.orderCompleteTime = orderCompleteTime;
+        this.isCompleted = true;
     }
 
     public void confirmBid(int bid) {
         this.bid = bid;
     }
+
 
 }
