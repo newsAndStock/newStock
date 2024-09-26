@@ -3,11 +3,14 @@ package com.ssafy.newstock.quiz.service;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.quiz.controller.response.QuizResponse;
+import com.ssafy.newstock.quiz.domain.Quiz;
 import com.ssafy.newstock.quiz.domain.QuizHistory;
 import com.ssafy.newstock.quiz.repository.QuizHistoryRepository;
 import com.ssafy.newstock.quiz.repository.QuizRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -29,9 +32,22 @@ public class QuizService {
         if (currentIndex >= todayIndex + 3) throw new IllegalArgumentException("오늘 퀴즈 완료!");
         if (currentIndex < todayIndex) currentIndex = todayIndex;
 
-        return QuizResponse.from(
-                quizRepository.findById(currentIndex).orElseThrow(() -> new IllegalArgumentException("유효하지 않은 퀴즈 ID"))
-        );
+        return QuizResponse.from(findQuizById(currentIndex));
+    }
+
+    @Transactional
+    public boolean checkAnswer(Long memberId, int quizId, String answer) {
+        findQuizHistoryByMemberId(memberId).updateIndex();
+
+        boolean isCorrect = findQuizById(quizId).getAnswer().equals(answer);
+        if (isCorrect) findMemberById(memberId).plusDeposit(100000L);
+
+        return isCorrect;
+    }
+
+    @Transactional
+    public void skipQuiz(Long memberId) {
+        findQuizHistoryByMemberId(memberId).updateIndex();
     }
 
     private int calculateIndexForToday() {
@@ -42,7 +58,22 @@ public class QuizService {
     }
 
     private QuizHistory createQuizHistory(Long memberId) {
-        Member member = memberRepository.findById(memberId).get();
+        Member member = findMemberById(memberId);
         return quizHistoryRepository.save(new QuizHistory(member, calculateIndexForToday()));
+    }
+
+    private Member findMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("회원(memberId: " + memberId + ")이 존재하지 않습니다."));
+    }
+
+    private Quiz findQuizById(int quizId) {
+        return quizRepository.findById(quizId)
+                .orElseThrow(() -> new EntityNotFoundException("퀴즈(quizId: " + quizId + ")가 존재하지 않습니다."));
+    }
+
+    private QuizHistory findQuizHistoryByMemberId(Long memberId) {
+        return quizHistoryRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 회원(memberId: " + memberId + ")의 퀴즈 내역이 존재하지 않습니다"));
     }
 }

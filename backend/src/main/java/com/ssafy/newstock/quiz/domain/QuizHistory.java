@@ -28,4 +28,8 @@ public class QuizHistory {
         this.member = member;
         this.quizIndex = quizIndex;
     }
+
+    public void updateIndex() {
+        this.quizIndex++;
+    }
 }

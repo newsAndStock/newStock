@@ -9,8 +9,9 @@ import lombok.Getter;
 public class QuizResponse {
     private int id;
     private String question;
+    private String answer;
 
     public static QuizResponse from(Quiz quiz) {
-        return new QuizResponse(quiz.getId(), quiz.getQuestion());
+        return new QuizResponse(quiz.getId(), quiz.getQuestion(), quiz.getAnswer());
     };
 }
