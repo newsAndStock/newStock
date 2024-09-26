@@ -1,6 +1,7 @@
 package com.ssafy.newstock.trading.controller.response;
 
 
+import com.ssafy.newstock.trading.domain.OrderType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class SellResponse {
+public class TradeResponse {
 
     private int bid;
 
@@ -18,7 +19,10 @@ public class SellResponse {
 
     private int totalPrice;
 
-    public SellResponse(int bid, LocalDateTime orderCompleteTime, int quantity, int totalPrice) {
+    private OrderType orderType;
+
+    public TradeResponse(OrderType orderType, int bid, LocalDateTime orderCompleteTime, int quantity, int totalPrice) {
+        this.orderType = orderType;
         this.bid = bid;
         this.orderCompleteTime = orderCompleteTime;
         this.quantity = quantity;

@@ -7,8 +7,8 @@ import com.ssafy.newstock.kis.domain.TradeItem;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.memberstocks.service.MemberStocksService;
-import com.ssafy.newstock.trading.controller.request.SellRequest;
-import com.ssafy.newstock.trading.controller.response.SellResponse;
+import com.ssafy.newstock.trading.controller.request.TradeRequest;
+import com.ssafy.newstock.trading.controller.response.TradeResponse;
 import com.ssafy.newstock.trading.domain.OrderType;
 import com.ssafy.newstock.trading.domain.TradeQueue;
 import com.ssafy.newstock.trading.domain.TradeType;
@@ -19,10 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,24 +37,24 @@ public class TradingService {
     private final MemberService memberService;
 
     //시장가 거래는 거래 즉시 완료됨.
-    public SellResponse sellByMarket(Member member, SellRequest sellRequest) {
+    public TradeResponse sellByMarket(Member member, TradeRequest sellRequest) {
 
         checkHoldings(member, sellRequest);
-        Trading trading = sellRequest.toEntity(member, TradeType.MARKET);
+        Trading trading = sellRequest.toEntity(member, OrderType.SELL, TradeType.MARKET);
         trading.confirmBid(getStockPrPr(sellRequest.getStockCode()));
         trading.tradeComplete(LocalDateTime.now());
         memberStocksService.sellComplete(member.getId(),sellRequest.getStockCode(),sellRequest.getQuantity(),trading.getBid());
         memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.SELL);
         tradingRepository.save(trading);
 
-        return new SellResponse(trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
+        return new TradeResponse(OrderType.SELL, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
     }
 
     private int getStockPrPr(String stockCode) {
         return Integer.parseInt(kisService.getCurrentStockPrice(stockCode));
     }
 
-    private void checkHoldings(Member member, SellRequest sellRequest){
+    private void checkHoldings(Member member, TradeRequest sellRequest){
         long holdings=memberStocksService.getHoldingsByMemberAndStockCode(member.getId(),sellRequest.getStockCode());
         if(holdings<sellRequest.getQuantity()){
             throw new IllegalArgumentException("Holdings not enough");
@@ -66,10 +62,10 @@ public class TradingService {
     }
 
 
-    public boolean sellByLimit(Member member, SellRequest sellRequest) throws JsonProcessingException {
+    public boolean sellByLimit(Member member, TradeRequest sellRequest) throws JsonProcessingException {
 
         checkHoldings(member, sellRequest);
-        Trading trading = sellRequest.toEntity(member, TradeType.LIMIT);
+        Trading trading = sellRequest.toEntity(member, OrderType.SELL, TradeType.LIMIT);
         int marketPrice=getStockPrPr(sellRequest.getStockCode());
         //현재 시장가보다 싸게 올릴수는 없다.
         if(marketPrice>trading.getBid()){
@@ -94,5 +90,28 @@ public class TradingService {
         return CompletableFuture.runAsync(() -> {
             kisServiceSocket.sendMessage(stockCode,"1");
         }, executorService);
+    }
+
+    public TradeResponse buyByMarket(Member member, TradeRequest buyRequest) {
+
+        if(!buyPossible(member,buyRequest)){
+            throw new IllegalArgumentException("Buy not possible(Insufficient account balance)");
+        }
+
+        Trading trading = buyRequest.toEntity(member, OrderType.BUY, TradeType.MARKET);
+        trading.confirmBid(getStockPrPr(buyRequest.getStockCode()));
+        trading.tradeComplete(LocalDateTime.now());
+        memberStocksService.buyComplete(member.getId(),buyRequest.getStockCode(),buyRequest.getQuantity(),trading.getBid());
+        memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.BUY);
+        tradingRepository.save(trading);
+
+        return new TradeResponse(OrderType.BUY, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
+    }
+
+    private boolean buyPossible(Member member, TradeRequest buyRequest) {
+
+        Long deposit=member.getDeposit();
+
+        return (long) buyRequest.getQuantity() *buyRequest.getBid()<=deposit;
     }
 }

@@ -41,6 +41,12 @@ public class MemberStock {
         this.member=member;
     }
 
+    @Builder
+    public MemberStock(String stockCode, Member member){
+        this.stockCode=stockCode;
+        this.member=member;
+    }
+
     public void updateAveragePrice(float averagePrice){
         this.averagePrice=averagePrice;
     }
