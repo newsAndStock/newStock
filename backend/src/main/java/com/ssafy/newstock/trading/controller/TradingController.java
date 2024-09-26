@@ -6,6 +6,9 @@ import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.trading.controller.request.TradeRequest;
 import com.ssafy.newstock.trading.controller.response.TradeResponse;
+import com.ssafy.newstock.trading.controller.response.TradingResponse;
+import com.ssafy.newstock.trading.domain.Trading;
+import com.ssafy.newstock.trading.service.TradingHandleService;
 import com.ssafy.newstock.trading.service.TradingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,9 +18,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +28,7 @@ public class TradingController {
 
     private final TradingService tradingService;
     private final MemberService memberService;
-
+    private final TradingHandleService tradingHandleService;
 
 
     @PostMapping("/sell-market")
@@ -83,6 +86,25 @@ public class TradingController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
 
     }
+
+    @GetMapping("/tradings")
+    public ResponseEntity<List<TradingResponse>> getTrading(@LoginMember Long memberId) {
+        List<TradingResponse> tradings=tradingHandleService.getActiveTradings(memberId);
+        return ResponseEntity.status(HttpStatus.OK).body(tradings);
+    }
+
+    @GetMapping("/buy-tradings")
+    public ResponseEntity<List<TradingResponse>> getTradingBuy(@LoginMember Long memberId) {
+        List<TradingResponse> tradings=tradingHandleService.getActiveBuyTradings(memberId);
+        return ResponseEntity.status(HttpStatus.OK).body(tradings);
+    }
+
+    @GetMapping("/sell-tradings")
+    public ResponseEntity<List<TradingResponse>> getTradingSell(@LoginMember Long memberId) {
+        List<TradingResponse> tradings=tradingHandleService.getActiveSellTradings(memberId);
+        return ResponseEntity.status(HttpStatus.OK).body(tradings);
+    }
+
 
 
 

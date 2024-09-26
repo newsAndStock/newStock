@@ -151,4 +151,5 @@ public class TradingService {
         tradingRepository.save(trading);
     }
 
+
 }
