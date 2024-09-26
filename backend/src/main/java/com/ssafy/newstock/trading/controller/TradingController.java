@@ -71,6 +71,19 @@ public class TradingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(buyResponse);
     }
 
+    @PostMapping("/buy-limit")
+    public ResponseEntity<Void> buyByLimit(@Valid @RequestBody TradeRequest buyRequest,
+                                           @LoginMember Long memberId) {
+        Member member = memberService.findById(memberId);
+        try {
+            tradingService.buyByLimit(member, buyRequest);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+
+    }
+
 
 
 
