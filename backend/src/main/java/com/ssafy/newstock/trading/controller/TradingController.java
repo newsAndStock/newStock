@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -103,6 +104,13 @@ public class TradingController {
     public ResponseEntity<List<TradingResponse>> getTradingSell(@LoginMember Long memberId) {
         List<TradingResponse> tradings=tradingHandleService.getActiveSellTradings(memberId);
         return ResponseEntity.status(HttpStatus.OK).body(tradings);
+    }
+
+    @DeleteMapping("/trading")
+    public ResponseEntity<Void> deleteTrading(@RequestBody Map<String, Long> requestBody, @LoginMember Long memberId) {
+        Long tradingId = requestBody.get("tradingId");
+        tradingHandleService.removeTrading(tradingId,memberId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 

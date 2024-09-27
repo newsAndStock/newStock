@@ -11,10 +11,8 @@ public interface TradingRepository extends JpaRepository<Trading,Long> {
 
     List<Trading> findByMemberIdAndIsCompletedFalse(Long memberId);
 
-    // 매수중인 거래 조회
-    List<Trading> findByMemberIdAndIsCompletedFalseAndOrderType(Long memberId, OrderType orderType);
+    // 거래 조회
+    List<Trading> findByMemberIdAndIsCompletedFalseAndOrderTypeAndIsCanceledFalse(Long memberId, OrderType orderType);
 
-    // 매도중인 거래 조회
-    List<Trading> findByMemberIdAndIsCompletedFalseAndTradeType(Long memberId, OrderType orderType);
 
 }

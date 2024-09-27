@@ -7,6 +7,7 @@ import com.ssafy.newstock.memberstocks.service.MemberStocksService;
 import com.ssafy.newstock.trading.domain.OrderType;
 import com.ssafy.newstock.trading.domain.TradeQueue;
 import com.ssafy.newstock.trading.domain.Trading;
+import com.ssafy.newstock.trading.service.TradingHandleService;
 import com.ssafy.newstock.trading.service.TradingService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -36,14 +37,16 @@ public class KisServiceSocket {
     private final MemberStocksService memberStocksService;
     private final MemberService memberService;
     private final TradingService tradingService;
+    private final TradingHandleService tradingHandleService;
     private WebSocketSession session;
     private TradeQueue tradeQueue=TradeQueue.getInstance();
 
     @Lazy
-    public KisServiceSocket(MemberStocksService memberStocksService, MemberService memberService, TradingService tradingService) {
+    public KisServiceSocket(MemberStocksService memberStocksService, MemberService memberService, TradingService tradingService, TradingHandleService tradingHandleService) {
         this.memberStocksService = memberStocksService;
         this.memberService = memberService;
         this.tradingService = tradingService;
+        this.tradingHandleService = tradingHandleService;
     }
 
     public void connectWebsocket(Runnable onConnected) {
@@ -154,36 +157,56 @@ public class KisServiceSocket {
 
         for(SocketItem socketItem: socketItems){
             log.info("<{}> 거래타입: {}, 거래량: {}",stockCode,socketItem.getType(),socketItem.getMount());
-            //1이 매수, 5가 매도
+            //1이 매수, 5가 매도, 매수 거래가 발생하면 사용자의 매도 거래가 진행됨. 매도 거래는 그 반대
             if(socketItem.getType()==1){
                 if(sellItems.isEmpty())continue;
-                if(socketItem.getPrice()>=sellItems.peek().getBid()){
-                    if(socketItem.getPrice()==buyItems.peek().getBid()){
-                        buyItems.peek().trade(socketItem.getMount());
-                    }else{
-                        buyItems.peek().complete();
-                    }
-                    if(sellItems.peek().getRemaining()>0)continue;
-                    TradeItem complete=sellItems.poll();
-                    sellComplete(stockCode,complete);
-                    log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
-
-                }
+                sellTrade(socketItem,stockCode,sellItems);
             } else if (socketItem.getType()==5) {
                 if(buyItems.isEmpty())continue;
-                if(socketItem.getPrice()<=buyItems.peek().getBid()){
-                    if(socketItem.getPrice()==buyItems.peek().getBid()){
-                        buyItems.peek().trade(socketItem.getMount());
-                    }else{
-                        buyItems.peek().complete();
-                    }
-                    if(buyItems.peek().getRemaining()>0)continue;
-                    TradeItem complete=buyItems.poll();
-                    buyComplete(stockCode,complete);
-                    log.info("<{}> [{}]님 매수거래완료", stockCode, complete.getMember().getNickname());
-
-                }
+                buyTrade(socketItem,stockCode,buyItems);
             }
+        }
+    }
+
+    private void sellTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> sellItems){
+        while(tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())){
+            TradeItem removed=sellItems.poll();
+            tradingHandleService.cancelComplete(removed.getTrading().getId());
+            log.info("<{}> [{}]님 매수거래취소", stockCode, removed.getMember().getNickname());
+        }
+        if(socketItem.getPrice()>=sellItems.peek().getBid()){
+
+            if(socketItem.getPrice()==sellItems.peek().getBid()){
+                sellItems.peek().trade(socketItem.getMount());
+            }else{
+                sellItems.peek().complete();
+            }
+            if(sellItems.peek().getRemaining()>0)return;
+            TradeItem complete=sellItems.poll();
+            sellComplete(stockCode,complete);
+            log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
+
+        }
+    }
+
+    private void buyTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> buyItems){
+        while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
+            TradeItem removed=buyItems.poll();
+            tradingHandleService.cancelComplete(removed.getTrading().getId());
+            log.info("<{}> [{}]님 매도거래취소", stockCode, removed.getMember().getNickname());
+        }
+        if(socketItem.getPrice()<=buyItems.peek().getBid()){
+
+            if(socketItem.getPrice()==buyItems.peek().getBid()){
+                buyItems.peek().trade(socketItem.getMount());
+            }else{
+                buyItems.peek().complete();
+            }
+            if(buyItems.peek().getRemaining()>0)return;
+            TradeItem complete=buyItems.poll();
+            buyComplete(stockCode,complete);
+            log.info("<{}> [{}]님 매수거래완료", stockCode, complete.getMember().getNickname());
+
         }
     }
 
