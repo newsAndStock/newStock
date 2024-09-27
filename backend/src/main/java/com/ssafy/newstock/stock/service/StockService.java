@@ -3,6 +3,7 @@ package com.ssafy.newstock.stock.service;
 import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
 import com.ssafy.newstock.stock.domain.StockInfo;
 import com.ssafy.newstock.stock.repository.StockInfoRepository;
+import com.ssafy.newstock.stock.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class StockService {
     private final StockInfoRepository stockInfoRepository;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private final StockRepository stockRepository;
 
     public List<StockInfoResponse> getStockInfo(String stockCode, String period) {
         LocalDate currentDate = LocalDate.now();
@@ -31,5 +33,12 @@ public class StockService {
         return stockInfoList.stream()
                 .map(StockInfoResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    public String findNameByStockCode(String stockCode) {
+        if(stockRepository.findByStockCode(stockCode).isEmpty()){
+            throw new IllegalArgumentException("잘못된 주식 코드입니다.");
+        }
+        return stockRepository.findByStockCode(stockCode).get().getName();
     }
 }

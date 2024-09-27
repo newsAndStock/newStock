@@ -49,6 +49,9 @@ public class Trading {
     @Column(name="is_completed", nullable = false)
     private boolean isCompleted=false;
 
+    @Column(name="is_canceled", nullable = false)
+    private boolean isCanceled=false;
+
     public Trading(String stockCode, int quantity, int bid, OrderType orderType, LocalDateTime orderTime, Member member, TradeType tradeType) {
         this.stockCode = stockCode;
         this.quantity = quantity;
@@ -68,6 +71,11 @@ public class Trading {
     public void confirmBid(int bid) {
         this.bid = bid;
     }
+
+    public void cancelTrading(){
+        this.isCanceled = true;
+    }
+
 
 
 }
