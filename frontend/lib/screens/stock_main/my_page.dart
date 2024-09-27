@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/stock_main/components/in_contract_component.dart';
+import 'package:frontend/screens/stock_main/ranking.dart';
 
 class MyPage extends StatelessWidget {
   const MyPage({Key? key}) : super(key: key);
@@ -16,7 +18,14 @@ class MyPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildUserInfoCard(),
+            GestureDetector(
+              child: _buildUserInfoCard(),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => RankingPage()));
+              },
+            ),
+            InContractComponent(),
             _buildAccountSummaryCard(),
             _buildStockList(),
           ],
