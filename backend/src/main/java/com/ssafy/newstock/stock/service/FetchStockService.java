@@ -44,7 +44,6 @@ public class FetchStockService {
 
         try {
             log.info("주식 데이터 가져오기: {}, period: {}, startDate: {}, endDate: {}", stockCode, period, startDate, endDate);
-            Thread.sleep(100);
             return webClientUtil.sendRequest(url, queryParams, headers);
         } catch (Exception ex) {
             throw new RuntimeException("주식 데이터 가져오기 실패: " + stockCode, ex);

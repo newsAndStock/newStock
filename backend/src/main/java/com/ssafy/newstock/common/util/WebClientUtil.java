@@ -40,7 +40,7 @@ public class WebClientUtil {
 
         return uriSpec.retrieve()
                 .bodyToMono(String.class)
-                .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))
+                .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(200)))
                 .block();
     }
 }
