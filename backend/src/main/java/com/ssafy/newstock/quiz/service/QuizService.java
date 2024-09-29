@@ -22,6 +22,7 @@ public class QuizService {
     private final QuizHistoryRepository quizHistoryRepository;
     private final MemberRepository memberRepository;
 
+    @Transactional
     public QuizResponse getCurrentQuiz(Long memberId) {
         QuizHistory quizHistory = quizHistoryRepository.findByMemberId(memberId)
                 .orElseGet(() -> createQuizHistory(memberId));
@@ -30,7 +31,11 @@ public class QuizService {
         int currentIndex = quizHistory.getQuizIndex();
 
         if (currentIndex >= todayIndex + 3) throw new IllegalArgumentException("오늘 퀴즈 완료!");
-        if (currentIndex < todayIndex) currentIndex = todayIndex;
+
+        if (currentIndex < todayIndex) {
+            currentIndex = todayIndex;
+            quizHistory.updateIndex(currentIndex);
+        }
 
         return QuizResponse.from(findQuizById(currentIndex));
     }
@@ -47,7 +52,12 @@ public class QuizService {
 
     @Transactional
     public void skipQuiz(Long memberId) {
-        findQuizHistoryByMemberId(memberId).updateIndex();
+        QuizHistory quizHistory = findQuizHistoryByMemberId(memberId);
+        int todayIndex = calculateIndexForToday();
+        int currentIndex = quizHistory.getQuizIndex();
+
+        if (currentIndex >= todayIndex + 3) throw new IllegalArgumentException("오늘 퀴즈 완료!");
+        quizHistory.updateIndex();
     }
 
     private int calculateIndexForToday() {
