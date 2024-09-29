@@ -28,6 +28,8 @@ services:
             - PROD=https://openapi.koreainvestment.com:9443
             - PROD_APPKEY=PSxM6gVFgCsfXSfJqwvtrjnuY0beo4G9dQTd
             - PROD_APPSECRET=DSzIBtdHTYBtLhRT7xOYc3KYPy9a92PWKRLFyufBSlv1voXzJh3FNGlgrch4lipoVatGwuptXL1Xcsj8xkZhC5naWtocPRImHZGwZce6FKASo6Zmu6/6C3+IYGjnnPPfM29ZDHUXZ0kmD30reGGUg3W7SbC1QrPwSB3jPdgeDNXsB+RB+FA=
+            - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
+            - MARKETINDEX_API_KEY={MARKETINDEX_API_KEY}
     network_mode: host  # Host 모드 사용
 
 volumes:
