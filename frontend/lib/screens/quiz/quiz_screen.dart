@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/data/quiz/quiz_data.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/api/quiz_api_service.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -9,33 +10,227 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int _currentIndex = 7; // 현재 퀴즈 인덱스
+  int _currentIndex = 0; // 현재 퀴즈 인덱스
   List<TextEditingController> _controllers = [];
+  List<Map<String, dynamic>> _quizData = [];
+  final QuizApiService _apiService = QuizApiService();
+  final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
+    _fetchQuizData();
+  }
+
+  // API에서 퀴즈 데이터를 가져오는 함수
+  Future<void> _fetchQuizData() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+
+      List<Map<String, dynamic>> quizData =
+          await _apiService.getQuizData(accessToken);
+      setState(() {
+        _quizData = quizData;
+        _initializeControllers();
+      });
+    } catch (e) {
+      print('Failed to fetch quiz data: $e');
+    }
+  }
+
+  // 퀴즈 건너뛰기 함수
+  Future<void> _skipQuiz() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+
+      // 서버에 퀴즈 건너뛰기 요청
+      await _apiService.skipQuiz(accessToken);
+
+      // 다음 퀴즈로 이동
+      if (_currentIndex < _quizData.length - 1) {
+        setState(() {
+          _currentIndex++;
+          _initializeControllers(); // 다음 퀴즈에 맞게 컨트롤러 초기화
+        });
+      } else {
+        // 모든 퀴즈를 완료했을 경우 처리
+        print("모든 퀴즈를 완료했습니다.");
+        // 예를 들어, 완료 화면으로 이동하거나 종료 메시지를 표시할 수 있습니다.
+      }
+    } catch (e) {
+      print('Failed to skip quiz: $e');
+    }
+  }
+
+  // 퀴즈 정답 제출 함수
+  Future<void> _submitAnswer() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+
+      // 사용자가 입력한 정답을 가져옴
+      String userAnswer =
+          _controllers.map((controller) => controller.text).join();
+
+      // 퀴즈 ID 가져오기
+      int quizId = _quizData[_currentIndex]['id'] as int;
+
+      // 서버에 정답 제출
+      bool isCorrect =
+          await _apiService.submitQuizAnswer(accessToken, quizId, userAnswer);
+
+      // 제출 후 결과에 따른 처리
+      if (isCorrect) {
+        int points = (_currentIndex == 2) ? 400000 : 300000; // 포인트 설정
+        _showResultDialog(true, points);
+      } else {
+        _showResultDialog(false, 0);
+      }
+    } catch (e) {
+      print('Failed to submit answer: $e');
+    }
+  }
+
+  // 정답/오답 결과를 보여주는 다이얼로그 함수
+  void _showResultDialog(bool isCorrect, int points) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          title: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isCorrect)
+                    Text(
+                      '🎉 정답! 축하합니다',
+                      style: TextStyle(
+                        color: Color(0xFF3A2E6A), // 메인 컬러
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                  else
+                    Text(
+                      '오답입니다!',
+                      style: TextStyle(
+                        color: Color(0xFF3A2E6A), // 메인 컬러
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Divider(
+                color: Colors.grey,
+                thickness: 1,
+              ),
+            ],
+          ),
+          content: isCorrect
+              ? Text(
+                  '$points 포인트가 적립되었습니다',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                )
+              : Text(
+                  '다시 시도해보세요!',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (isCorrect) {
+                  _goToNextQuiz();
+                }
+              },
+              child: Text(
+                '확인',
+                style: TextStyle(color: Color(0xFF3A2E6A)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 다음 퀴즈로 이동하는 함수
+  void _goToNextQuiz() {
+    if (_currentIndex < _quizData.length - 1) {
+      setState(() {
+        _currentIndex++;
+        _initializeControllers(); // 다음 퀴즈에 맞게 컨트롤러 초기화
+      });
+    } else {
+      // 모든 퀴즈 완료 시 처리
+      print("모든 퀴즈를 완료했습니다.");
+    }
   }
 
   // word 길이에 맞춰 컨트롤러를 초기화하는 함수
   void _initializeControllers() {
-    String word = quizData[_currentIndex]['word'] as String;
+    if (_quizData.isEmpty) return;
+
+    String word = (_quizData[_currentIndex]['answer'] ?? '') as String;
     _controllers =
         List.generate(word.length, (index) => TextEditingController());
   }
 
   // 한 글자를 입력할 때 다음 필드로 자동 포커스 이동
   void _nextField(String value, int index) {
-    if (value.length == 1 && index < _controllers.length - 1) {
+    RegExp completeHangul = RegExp(r'^[가-힣]$');
+
+    if (completeHangul.hasMatch(value) && index < _controllers.length - 1) {
       FocusScope.of(context).nextFocus(); // 다음 필드로 포커스 이동
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    String word = quizData[_currentIndex]['word'] as String;
-    String description = quizData[_currentIndex]['description'] as String;
+    if (_quizData.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          title: Text(
+            '경제 퀴즈',
+            style: TextStyle(color: Colors.black),
+          ),
+          elevation: 0,
+        ),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    String question = (_quizData[_currentIndex]['question'] ??
+        'No question available') as String;
+    String answer = (_quizData[_currentIndex]['answer'] ?? '') as String;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -51,7 +246,7 @@ class _QuizScreenState extends State<QuizScreen> {
             Navigator.pop(context);
           },
         ),
-        elevation: 0, // 그림자 제거
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(30.0),
@@ -71,12 +266,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     color: Colors.grey.withOpacity(0.5),
                     spreadRadius: 3,
                     blurRadius: 7,
-                    offset: Offset(0, 1), // 그림자 위치
+                    offset: Offset(0, 1),
                   ),
                 ],
               ),
               child: Text(
-                '오늘의 퀴즈 1/3',
+                '오늘의 퀴즈 ${_currentIndex + 1}/${_quizData.length}',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -86,7 +281,7 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             SizedBox(height: 30),
             Text(
-              description,
+              question,
               style: TextStyle(fontSize: 18),
               textAlign: TextAlign.center,
             ),
@@ -95,17 +290,17 @@ class _QuizScreenState extends State<QuizScreen> {
               widthFactor: 0.8,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(word.length, (index) {
+                children: List.generate(answer.length, (index) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9), // skyblue 배경색
+                      color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 3,
                           blurRadius: 7,
-                          offset: Offset(0, 1), // 그림자 위치
+                          offset: Offset(0, 1),
                         ),
                       ],
                     ),
@@ -125,7 +320,7 @@ class _QuizScreenState extends State<QuizScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                             borderSide: BorderSide(
-                              color: const Color(0xFF3A2E6A), // 포커스 시 보더 색상
+                              color: const Color(0xFF3A2E6A),
                               width: 2,
                             ),
                           ),
@@ -139,15 +334,13 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             SizedBox(height: 40),
             SizedBox(
-              width: 250, // 버튼을 가로로 꽉 차게
+              width: 250,
               child: OutlinedButton(
-                onPressed: () {
-                  // 제출하기 버튼 액션
-                },
+                onPressed: _submitAnswer,
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   side: BorderSide(
-                    color: Color(0xFF3A2E6A), // 보더 색상
+                    color: Color(0xFF3A2E6A),
                     width: 2,
                   ),
                   shape: RoundedRectangleBorder(
@@ -165,9 +358,7 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
-                // 넘어가기 버튼 액션
-              },
+              onPressed: _skipQuiz,
               child: Text(
                 '모르겠어요 넘어갈래요!',
                 style: TextStyle(
@@ -180,4 +371,4 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
     );
   }
-}
+} 
