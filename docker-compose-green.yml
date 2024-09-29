@@ -19,15 +19,15 @@ services:
     environment:
             - PROFILES=green
             - ENV=green
-            - DEV_NAME=admin
-            - DEV_PASSWORD=ssafyssafy
-            - GMAIL_PASSWORD=gvuy pfql mlbd rmrl
-            - GMAIL_USERNAME=leejh0799@gmail.com
-            - REFRESH_KEY=refresh
-            - SECRET_KEY=secret
-            - PROD=https://openapi.koreainvestment.com:9443
-            - PROD_APPKEY=PSxM6gVFgCsfXSfJqwvtrjnuY0beo4G9dQTd
-            - PROD_APPSECRET=DSzIBtdHTYBtLhRT7xOYc3KYPy9a92PWKRLFyufBSlv1voXzJh3FNGlgrch4lipoVatGwuptXL1Xcsj8xkZhC5naWtocPRImHZGwZce6FKASo6Zmu6/6C3+IYGjnnPPfM29ZDHUXZ0kmD30reGGUg3W7SbC1QrPwSB3jPdgeDNXsB+RB+FA=
+            - DEV_NAME=${DEV_NAME}
+            - DEV_PASSWORD=${DEV_PASSWORD}
+            - GMAIL_PASSWORD=${GMAIL_PASSWORD}
+            - GMAIL_USERNAME=${GMAIL_USERNAME}
+            - REFRESH_KEY=${REFRESH_KEY}
+            - SECRET_KEY=${SECRET_KEY}
+            - PROD=${PROD}
+            - PROD_APPKEY=${PROD_APPKEY}
+            - PROD_APPSECRET=${PROD_APPSECRET}
             - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
             - MARKETINDEX_API_KEY={MARKETINDEX_API_KEY}
     network_mode: host  # Host 모드 사용
