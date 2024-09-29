@@ -32,4 +32,8 @@ public class QuizHistory {
     public void updateIndex() {
         this.quizIndex++;
     }
+
+    public void updateIndex(int quizIndex) {
+        this.quizIndex = quizIndex;
+    }
 }
