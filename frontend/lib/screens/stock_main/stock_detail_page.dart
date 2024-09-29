@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:candlesticks/candlesticks.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:frontend/screens/stock_main/interactive_chart/interactive_chart.dart';
+import 'package:frontend/api/stock_api/favorite_stock_api.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'stock_trading_page.dart';
 import 'interactive_chart/mock_data.dart';
 
@@ -19,8 +21,11 @@ class StockData {
 
 class StockDetailPage extends StatefulWidget {
   final String stockName;
+  final String stockCode;
 
-  const StockDetailPage({Key? key, required this.stockName}) : super(key: key);
+  const StockDetailPage(
+      {Key? key, required this.stockName, required this.stockCode})
+      : super(key: key);
 
   @override
   _StockDetailPageState createState() => _StockDetailPageState();
@@ -34,11 +39,57 @@ class _StockDetailPageState extends State<StockDetailPage>
   String _selectedPeriod = '1일';
   final List<CandleData> _data = MockDataTesla.candles;
 
+  bool _isFavorite = false;
+  bool _isLoading = false;
+  final FlutterSecureStorage _storage = FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _showLineChart = true;
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      final favoriteStocks = await FavoriteStockApi.getFavoriteStocks(token);
+      setState(() => _isFavorite = favoriteStocks['stocks']
+          .any((stock) => stock['stockCode'] == widget.stockCode));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to load favorite status: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      if (_isFavorite) {
+        await FavoriteStockApi.removeFavoriteStock(token, widget.stockCode);
+      } else {
+        await FavoriteStockApi.addFavoriteStock(token, widget.stockCode);
+      }
+      setState(() => _isFavorite = !_isFavorite);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to update favorite status: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -56,10 +107,10 @@ class _StockDetailPageState extends State<StockDetailPage>
         title: Text(widget.stockName),
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border),
-            onPressed: () {
-              // 즐겨찾기 기능 구현
-            },
+            icon: _isLoading
+                ? CircularProgressIndicator()
+                : Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
+            onPressed: _isLoading ? null : _toggleFavorite,
           ),
         ],
       ),

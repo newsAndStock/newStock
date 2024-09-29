@@ -1,7 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/stock_search_api.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/services.dart';
 
-class SearchPage extends StatelessWidget {
+class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
+
+  @override
+  _SearchPageState createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  List<Map<String, dynamic>> _topVolumeStocks = [];
+  List<Map<String, dynamic>> _searchResults = [];
+  List<String> _recentSearches = [];
+  bool _isLoadingTrendingStock = false;
+  bool _isLoadingSearch = false;
+  final FlutterSecureStorage storage = FlutterSecureStorage();
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTopVolumeStocks();
+    // _fetchRecentSearches();
+  }
+
+  Future<void> _fetchTopVolumeStocks() async {
+    setState(() {
+      _isLoadingTrendingStock = true;
+    });
+
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final stocks = await StockSearchgApi.getTopVolumeStocks(accessToken);
+      setState(() {
+        _topVolumeStocks = stocks;
+        _isLoadingTrendingStock = false;
+      });
+    } catch (e) {
+      print('Error fetching top volume stocks: $e');
+      setState(() {
+        _isLoadingTrendingStock = false;
+      });
+    }
+  }
+
+  // Future<void> _fetchRecentSearches() async {
+  //   try {
+  //     String? accessToken = await storage.read(key: 'accessToken');
+  //     if (accessToken == null) {
+  //       throw Exception('No access token found');
+  //     }
+  //     final keywords = await StockSearchgApi.getRecentKeywords(accessToken);
+  //     setState(() {
+  //       _recentSearches = keywords;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching recent searches: $e');
+  //   }
+  // }
+
+  Future<void> _searchStocks(String keyword) async {
+    setState(() {
+      _isLoadingSearch = true;
+    });
+
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      int memberId = 11; //일단 kimsw0516@naver.com memberId 값으로 저장
+
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final stocks = await StockSearchgApi.searchStocks(keyword, accessToken);
+      await StockSearchgApi.saveRecentKeyword(accessToken, memberId, keyword);
+      setState(() {
+        _searchResults = stocks;
+        _isLoadingSearch = false;
+      });
+      // _fetchRecentSearches();
+    } catch (e) {
+      print('Error searching stocks: $e');
+      setState(() {
+        _isLoadingSearch = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,16 +105,15 @@ class SearchPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 10,
-          ),
+          SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: SearchBar(),
+            child: SearchBar(
+              controller: _searchController,
+              onSearch: _searchStocks,
+            ),
           ),
-          SizedBox(
-            height: 10,
-          ),
+          SizedBox(height: 10),
           Expanded(
             child: DefaultTabController(
               length: 2,
@@ -35,32 +122,20 @@ class SearchPage extends StatelessWidget {
                   TabBar(
                     tabs: [
                       Tab(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16), // 라벨 좌우 여백 추가
-                          child: Text(
-                            '거래많은 주식',
-                            style: TextStyle(fontSize: 16), // 글씨 크기 증가
-                          ),
-                        ),
-                      ),
+                          child:
+                              Text('거래많은 주식', style: TextStyle(fontSize: 16))),
                       Tab(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16), // 라벨 좌우 여백 추가
-                          child: Text(
-                            '최근 검색어',
-                            style: TextStyle(fontSize: 16), // 글씨 크기 증가
-                          ),
-                        ),
-                      ),
+                          child:
+                              Text('최근 검색어', style: TextStyle(fontSize: 16))),
                     ],
                     labelColor: Color(0xff3A2E6A),
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
-                        _buildTrendingStocks(),
+                        _searchResults.isNotEmpty
+                            ? _buildSearchResults()
+                            : _buildTrendingStocks(),
                         _buildRecentSearches(),
                       ],
                     ),
@@ -75,119 +150,128 @@ class SearchPage extends StatelessWidget {
   }
 
   Widget _buildTrendingStocks() {
+    if (_isLoadingTrendingStock) {
+      return Center(child: CircularProgressIndicator());
+    }
+
     return ListView.builder(
-      itemCount: 5,
+      itemCount: _topVolumeStocks.length,
       itemBuilder: (context, index) {
-        return Column(children: [
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
-              child: ListTile(
-                title: Text('${index + 1}. 주식 ${index + 1}'),
-                // trailing: Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  // Handle stock selection
-                },
-              ),
-            ),
-          ),
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.85,
-              child: Divider(
-                color: Color(0xFFB4B4B4),
-                thickness: 1,
-                height: 1,
-              ),
-            ),
-          )
-        ]);
+        final stock = _topVolumeStocks[index];
+        return _buildStockListItem(stock, index);
       },
     );
   }
-  // 검색어 height를 줄이고 싶을 때 쓰는 코드
-//   Widget _buildTrendingStocks() {
-//   return ListView.builder(
-//     itemCount: 5,
-//     itemBuilder: (context, index) {
-//       return Column(
-//         children: [
-//           SizedBox(
-//             height: 40, // ListTile의 높이를 줄임
-//             child: Center(
-//               child: FractionallySizedBox(
-//                 widthFactor: 0.9,
-//                 child: ListTile(
-//                   contentPadding: EdgeInsets.symmetric(horizontal: 8),
-//                   title: Text(
-//                     '${index + 1}. 주식 ${index + 1}',
-//                     style: TextStyle(fontSize: 14), // 글자 크기를 줄임
-//                   ),
-//                   onTap: () {
-//                     // Handle stock selection
-//                   },
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Center(
-//             child: FractionallySizedBox(
-//               widthFactor: 0.85,
-//               child: Divider(
-//                 color: Color(0xFFB4B4B4),
-//                 thickness: 1,
-//                 height: 1,
-//               ),
-//             ),
-//           ),
-//         ],
-//       );
-//     },
-//   );
-// }
+
+  Widget _buildSearchResults() {
+    if (_isLoadingSearch) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return ListView.builder(
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final stock = _searchResults[index];
+        return _buildStockListItem(stock, index);
+      },
+    );
+  }
+
+  Widget _buildStockListItem(Map<String, dynamic> stock, int index) {
+    return Column(
+      children: [
+        Center(
+          child: FractionallySizedBox(
+            widthFactor: 0.9,
+            child: ListTile(
+              title: Text('${index + 1}. ${stock['stockName']}'),
+              subtitle: Text('${stock['stockCode']}'),
+              onTap: () {
+                // Handle stock selection
+              },
+            ),
+          ),
+        ),
+        Center(
+          child: FractionallySizedBox(
+            widthFactor: 0.85,
+            child: Divider(color: Color(0xFFB4B4B4), thickness: 1, height: 1),
+          ),
+        )
+      ],
+    );
+  }
 
   Widget _buildRecentSearches() {
+    if (_recentSearches.isEmpty) {
+      return Center(
+        child: Text(
+          '최근 검색어가 없습니다.',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }
+
     return ListView.builder(
-      itemCount: 6,
+      itemCount: _recentSearches.length,
       itemBuilder: (context, index) {
-        return Column(children: [
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
-              child: ListTile(
-                title: Text('최근 검색어 ${index + 1}'),
-                trailing: Icon(
-                  Icons.close,
-                  size: 15,
-                  color: Color(0xFFB4B4B4),
+        return Column(
+          children: [
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.9,
+                child: ListTile(
+                  title: Text(_recentSearches[index]),
+                  trailing:
+                      Icon(Icons.close, size: 15, color: Color(0xFFB4B4B4)),
+                  onTap: () => _searchStocks(_recentSearches[index]),
                 ),
-                onTap: () {
-                  // Handle recent search selection
-                },
               ),
             ),
-          ),
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.85,
-              child: Divider(
-                color: Color(0xFFB4B4B4),
-                thickness: 1,
-                height: 1,
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child:
+                    Divider(color: Color(0xFFB4B4B4), thickness: 1, height: 1),
               ),
             ),
-          ),
-        ]);
+          ],
+        );
       },
     );
   }
 }
 
-class SearchBar extends StatelessWidget {
-  const SearchBar({Key? key}) : super(key: key);
+class SearchBar extends StatefulWidget {
+  final TextEditingController controller;
+  final Function(String) onSearch;
+
+  const SearchBar({Key? key, required this.controller, required this.onSearch})
+      : super(key: key);
 
   @override
-  //
+  _SearchBarState createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<SearchBar> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Center(
       child: FractionallySizedBox(
@@ -210,22 +294,25 @@ class SearchBar extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: '키워드를 검색해보세요!',
-                    hintStyle:
-                        TextStyle(color: Color(0xFFB4B4B4), fontSize: 15),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (value) {
-                    // Handle search submission
-                  },
+                child: EditableText(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  style: TextStyle(color: Colors.black, fontSize: 16),
+                  cursorColor: Colors.blue,
+                  backgroundCursorColor: Colors.grey,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: widget.onSearch,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(100),
+                  ],
+                  maxLines: 1,
+                  // cursorColo: Colors.blue,
+                  // backgroundCursorColor: Colors.grey,
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  // 검색 기능 구현
-                },
+                onPressed: () => widget.onSearch(widget.controller.text),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xffF1F5F9),
                   foregroundColor: Colors.black,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/favorite_stock_api.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'dart:async';
 import 'components/search_bar.dart';
@@ -11,6 +12,7 @@ import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
 import 'package:frontend/screens/notification_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 
 class StockMainPage extends StatefulWidget {
   const StockMainPage({Key? key}) : super(key: key);
@@ -22,15 +24,54 @@ class StockMainPage extends StatefulWidget {
 class _StockMainPageState extends State<StockMainPage> {
   late Timer _timer;
   int _currentIndex = 0;
+  Map<String, dynamic>? _favoriteStockData;
+  bool _isLoadingFavStock = true;
+  final FlutterSecureStorage storage =
+      FlutterSecureStorage(); // Secure storage instance
 
   @override
   void initState() {
     super.initState();
+    _fetchFavoriteStocks();
     // 5초마다 MarketIndex 위젯의 애니메이션을 트리거
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       setState(() {
         _currentIndex = (_currentIndex + 1) % 4; // 4개의 지수가 있다고 가정
       });
+    });
+  }
+
+  Future<void> _fetchFavoriteStocks() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final data = await FavoriteStockApi.getFavoriteStocks(accessToken);
+      setState(() {
+        _favoriteStockData = data;
+        _isLoadingFavStock = false;
+      });
+    } catch (e) {
+      print('Error fetching favorite stocks: $e');
+      setState(() {
+        _isLoadingFavStock = false;
+      });
+    }
+  }
+
+  void _navigateToStockDetail(String stockName, String stockCode) {
+    // 빌드 프로세스 이후에 실행되도록 WidgetsBinding.instance.addPostFrameCallback 사용
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(
+            stockName: stockName,
+            stockCode: stockCode,
+          ),
+        ),
+      );
     });
   }
 
@@ -135,19 +176,14 @@ class _StockMainPageState extends State<StockMainPage> {
             Center(
               child: FractionallySizedBox(
                 widthFactor: 0.9,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              StockDetailPage(stockName: '삼성전자')),
-                    );
-                  },
-                  child: SizedBox(
-                    height: 150,
-                    child: FavoriteStocks(),
-                  ),
+                child: SizedBox(
+                  height: 150,
+                  child: _isLoadingFavStock
+                      ? Center(child: CircularProgressIndicator())
+                      : FavoriteStocks(
+                          stocksData: _favoriteStockData,
+                          onStockTap: _navigateToStockDetail,
+                        ),
                 ),
               ),
             ),

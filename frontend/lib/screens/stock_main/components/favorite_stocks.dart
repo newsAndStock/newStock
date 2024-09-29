@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoriteStocks extends StatelessWidget {
+  final Map<String, dynamic>? stocksData;
+  final Function(String stockName, String stockCode) onStockTap;
+
+  const FavoriteStocks({
+    Key? key,
+    required this.stocksData,
+    required this.onStockTap,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    if (stocksData == null || stocksData!['stocks'].isEmpty) {
+      return Container(
+        height: 105,
+        alignment: Alignment.center,
+        child: Text('관심종목이 없습니다.', style: TextStyle(fontSize: 16)),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -14,15 +35,20 @@ class FavoriteStocks extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
             scrollDirection: Axis.horizontal,
-            children: [
-              _buildFavoriteStockItem('티디에스팜', '42,200원', '+0.5%'),
-              SizedBox(width: 12),
-              _buildFavoriteStockItem('아이스크림미디어', '24,500원', '-23.2%'),
-              SizedBox(width: 12),
-              _buildFavoriteStockItem('가나다라마바사아자차카타파하', '24,500원', '-23.2%'),
-              SizedBox(width: 12),
-              _buildFavoriteStockItem('아이스크림미디어', '24,500원', '-23.2%'),
-            ],
+            children: stocksData!['stocks'].map<Widget>((stock) {
+              return GestureDetector(
+                onTap: () =>
+                    onStockTap(stock['name'], stock['stockCode']), // 수정된 부분
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _buildFavoriteStockItem(
+                    stock['name'],
+                    '가격 정보 없음',
+                    '변동 없음',
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -42,7 +68,7 @@ class FavoriteStocks extends StatelessWidget {
             color: Colors.grey.withOpacity(0.5),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: const Offset(0, 2), // 그림자의 위치 변경
+            offset: const Offset(0, 2),
           ),
         ],
       ),
