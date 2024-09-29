@@ -29,7 +29,7 @@ services:
             - PROD_APPKEY=${PROD_APPKEY}
             - PROD_APPSECRET=${PROD_APPSECRET}
             - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
-            - MARKETINDEX_API_KEY={MARKETINDEX_API_KEY}
+            - MARKETINDEX_API_KEY=${MARKETINDEX_API_KEY}
     network_mode: host  # Host 모드 사용
 
 volumes:
