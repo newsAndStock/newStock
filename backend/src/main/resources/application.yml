@@ -47,4 +47,11 @@ kis:
   prod-appkey: ${PROD_APPKEY}
   prod-appsecret: ${PROD_APPSECRET}
 
+twelvedata:
+  api:
+    key: ${TWELVEDATA_API_KEY}
 
+
+marketindex:
+  api:
+    key: ${MARKETINDEX_API_KEY}

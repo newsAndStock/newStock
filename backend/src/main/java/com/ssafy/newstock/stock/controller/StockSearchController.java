@@ -4,18 +4,22 @@ import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.stock.controller.request.SearchKeywordRequest;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
 import com.ssafy.newstock.stock.domain.StockRecentSearchWord;
+import com.ssafy.newstock.stock.service.StockMarketIndexService;
 import com.ssafy.newstock.stock.service.StockSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @RestController
 @RequiredArgsConstructor
 public class StockSearchController {
     private final StockSearchService stockSearchService;
+    private final StockMarketIndexService stockMarketIndexService;
 
     @PostMapping("/recent-stock-keyword")
     public void addRecentKeyword(@RequestBody SearchKeywordRequest request){
@@ -50,5 +54,11 @@ public class StockSearchController {
         } else{
             return ResponseEntity.badRequest().body("카테고리가 잘못되었습니다.");
         }
+    }
+
+    @GetMapping("/market-data")
+    public ResponseEntity<?> getMarketData(){
+        List<Map<String, String>> marketData = stockMarketIndexService.getMarketData();
+        return ResponseEntity.ok(marketData);
     }
 }
