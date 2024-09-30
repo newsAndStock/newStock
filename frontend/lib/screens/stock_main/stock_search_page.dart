@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/stock_search_api.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/screens/stock_main/stock_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   List<Map<String, dynamic>> _topVolumeStocks = [];
   List<Map<String, dynamic>> _searchResults = [];
-  List<String> _recentSearches = [];
+  List<Map<String, dynamic>> _recentSearches = [];
   bool _isLoadingTrendingStock = false;
   bool _isLoadingSearch = false;
   final FlutterSecureStorage storage = FlutterSecureStorage();
@@ -23,7 +24,53 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _fetchTopVolumeStocks();
-    // _fetchRecentSearches();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_searchController.text.isNotEmpty) {
+      _searchStocks(_searchController.text);
+    } else {
+      setState(() {
+        _searchResults = [];
+      });
+    }
+  }
+
+  Future<void> _fetchRecentSearches() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final keywords = await StockSearchgApi.getRecentKeywords(accessToken);
+      setState(() {
+        _recentSearches = keywords;
+      });
+    } catch (e) {
+      print('Error fetching recent searches: $e');
+    }
+  }
+
+  Future<void> _deleteRecentKeyword(int keywordId) async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      await StockSearchgApi.deleteRecentKeyword(accessToken, keywordId);
+      // 삭제 후 목록 새로고침
+      _fetchRecentSearches();
+    } catch (e) {
+      print('Error deleting recent keyword: $e');
+    }
   }
 
   Future<void> _fetchTopVolumeStocks() async {
@@ -49,21 +96,6 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  // Future<void> _fetchRecentSearches() async {
-  //   try {
-  //     String? accessToken = await storage.read(key: 'accessToken');
-  //     if (accessToken == null) {
-  //       throw Exception('No access token found');
-  //     }
-  //     final keywords = await StockSearchgApi.getRecentKeywords(accessToken);
-  //     setState(() {
-  //       _recentSearches = keywords;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching recent searches: $e');
-  //   }
-  // }
-
   Future<void> _searchStocks(String keyword) async {
     setState(() {
       _isLoadingSearch = true;
@@ -77,18 +109,31 @@ class _SearchPageState extends State<SearchPage> {
         throw Exception('No access token found');
       }
       final stocks = await StockSearchgApi.searchStocks(keyword, accessToken);
-      await StockSearchgApi.saveRecentKeyword(accessToken, memberId, keyword);
       setState(() {
         _searchResults = stocks;
         _isLoadingSearch = false;
       });
-      // _fetchRecentSearches();
     } catch (e) {
       print('Error searching stocks: $e');
       setState(() {
         _isLoadingSearch = false;
       });
     }
+  }
+
+  void _navigateToStockDetail(String stockName, String stockCode) {
+    // 빌드 프로세스 이후에 실행되도록 WidgetsBinding.instance.addPostFrameCallback 사용
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StockDetailPage(
+            stockName: stockName,
+            stockCode: stockCode,
+          ),
+        ),
+      );
+    });
   }
 
   @override
@@ -110,40 +155,61 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.all(8.0),
             child: SearchBar(
               controller: _searchController,
-              onSearch: _searchStocks,
+              onSearch: (keyword) {
+                if (keyword.isNotEmpty) {
+                  _navigateToStockDetail(_searchResults.first['stockName'],
+                      _searchResults.first['stockCode']);
+                }
+              },
             ),
           ),
-          SizedBox(height: 10),
-          Expanded(
-            child: DefaultTabController(
-              length: 2,
-              child: Column(
-                children: [
-                  TabBar(
-                    tabs: [
-                      Tab(
-                          child:
-                              Text('거래많은 주식', style: TextStyle(fontSize: 16))),
-                      Tab(
-                          child:
-                              Text('최근 검색어', style: TextStyle(fontSize: 16))),
-                    ],
-                    labelColor: Color(0xff3A2E6A),
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _searchResults.isNotEmpty
-                            ? _buildSearchResults()
-                            : _buildTrendingStocks(),
-                        _buildRecentSearches(),
+          if (_searchResults.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: _searchResults.length,
+                itemBuilder: (context, index) {
+                  final stock = _searchResults[index];
+                  return ListTile(
+                    title: Text(stock['stockName']),
+                    subtitle: Text(stock['stockCode']),
+                    onTap: () {
+                      _searchController.text = stock['stockName'];
+                      _navigateToStockDetail(
+                          stock['stockName'], stock['stockCode']);
+                    },
+                  );
+                },
+              ),
+            )
+          else
+            Expanded(
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: [
+                        Tab(
+                            child: Text('거래많은 주식',
+                                style: TextStyle(fontSize: 16))),
+                        Tab(
+                            child:
+                                Text('최근 검색어', style: TextStyle(fontSize: 16))),
                       ],
+                      labelColor: Color(0xff3A2E6A),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildTrendingStocks(),
+                          _buildRecentSearches(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -163,20 +229,6 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSearchResults() {
-    if (_isLoadingSearch) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    return ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final stock = _searchResults[index];
-        return _buildStockListItem(stock, index);
-      },
-    );
-  }
-
   Widget _buildStockListItem(Map<String, dynamic> stock, int index) {
     return Column(
       children: [
@@ -186,9 +238,8 @@ class _SearchPageState extends State<SearchPage> {
             child: ListTile(
               title: Text('${index + 1}. ${stock['stockName']}'),
               subtitle: Text('${stock['stockCode']}'),
-              onTap: () {
-                // Handle stock selection
-              },
+              onTap: () => _navigateToStockDetail(
+                  stock['stockName'], stock['stockCode']),
             ),
           ),
         ),
@@ -224,10 +275,14 @@ class _SearchPageState extends State<SearchPage> {
               child: FractionallySizedBox(
                 widthFactor: 0.9,
                 child: ListTile(
-                  title: Text(_recentSearches[index]),
-                  trailing:
-                      Icon(Icons.close, size: 15, color: Color(0xFFB4B4B4)),
-                  onTap: () => _searchStocks(_recentSearches[index]),
+                  title: Text(_recentSearches[index]['stockName']),
+                  trailing: IconButton(
+                    icon: Icon(Icons.close, size: 15, color: Color(0xFFB4B4B4)),
+                    onPressed: () =>
+                        _deleteRecentKeyword(_recentSearches[index]['id']),
+                  ),
+                  onTap: () =>
+                      _searchStocks(_recentSearches[index]['stockName']),
                 ),
               ),
             ),
@@ -294,21 +349,15 @@ class _SearchBarState extends State<SearchBar> {
           child: Row(
             children: [
               Expanded(
-                child: EditableText(
+                child: TextField(
                   controller: widget.controller,
                   focusNode: _focusNode,
                   style: TextStyle(color: Colors.black, fontSize: 16),
-                  cursorColor: Colors.blue,
-                  backgroundCursorColor: Colors.grey,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: '주식 검색',
+                    border: InputBorder.none,
+                  ),
                   onSubmitted: widget.onSearch,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(100),
-                  ],
-                  maxLines: 1,
-                  // cursorColo: Colors.blue,
-                  // backgroundCursorColor: Colors.grey,
                 ),
               ),
               ElevatedButton(
