@@ -1,4 +1,4 @@
-package com.ssafy.newstock.stock.batch;
+package com.ssafy.newstock.stock.batch.minute;
 
 import com.ssafy.newstock.stock.domain.Stock;
 import com.ssafy.newstock.stock.repository.StockRepository;
@@ -10,7 +10,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class StockItemReader implements ItemReader<Stock> {
+public class MinuteStockItemReader implements ItemReader<Stock> {
 
     private final StockRepository stockRepository;
     private List<Stock> stockList;

@@ -16,7 +16,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class StockBatchScheduler {
     private final JobLauncher jobLauncher;
-    private final Job stockDataJob;
+    private final Job dayStockDataJob;
+    private final Job minuteStockDataJob;
+
     private final Set<LocalDate> holidays = Set.of(
             LocalDate.of(2024, 10, 1),
             LocalDate.of(2024, 10, 3),
@@ -29,7 +31,20 @@ public class StockBatchScheduler {
         if (holidays.contains(today)) return;
 
         jobLauncher.run(
-                stockDataJob,
+                dayStockDataJob,
+                new JobParametersBuilder()
+                        .addLong("time", System.currentTimeMillis())
+                        .toJobParameters()
+        );
+    }
+
+    @Scheduled(cron = "0 30,0 9-15 * * MON-FRI", zone = "Asia/Seoul")
+    public void runMinuteStockDataJob() throws Exception {
+        LocalDate today = LocalDate.now();
+        if (holidays.contains(today)) return;
+
+        jobLauncher.run(
+                minuteStockDataJob,
                 new JobParametersBuilder()
                         .addLong("time", System.currentTimeMillis())
                         .toJobParameters()
