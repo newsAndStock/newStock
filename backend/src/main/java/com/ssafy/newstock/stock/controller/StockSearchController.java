@@ -3,6 +3,7 @@ package com.ssafy.newstock.stock.controller;
 import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.stock.controller.request.SearchKeywordRequest;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
+import com.ssafy.newstock.stock.domain.Stock;
 import com.ssafy.newstock.stock.domain.StockRecentSearchWord;
 import com.ssafy.newstock.stock.service.StockMarketIndexService;
 import com.ssafy.newstock.stock.service.StockSearchService;
@@ -60,5 +61,14 @@ public class StockSearchController {
     public ResponseEntity<?> getMarketData(){
         List<Map<String, String>> marketData = stockMarketIndexService.getMarketData();
         return ResponseEntity.ok(marketData);
+    }
+
+    @GetMapping("/stock-search")
+    public ResponseEntity<?> getStockSearch(@RequestParam String keyword){
+        List<Stock> stocks = stockSearchService.searchStock(keyword);
+        if(stocks.isEmpty()){
+            return ResponseEntity.ok("검색 결과가 없습니다.");
+        }
+        return ResponseEntity.ok(stocks);
     }
 }

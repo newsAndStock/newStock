@@ -38,11 +38,11 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(Member member) {
-        return createToken(member, 1000 * 60 * 60, secretKey);
+        return createToken(member, 1000 * 60 * 60 * 24, secretKey);
     }
 
     public String createRefreshToken(Member member) {
-        return createToken(member, 1000 * 60 * 60 * 24, refreshKey);
+        return createToken(member, 1000 * 60 * 60 * 24 * 7, refreshKey);
     }
 
     public String createToken(Member member, int expiration, String encodingKey) {
