@@ -30,6 +30,30 @@ class StockSearchgApi {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> getRecentKeywords(
+      String token) async {
+    final url = Uri.parse('$apiServerUrl/recent-stock-keyword');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to load top volume stocks');
+      }
+    } catch (e) {
+      throw Exception('Failed to load top volume stocks: ${e.toString()}');
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> searchStocks(
       String token, String keyword) async {
     final url = Uri.parse('$apiServerUrl/stock-search?keyword=$keyword');
@@ -54,8 +78,7 @@ class StockSearchgApi {
     }
   }
 
-  static Future<void> saveRecentKeyword(
-      String token, int memberId, String keyword) async {
+  static Future<void> saveRecentKeyword(String token, String keyword) async {
     final url = Uri.parse('$apiServerUrl/recent-stock-keyword');
 
     try {
@@ -65,7 +88,7 @@ class StockSearchgApi {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({"memberId": memberId, "keyword": keyword}),
+        body: jsonEncode({"keyword": keyword}),
       );
 
       if (response.statusCode != 200) {
@@ -73,6 +96,22 @@ class StockSearchgApi {
       }
     } catch (e) {
       throw Exception('Failed to save recent keyword: ${e.toString()}');
+    }
+  }
+
+  static Future<void> deleteRecentKeyword(
+      String accessToken, int keywordId) async {
+    final url = Uri.parse('$apiServerUrl/recent-stock-keyword/$keywordId');
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete recent keyword');
     }
   }
 }
