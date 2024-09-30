@@ -1,4 +1,4 @@
-package com.ssafy.newstock.stock.batch;
+package com.ssafy.newstock.stock.batch.day;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +13,7 @@ import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor
-public class StockItemProcessor implements ItemProcessor<Stock, StockInfo> {
+public class DayStockItemProcessor implements ItemProcessor<Stock, StockInfo> {
 
     private final FetchStockService fetchStockService;
     private final ObjectMapper objectMapper;

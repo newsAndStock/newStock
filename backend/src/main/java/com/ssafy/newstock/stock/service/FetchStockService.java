@@ -50,6 +50,29 @@ public class FetchStockService {
         }
     }
 
+    public String fetchMinuteStockData(String stockCode, String time) {
+        String url = "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice";
+
+        Map<String, String> queryParams = Map.of(
+                "fid_etc_cls_code", "",
+                "fid_cond_mrkt_div_code", "J",
+                "fid_input_iscd", stockCode,
+                "fid_input_hour_1", time,
+                "fid_pw_data_incu_yn", "N"
+        );
+
+        Map<String, String> headers = Map.of(
+                "tr_id", "FHKST03010200"
+        );
+
+        try {
+            log.info("30분 단위 주식 데이터 가져오기: {}, time: {}", stockCode, time);
+            return webClientUtil.sendRequest(url, queryParams, headers);
+        } catch (Exception ex) {
+            throw new RuntimeException("주식 데이터 가져오기 실패: " + stockCode, ex);
+        }
+    }
+
     public void processStockData() {
         List<Stock> stocks = stockRepository.findAll();
         LocalDate currentDate = LocalDate.now();

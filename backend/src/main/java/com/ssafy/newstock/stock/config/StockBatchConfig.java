@@ -1,8 +1,12 @@
 package com.ssafy.newstock.stock.config;
 
-import com.ssafy.newstock.stock.batch.StockItemProcessor;
-import com.ssafy.newstock.stock.batch.StockItemReader;
-import com.ssafy.newstock.stock.batch.StockItemWriter;
+import com.ssafy.newstock.stock.batch.day.DayStockItemProcessor;
+import com.ssafy.newstock.stock.batch.day.DayStockItemReader;
+import com.ssafy.newstock.stock.batch.day.DayStockItemWriter;
+import com.ssafy.newstock.stock.batch.minute.MinuteStockItemProcessor;
+import com.ssafy.newstock.stock.batch.minute.MinuteStockItemReader;
+import com.ssafy.newstock.stock.batch.minute.MinuteStockItemWriter;
+import com.ssafy.newstock.stock.domain.MinuteStockInfo;
 import com.ssafy.newstock.stock.domain.Stock;
 import com.ssafy.newstock.stock.domain.StockInfo;
 import lombok.RequiredArgsConstructor;
@@ -24,25 +28,46 @@ public class StockBatchConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final StockItemReader stockItemReader;
-    private final StockItemProcessor stockItemProcessor;
-    private final StockItemWriter stockItemWriter;
+    private final DayStockItemReader dayStockItemReader;
+    private final DayStockItemProcessor dayStockItemProcessor;
+    private final DayStockItemWriter dayStockItemWriter;
+    private final MinuteStockItemReader minuteStockItemReader;
+    private final MinuteStockItemProcessor minuteStockItemProcessor;
+    private final MinuteStockItemWriter minuteStockItemWriter;
 
     @Bean
-    public Job stockDataJob(Step stockDataStep) {
-        return new JobBuilder("stockDataJob", jobRepository)
+    public Job dayStockDataJob(Step dayStockDataStep) {
+        return new JobBuilder("dayStockDataJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
-                .start(stockDataStep)
+                .start(dayStockDataStep)
                 .build();
     }
 
     @Bean
-    public Step stockDataStep() {
-        return new StepBuilder("stockDataStep", jobRepository)
+    public Step dayStockDataStep() {
+        return new StepBuilder("dayStockDataStep", jobRepository)
                 .<Stock, StockInfo>chunk(100, transactionManager)
-                .reader(stockItemReader)
-                .processor(stockItemProcessor)
-                .writer(stockItemWriter)
+                .reader(dayStockItemReader)
+                .processor(dayStockItemProcessor)
+                .writer(dayStockItemWriter)
+                .build();
+    }
+
+    @Bean
+    public Job minuteStockDataJob(Step minuteStockDataStep) {
+        return new JobBuilder("minuteStockDataJob", jobRepository)
+                .incrementer(new RunIdIncrementer())
+                .start(minuteStockDataStep)
+                .build();
+    }
+
+    @Bean
+    public Step minuteStockDataStep() {
+        return new StepBuilder("minuteStockDataStep", jobRepository)
+                .<Stock, MinuteStockInfo>chunk(100, transactionManager)
+                .reader(minuteStockItemReader)
+                .processor(minuteStockItemProcessor)
+                .writer(minuteStockItemWriter)
                 .build();
     }
 }

@@ -1,4 +1,4 @@
-package com.ssafy.newstock.stock.batch;
+package com.ssafy.newstock.stock.batch.day;
 
 import com.ssafy.newstock.stock.domain.StockInfo;
 import com.ssafy.newstock.stock.repository.StockInfoBulkInsertRepository;
@@ -11,7 +11,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class StockItemWriter implements ItemWriter<StockInfo> {
+public class DayStockItemWriter implements ItemWriter<StockInfo> {
 
     private final StockInfoBulkInsertRepository stockInfoBulkInsertRepository;
 
