@@ -16,6 +16,8 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,8 +40,16 @@ public class StockMarketIndexService {
     @Scheduled(cron = "0 0 9 * * ?")
     public void storeNASDAQAndExchangeRate() {
         // API 호출
-        String TWELVEDATA_API_URL = "https://api.twelvedata.com/time_series?symbol=NDX,USD/KRW&interval=1day&apikey=" + TWELVEDATA_API_KEY + "&outputsize=2";
+        String TWELVEDATA_API_URL = "https://api.twelvedata.com/time_series?symbol=SPX,NDX,USD/KRW&interval=1day&apikey=" + TWELVEDATA_API_KEY + "&outputsize=2";
         ResponseEntity<String> response = restTemplate.getForEntity(TWELVEDATA_API_URL, String.class);
+
+        // 현재 날짜 가져오기
+        LocalDate currentDate = LocalDate.now();
+
+        // 날짜 형식을 yyyyMMdd로 포맷팅
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        String formattedDate = currentDate.format(formatter);
+
         try {
             // JSON 파싱
             JsonNode root = objectMapper.readTree(response.getBody());
@@ -61,11 +71,12 @@ public class StockMarketIndexService {
             nasdaqData.put("ndxCloseToday", formattedNdxCloseToday);
             nasdaqData.put("ndxChange", formattedNdxChange);
             nasdaqData.put("ndxChangePercent", formattedNdxChangePercent);
+            nasdaqData.put("date", formattedDate);
 
             // Redis 저장
             String nasdaqKey = "nasdaqData";
             redisTemplate.opsForValue().set(nasdaqKey, objectMapper.writeValueAsString(nasdaqData));
-            System.out.println("NASDAQ data saved to Redis: " + nasdaqKey);
+            log.info("NASDAQ data saved to Redis: " + nasdaqKey);
 
             // USD/KRW 데이터 가져오기
             JsonNode usdkrwValues = root.path("USD/KRW").path("values");
@@ -85,15 +96,42 @@ public class StockMarketIndexService {
             usdkrwData.put("usdkrwCloseToday", formattedUsdkrwCloseToday);
             usdkrwData.put("usdkrwChange", formattedUsdkrwChange);
             usdkrwData.put("usdkrwChangePercent", formattedUsdkrwChangePercent);
+            usdkrwData.put("date", formattedDate);
 
             // Redis에 저장
             String usdkrwKey = "usdkrwData";
             redisTemplate.opsForValue().set(usdkrwKey, objectMapper.writeValueAsString(usdkrwData));
-            System.out.println("USD/KRW data saved to Redis: " + usdkrwKey);
+            log.info("USD/KRW data saved to Redis: " + usdkrwKey);
+
+
+            // SPX 데이터 가져오기
+            JsonNode SpxValues = root.path("SPX").path("values");
+            String SpxCloseToday = SpxValues.get(0).path("close").asText(); // 오늘 종가
+            String SpxCloseYesterday = SpxValues.get(1).path("close").asText(); // 어제 종가
+            double SpxChange = Double.parseDouble(SpxCloseToday) - Double.parseDouble(SpxCloseYesterday);
+            double SpxChangePercent = (SpxChange / Double.parseDouble(SpxCloseYesterday)) * 100;
+
+            // 소수점 2자리에서 반올림 처리
+            BigDecimal formattedSpxCloseToday = new BigDecimal(SpxCloseToday).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal formattedSpxChange = new BigDecimal(SpxChange).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal formattedSpxChangePercent = new BigDecimal(SpxChangePercent).setScale(2, RoundingMode.HALF_UP);
+
+
+            Map<String, Object> spxData = new HashMap<>();
+            spxData.put("name", "SPX");
+            spxData.put("spxCloseToday", formattedSpxCloseToday);
+            spxData.put("spxChange", formattedSpxChange);
+            spxData.put("spxChangePercent", formattedSpxChangePercent);
+            spxData.put("date", formattedDate);
+
+            // Redis에 저장
+            String spxKey = "spxData";
+            redisTemplate.opsForValue().set(spxKey, objectMapper.writeValueAsString(spxData));
+            log.info("SPX data saved to Redis: " + spxKey);
 
 
         } catch (Exception e) {
-            log.error("나스닥, 환율 데이터 저장 실패");
+            log.error("나스닥, 환율, SPX 데이터 저장 실패");
         }
     }
 
@@ -168,16 +206,19 @@ public class StockMarketIndexService {
             String usdkrwDataJson = (String) redisTemplate.opsForValue().get("usdkrwData");
             String kosdaqDataJson = (String) redisTemplate.opsForValue().get("kosdaqData");
             String kospiDataJson = (String) redisTemplate.opsForValue().get("kospiData");
+            String spxDataJson = (String) redisTemplate.opsForValue().get("spxData");
 
             Map<String, String> nasdaqData = objectMapper.readValue(nasdaqDataJson, new TypeReference<Map<String, String>>() {});
             Map<String, String> usdkrwData = objectMapper.readValue(usdkrwDataJson, new TypeReference<Map<String, String>>() {});
             Map<String, String> kosdaqData = objectMapper.readValue(kosdaqDataJson, new TypeReference<Map<String, String>>() {});
             Map<String, String> kospiData = objectMapper.readValue(kospiDataJson, new TypeReference<Map<String, String>>() {});
+            Map<String, String> spxData = objectMapper.readValue(spxDataJson, new TypeReference<Map<String, String>>() {});
 
             result.add(nasdaqData);
             result.add(usdkrwData);
             result.add(kosdaqData);
             result.add(kospiData);
+            result.add(spxData);
         } catch (Exception e) {
             throw new RuntimeException("주가 정보 가져오는데 실패하였습니다");
         }
