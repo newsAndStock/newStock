@@ -24,5 +24,4 @@ public class Keyword {
 
     @Column(name = "count", nullable = false)
     private Long count;
-
 }
