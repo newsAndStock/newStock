@@ -35,5 +35,4 @@ public class News {
 
     @Column(name = "image_url")
     private String imageUrl;
-
 }
