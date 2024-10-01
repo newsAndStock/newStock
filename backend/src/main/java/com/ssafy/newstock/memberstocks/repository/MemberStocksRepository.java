@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -15,5 +16,9 @@ public interface MemberStocksRepository extends JpaRepository<MemberStock,Long> 
     Optional<Long> getHoldingsByMember_IdAndStockCode(@Param("memberId") Long memberId, @Param("stockCode") String stockCode);
 
     Optional<MemberStock> findByMember_IdAndStockCode(Long member_id, String stockCode);
-    public Optional<MemberStock> getMemberStockByMember_IdAndStockCode(Long memberId,String stockCode);
+
+    Optional<MemberStock> getMemberStockByMember_IdAndStockCode(Long memberId,String stockCode);
+
+    List<MemberStock> findByMember_Id(Long member_id);
+
 }
