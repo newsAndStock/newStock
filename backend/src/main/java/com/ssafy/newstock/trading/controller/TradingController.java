@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
+import com.ssafy.newstock.notification.service.NotificationService;
 import com.ssafy.newstock.trading.controller.request.TradeRequest;
 import com.ssafy.newstock.trading.controller.response.TradeResponse;
 import com.ssafy.newstock.trading.controller.response.TradingResponse;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,9 @@ public class TradingController {
     private final TradingService tradingService;
     private final MemberService memberService;
     private final TradingHandleService tradingHandleService;
+
+    @Autowired
+    private final NotificationService notificationService;
 
 
     @PostMapping("/sell-market")
@@ -112,6 +117,7 @@ public class TradingController {
         tradingHandleService.removeTrading(tradingId,memberId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
 
 
 

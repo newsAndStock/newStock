@@ -92,6 +92,7 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("회원(memberId: " + memberId + ")이 존재하지 않습니다."));
     }
 
+    @Transactional
     public void updateDeposit(Long memberId, Long change, OrderType orderType){
         Member member = findById(memberId);
         if(orderType.equals(OrderType.SELL)){
