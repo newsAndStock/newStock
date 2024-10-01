@@ -1,20 +1,29 @@
 package com.ssafy.newstock.memberstocks.service;
 
+import com.ssafy.newstock.kis.service.KisService;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
+import com.ssafy.newstock.memberstocks.controller.response.AssetInfoResponse;
+import com.ssafy.newstock.memberstocks.controller.response.MemberStockResponse;
 import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
 import org.springframework.stereotype.Service;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class MemberStocksService {
 
     private final MemberStocksRepository memberStocksRepository;
     private final MemberService memberService;
+    private final KisService kisService;
 
-    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService){
+    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService,KisService kisService){
         this.memberStocksRepository=memberStocksRepository;
         this.memberService = memberService;
+        this.kisService=kisService;
     }
 
     public Long getHoldingsByMemberAndStockCode(Long memberId, String stockCode){
@@ -30,7 +39,7 @@ public class MemberStocksService {
 
         MemberStock memberStock=memberStocksRepository.getMemberStockByMember_IdAndStockCode(memberId,stockCode).get();
 
-        double out=memberStock.getAveragePrice()*quantity;
+        long out=memberStock.getAveragePrice()*quantity;
         memberStock.updateTotalPrice(memberStock.getTotalPrice()-out);
         memberStock.sell(quantity);
         memberStocksRepository.save(memberStock);
@@ -47,21 +56,60 @@ public class MemberStocksService {
                     .member(member)
                     .build();
         }
-        updateMemberStock(memberStock,quantity);
+        updateMemberStock(memberStock,quantity,price);
         memberStocksRepository.save(memberStock);
 
     }
 
-    private void updateMemberStock(MemberStock memberStock, long quantity){
-        double in=memberStock.getAveragePrice()*quantity;
+    private void updateMemberStock(MemberStock memberStock, long quantity,int price){
+        long in=price*quantity;
         memberStock.updateTotalPrice(memberStock.getTotalPrice()+in);
         memberStock.buy(quantity);
-        double totalPrice=memberStock.getTotalPrice();
+        long totalPrice=memberStock.getTotalPrice();
         long holdings=memberStock.getHoldings();
-        float averagePrice= (float) (totalPrice/holdings);
+        long averagePrice= totalPrice/holdings;
         memberStock.updateAveragePrice(averagePrice);
     }
 
+    public AssetInfoResponse getMemberAssetInfo(Long memberId){
+        Long deposit=memberService.findById(memberId).getDeposit();
+        Long totalPrice=0L;
+        long oldPrice=0L;
+        long newPrice=0L;
+        List<MemberStock> memberStocks=memberStocksRepository.findByMember_Id(memberId);
+        for(MemberStock memberStock:memberStocks){
+            String stockCode=memberStock.getStockCode();
+            int currentPrice=Integer.parseInt(kisService.getCurrentStockPrice(stockCode));
+            newPrice+=currentPrice*memberStock.getHoldings();
+            oldPrice+=memberStock.getAveragePrice()*memberStock.getHoldings();
+        }
+        long profitAndLoss=newPrice-oldPrice;
+        double ROI= (double)(newPrice-oldPrice)/oldPrice*100;
+        DecimalFormat df = new DecimalFormat("0.0");
+        String formattedROI = df.format(ROI);
+        totalPrice=deposit+newPrice;
+        return new AssetInfoResponse(totalPrice,deposit,profitAndLoss,formattedROI);
+    }
 
+    public List<MemberStockResponse> getMemberStocks(Long memberId){
+        List<MemberStock> memberStocks=memberStocksRepository.findByMember_Id(memberId);
+        List<MemberStockResponse> memberStockResponses=new ArrayList<>();
+        for(MemberStock memberStock:memberStocks){
+            Long currentPrice=Long.parseLong(kisService.getCurrentStockPrice(memberStock.getStockCode()));
+            MemberStockResponse memberStockResponse=MemberStockResponse.builder()
+                    .currentPrice(currentPrice)
+                    .userPrice(memberStock.getAveragePrice())
+                    .quantity(memberStock.getHoldings())
+                    .profitAndLoss(calculateProfitAndLoss(currentPrice,memberStock.getAveragePrice(),memberStock.getHoldings()))
+                    .build();
 
+            memberStockResponses.add(memberStockResponse);
+        }
+
+        return memberStockResponses;
+    }
+
+    private Long calculateProfitAndLoss(Long currentPrice, Long userPrice, Long quantity){
+        return (currentPrice-userPrice)*quantity;
+    }
 }

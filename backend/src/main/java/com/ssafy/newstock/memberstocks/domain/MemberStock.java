@@ -20,13 +20,13 @@ public class MemberStock {
     private String stockCode;
 
     @Column(name = "average_price", nullable = false)
-    private float averagePrice;
+    private long averagePrice;
 
     @Column(name = "holdings", nullable = false)
     private long holdings;
 
     @Column(name= "total_price", nullable = false)
-    private double totalPrice;
+    private long totalPrice;
 
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = false)
@@ -47,11 +47,11 @@ public class MemberStock {
         this.member=member;
     }
 
-    public void updateAveragePrice(float averagePrice){
+    public void updateAveragePrice(long averagePrice){
         this.averagePrice=averagePrice;
     }
 
-    public void updateTotalPrice(double totalPrice){
+    public void updateTotalPrice(long totalPrice){
         this.totalPrice=totalPrice;
     }
 
