@@ -7,6 +7,7 @@ import com.ssafy.newstock.kis.service.KisServiceSocket;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.memberstocks.service.MemberStocksService;
+import com.ssafy.newstock.notification.service.NotificationService;
 import com.ssafy.newstock.trading.controller.request.TradeRequest;
 import com.ssafy.newstock.trading.controller.response.TradeResponse;
 import com.ssafy.newstock.trading.domain.OrderType;
@@ -17,6 +18,7 @@ import com.ssafy.newstock.trading.repository.TradingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -35,8 +37,11 @@ public class TradingService {
     private final MemberStocksService memberStocksService;
     private final MemberService memberService;
     private final KisServiceSocket kisServiceSocket;
+    private final NotificationService notificationService;
+
 
     //시장가 거래는 거래 즉시 완료됨.
+    @Transactional
     public TradeResponse sellByMarket(Member member, TradeRequest sellRequest) {
 
         checkHoldings(member, sellRequest);
@@ -46,6 +51,8 @@ public class TradingService {
         memberStocksService.sellComplete(member.getId(),sellRequest.getStockCode(),sellRequest.getQuantity(),trading.getBid());
         memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.SELL);
         tradingRepository.save(trading);
+
+        notificationService.send(member.getId(),sellRequest.getStockCode(), (long) sellRequest.getQuantity(),OrderType.SELL,trading.getBid());
 
         return new TradeResponse(OrderType.SELL, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
     }
@@ -106,7 +113,7 @@ public class TradingService {
         memberStocksService.buyComplete(member.getId(),buyRequest.getStockCode(),buyRequest.getQuantity(),trading.getBid());
         memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.BUY);
         tradingRepository.save(trading);
-
+        notificationService.send(member.getId(),buyRequest.getStockCode(), (long) buyRequest.getQuantity(),OrderType.BUY,trading.getBid());
         return new TradeResponse(OrderType.BUY, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
     }
 
@@ -147,6 +154,7 @@ public class TradingService {
         return tradingRepository.findById(id).orElse(null);
     }
 
+    @Transactional
     public void save(Trading trading){
         tradingRepository.save(trading);
     }

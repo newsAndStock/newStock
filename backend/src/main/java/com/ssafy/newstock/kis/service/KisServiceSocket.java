@@ -4,6 +4,7 @@ import com.ssafy.newstock.kis.domain.SocketItem;
 import com.ssafy.newstock.kis.domain.TradeItem;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.memberstocks.service.MemberStocksService;
+import com.ssafy.newstock.notification.service.NotificationService;
 import com.ssafy.newstock.trading.domain.OrderType;
 import com.ssafy.newstock.trading.domain.TradeQueue;
 import com.ssafy.newstock.trading.domain.Trading;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient;
@@ -40,13 +42,15 @@ public class KisServiceSocket {
     private final TradingHandleService tradingHandleService;
     private WebSocketSession session;
     private TradeQueue tradeQueue=TradeQueue.getInstance();
+    private final NotificationService notificationService;
 
     @Lazy
-    public KisServiceSocket(MemberStocksService memberStocksService, MemberService memberService, TradingService tradingService, TradingHandleService tradingHandleService) {
+    public KisServiceSocket(MemberStocksService memberStocksService, MemberService memberService, TradingService tradingService, TradingHandleService tradingHandleService, NotificationService notificationService) {
         this.memberStocksService = memberStocksService;
         this.memberService = memberService;
         this.tradingService = tradingService;
         this.tradingHandleService = tradingHandleService;
+        this.notificationService = notificationService;
     }
 
     public void connectWebsocket(Runnable onConnected) {
@@ -168,6 +172,7 @@ public class KisServiceSocket {
         }
     }
 
+
     private void sellTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> sellItems){
         while(tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())){
             TradeItem removed=sellItems.poll();
@@ -216,6 +221,7 @@ public class KisServiceSocket {
         Trading trading=tradingService.findById(complete.getTrading().getId());
         trading.tradeComplete(LocalDateTime.now());
         tradingService.save(trading);
+        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.SELL,complete.getBid());
     }
 
     private void buyComplete(String stockCode, TradeItem complete){
@@ -224,6 +230,8 @@ public class KisServiceSocket {
         Trading trading=tradingService.findById(complete.getTrading().getId());
         trading.tradeComplete(LocalDateTime.now());
         tradingService.save(trading);
+        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.BUY,complete.getBid());
+
     }
 
     private String getType(String message){

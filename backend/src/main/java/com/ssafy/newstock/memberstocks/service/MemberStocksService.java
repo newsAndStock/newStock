@@ -9,6 +9,7 @@ import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
 import com.ssafy.newstock.stock.service.StockService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class MemberStocksService {
         return 0L;
     }
 
+    @Transactional
     public void sellComplete(Long memberId, String stockCode, long quantity, int price){
         if(memberStocksRepository.getMemberStockByMember_IdAndStockCode(memberId,stockCode).isEmpty())return;
 
@@ -48,6 +50,7 @@ public class MemberStocksService {
         memberStocksRepository.save(memberStock);
     }
 
+    @Transactional
     public void buyComplete(Long memberId, String stockCode, long quantity, int price){
         MemberStock memberStock;
         Member member=memberService.findById(memberId);
