@@ -36,6 +36,7 @@ public class StockService {
     }
 
     public String findNameByStockCode(String stockCode) {
+        System.out.println(stockCode);
         if(stockRepository.findByStockCode(stockCode).isEmpty()){
             throw new IllegalArgumentException("잘못된 주식 코드입니다.");
         }

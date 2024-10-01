@@ -7,6 +7,7 @@ import com.ssafy.newstock.memberstocks.controller.response.AssetInfoResponse;
 import com.ssafy.newstock.memberstocks.controller.response.MemberStockResponse;
 import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
+import com.ssafy.newstock.stock.service.StockService;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
@@ -19,11 +20,13 @@ public class MemberStocksService {
     private final MemberStocksRepository memberStocksRepository;
     private final MemberService memberService;
     private final KisService kisService;
+    private final StockService stockService;
 
-    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService,KisService kisService){
+    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService,KisService kisService, StockService stockService){
         this.memberStocksRepository=memberStocksRepository;
         this.memberService = memberService;
         this.kisService=kisService;
+        this.stockService=stockService;
     }
 
     public Long getHoldingsByMemberAndStockCode(Long memberId, String stockCode){
@@ -97,6 +100,7 @@ public class MemberStocksService {
         for(MemberStock memberStock:memberStocks){
             Long currentPrice=Long.parseLong(kisService.getCurrentStockPrice(memberStock.getStockCode()));
             MemberStockResponse memberStockResponse=MemberStockResponse.builder()
+                    .name(stockService.findNameByStockCode(memberStock.getStockCode()))
                     .currentPrice(currentPrice)
                     .userPrice(memberStock.getAveragePrice())
                     .quantity(memberStock.getHoldings())

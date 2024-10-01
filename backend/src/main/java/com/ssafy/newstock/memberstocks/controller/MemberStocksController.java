@@ -20,7 +20,7 @@ public class MemberStocksController {
         this.memberStocksService=memberStocksService;
     }
 
-    @GetMapping("member-summary")
+    @GetMapping("/member-summary")
     public ResponseEntity<AssetInfoResponse> memberStocksInfo(@LoginMember Long memberId){
 
         AssetInfoResponse assetInfoResponse=memberStocksService.getMemberAssetInfo(memberId);
@@ -28,7 +28,7 @@ public class MemberStocksController {
 
     }
 
-    @GetMapping("stocks-held")
+    @GetMapping("/stocks-held")
     public ResponseEntity<List<MemberStockResponse>> memberStocksHeld(@LoginMember Long memberId){
         List<MemberStockResponse> stocksHeld=memberStocksService.getMemberStocks(memberId);
         return ResponseEntity.status(HttpStatus.OK).body(stocksHeld);

@@ -8,13 +8,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MemberStockResponse {
 
+    private String name;
     private Long currentPrice;
     private Long userPrice;
     private Long quantity;
     private Long profitAndLoss;
 
     @Builder
-    public MemberStockResponse(Long currentPrice, Long userPrice, Long quantity, Long profitAndLoss){
+    public MemberStockResponse(String name,Long currentPrice, Long userPrice, Long quantity, Long profitAndLoss){
+        this.name=name;
         this.currentPrice=currentPrice;
         this.userPrice=userPrice;
         this.quantity=quantity;
