@@ -1,5 +1,6 @@
 package com.ssafy.newstock.news.service;
 
+import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.domain.News;
@@ -13,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +47,20 @@ public class NewsService {
         return newsList.stream()
                 .map(NewsResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    public NewsDetailResponse getNewsDetail(String newsId) {
+        Optional<News> optionalNews = newsRepository.findById(newsId);
+        News news = optionalNews.orElseThrow(() -> new RuntimeException("News not found"));
+
+        return new NewsDetailResponse(
+                news.getNewsId(),
+                news.getTitle(),
+                news.getPress(),
+                news.getDate(),
+                news.getContent(),
+                news.getImageUrl()
+        );
     }
 
     public String calculateTime(String date) {
