@@ -8,4 +8,5 @@ import java.util.List;
 public interface NewsRepository extends JpaRepository<News, String> {
     List<News> findTop10ByOrderByDateDesc();
     List<News> findTop5ByCategoryOrderByDateDesc(String category);
+    List<News> findAllByOrderByDateDesc();
 }

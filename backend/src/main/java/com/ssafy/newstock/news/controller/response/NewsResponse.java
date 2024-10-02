@@ -11,14 +11,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewsCategoryResponse {
+public class NewsResponse {
     private String newsId;
     private String title;
     private String date;
     private String press;
     private String imageUrl;
 
-    public static NewsCategoryResponse from(News news) {
-        return new NewsCategoryResponse(news.getNewsId(), news.getTitle(), news.getDate(), news.getPress(), news.getImageUrl());
+    public static NewsResponse from(News news) {
+        return new NewsResponse(news.getNewsId(), news.getTitle(), news.getDate(), news.getPress(), news.getImageUrl());
     }
 }
