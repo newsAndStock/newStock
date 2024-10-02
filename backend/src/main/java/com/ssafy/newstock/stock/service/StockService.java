@@ -1,6 +1,8 @@
 package com.ssafy.newstock.stock.service;
 
+import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
 import com.ssafy.newstock.stock.controller.response.MinuteStockInfoResponse;
+import com.ssafy.newstock.stock.controller.response.StockHoldingsResponse;
 import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
 import com.ssafy.newstock.stock.domain.StockInfo;
 import com.ssafy.newstock.stock.repository.MinuteStockInfoRepository;
@@ -18,8 +20,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StockService {
     private final StockInfoRepository stockInfoRepository;
-    private final StockRepository stockRepository;
     private final MinuteStockInfoRepository minuteStockInfoRepository;
+    private final StockRepository stockRepository;
+    private final MemberStocksRepository memberStocksRepository;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -46,11 +49,20 @@ public class StockService {
                 .collect(Collectors.toList());
     }
 
+    public StockHoldingsResponse getMemberStockHoldings(Long memberId, String stockCode) {
+        Long holdingsCount = getHoldingsByMemberAndStockCode(memberId, stockCode);
+        return new StockHoldingsResponse(findNameByStockCode(stockCode), holdingsCount);
+    }
+
     public String findNameByStockCode(String stockCode) {
-        System.out.println(stockCode);
-        if(stockRepository.findByStockCode(stockCode).isEmpty()){
-            throw new IllegalArgumentException("잘못된 주식 코드입니다.");
-        }
-        return stockRepository.findByStockCode(stockCode).get().getName();
+        return stockRepository.findByStockCode(stockCode)
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 주식 코드입니다."))
+                .getName();
+    }
+
+    public Long getHoldingsByMemberAndStockCode(Long memberId, String stockCode) {
+        return memberStocksRepository
+                .getHoldingsByMember_IdAndStockCode(memberId, stockCode)
+                .orElse(0L);
     }
 }
