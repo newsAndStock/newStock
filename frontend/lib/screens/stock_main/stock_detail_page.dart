@@ -614,9 +614,11 @@ class _StockDetailPageState extends State<StockDetailPage>
             MaterialPageRoute(
               builder: (context) => StockTradingPage(
                 stockName: widget.stockName,
+                stockCode: widget.stockCode,
                 currentPrice: 74500, // Replace with actual current price
                 priceChange: 300, // Replace with actual price change
                 priceChangePercentage: 0.4, // Replace with actual percentage
+                totalHoldingQuantity: 30, //일단 임의의 숫자를 넣어놨음 api연결해서 수정해야함
               ),
             ),
           );

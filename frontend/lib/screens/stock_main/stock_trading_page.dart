@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/trading_api/fixed_price_api.dart';
+import 'package:frontend/api/stock_api/trading_api/market_price_api.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 
 class StockTradingPage extends StatefulWidget {
   final String stockName;
+  final String stockCode;
   final double currentPrice;
   final double priceChange;
   final double priceChangePercentage;
+  final int totalHoldingQuantity;
 
   const StockTradingPage({
     Key? key,
     required this.stockName,
+    required this.stockCode,
     required this.currentPrice,
     required this.priceChange,
     required this.priceChangePercentage,
+    required this.totalHoldingQuantity,
   }) : super(key: key);
 
   @override
@@ -30,6 +38,8 @@ class _StockTradingPageState extends State<StockTradingPage>
   final double _availableBalance = 1000000;
   bool _showKeypad = false;
   bool _showPriceVolumeChart = true;
+  final FlutterSecureStorage storage = FlutterSecureStorage();
+  late int _totalHoldingQuantity;
 
   @override
   void initState() {
@@ -38,16 +48,25 @@ class _StockTradingPageState extends State<StockTradingPage>
     _limitPrice = widget.currentPrice;
     _limitPriceController.text = widget.currentPrice.toStringAsFixed(0);
     _quantityFocusNode.addListener(_onQuantityFocusChange);
+    _totalHoldingQuantity = widget.totalHoldingQuantity;
+    _tabController.addListener(_handleTabChange);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     _quantityController.dispose();
     _quantityFocusNode.removeListener(_onQuantityFocusChange);
     _quantityFocusNode.dispose();
     _limitPriceController.dispose();
     super.dispose();
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      setState(() {}); // 탭이 변경될 때 상태 업데이트
+    }
   }
 
   void _onQuantityFocusChange() {
@@ -117,7 +136,7 @@ class _StockTradingPageState extends State<StockTradingPage>
           ),
         ],
       ),
-      bottomNavigationBar: _buildBuyButton(),
+      bottomNavigationBar: _buildBottomButton(),
     );
   }
 
@@ -216,7 +235,7 @@ class _StockTradingPageState extends State<StockTradingPage>
                   ),
                   FractionallySizedBox(
                     widthFactor: 0.9,
-                    child: _buildAvailableBalance(),
+                    child: _buildAvailableStock(),
                   ),
                   SizedBox(
                     height: 15,
@@ -279,6 +298,36 @@ class _StockTradingPageState extends State<StockTradingPage>
                   style: TextStyle(color: Colors.white, fontSize: 13)),
               Text('1,000,000원',
                   style: TextStyle(color: Colors.white, fontSize: 23)),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvailableStock() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Color(0xFF3A2E6A),
+          borderRadius: BorderRadius.all(Radius.circular(40))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 15,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '띵슈롱님의 가용 주식',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+              Text(
+                '$_totalHoldingQuantity주',
+                style: TextStyle(color: Colors.white, fontSize: 23),
+              ),
             ],
           )
         ],
@@ -631,21 +680,322 @@ class _StockTradingPageState extends State<StockTradingPage>
     });
   }
 
-  Widget _buildBuyButton() {
-    return ElevatedButton(
-      child: Text(
-        '매수하기',
-        style: TextStyle(color: Colors.white),
-      ),
-      onPressed: () => _showConfirmationSheet(),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF3A2E6A),
-        minimumSize: Size(double.infinity, 50),
+  Widget _buildBottomButton() {
+    if (_tabController.index == 0) {
+      // 매수 탭
+      if (_isMarketOrder) {
+        return _buildMarketBuyButton();
+      } else {
+        return _buildLimitBuyButton();
+      }
+    } else {
+      // 매도 탭
+      if (_isMarketOrder) {
+        return _buildMarketSellButton();
+      } else {
+        return _buildLimitSellButton();
+      }
+    }
+  }
+
+  // 시장가 매수
+  Widget _buildMarketBuyButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () async {
+          int maxQuantity = (_availableBalance / widget.currentPrice).floor();
+          if (_quantity <= 0) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else if (maxQuantity <= _quantity) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else {
+            String? accessToken = await storage.read(key: 'accessToken');
+            if (accessToken == null) {
+              throw Exception('No access token found');
+            }
+            try {
+              String orderTime =
+                  DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+              Map<String, dynamic> result = await MarketPriceApi.buyMarket(
+                token: accessToken,
+                stockCode: widget.stockCode,
+                quantity: _quantity,
+                orderTime: orderTime,
+              );
+
+              // 결과 처리
+              _showConfirmationSheet(result, true, true);
+              // showDialog(
+              //   context: context,
+              //   builder: (context) => AlertDialog(
+              //     title: Text('주문 완료'),
+              //     content: Text('매수 주문이 성공적으로 처리되었습니다.\n'
+              //         '주문 금액: ${result['totalPrice']}원\n'
+              //         '주문 수량: ${result['quantity']}주'),
+              //     actions: [
+              //       TextButton(
+              //         child: Text('확인'),
+              //         onPressed: () => Navigator.of(context).pop(),
+              //       ),
+              //     ],
+              //   ),
+              // );
+            } catch (e) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('오류'),
+                  content: Text('주문 처리 중 오류가 발생했습니다: ${e.toString()}'),
+                  actions: [
+                    TextButton(
+                      child: Text('확인'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        },
+        child:
+            Text('매수하기', style: TextStyle(fontSize: 18, color: Colors.white)),
       ),
     );
   }
 
-  void _showConfirmationSheet() {
+  // 지정가 매수
+  Widget _buildLimitBuyButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () async {
+          int maxQuantity = (_availableBalance / widget.currentPrice).floor();
+          if (_quantity <= 0) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else if (maxQuantity <= _quantity) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else {
+            String? accessToken = await storage.read(key: 'accessToken');
+            if (accessToken == null) {
+              throw Exception('No access token found');
+            }
+            try {
+              String orderTime =
+                  DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+              Map<String, dynamic> result = await FixedPriceApi.buyMarket(
+                token: accessToken,
+                stockCode: widget.stockCode,
+                bid: _limitPrice,
+                quantity: _quantity,
+                orderTime: orderTime,
+              );
+
+              // 결과 처리
+              _showConfirmationSheet(result, true, false);
+              // showDialog(
+              //   context: context,
+              //   builder: (context) => AlertDialog(
+              //     title: Text('주문 완료'),
+              //     content: Text('매수 주문이 성공적으로 처리되었습니다.\n'
+              //         '주문 금액: ${result['totalPrice']}원\n'
+              //         '주문 수량: ${result['quantity']}주'),
+              //     actions: [
+              //       TextButton(
+              //         child: Text('확인'),
+              //         onPressed: () => Navigator.of(context).pop(),
+              //       ),
+              //     ],
+              //   ),
+              // );
+            } catch (e) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('오류'),
+                  content: Text('주문 처리 중 오류가 발생했습니다: ${e.toString()}'),
+                  actions: [
+                    TextButton(
+                      child: Text('확인'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        },
+        child:
+            Text('매수하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            child: Text('확인'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 시장가 매도
+  Widget _buildMarketSellButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () async {
+          if (_quantity <= 0) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else if (_quantity > _totalHoldingQuantity) {
+            _showErrorDialog('보유 수량 초과', '보유한 주식 수량보다 많이 팔 수 없습니다.');
+          } else {
+            String? accessToken = await storage.read(key: 'accessToken');
+            if (accessToken == null) {
+              throw Exception('No access token found');
+            }
+            try {
+              String orderTime =
+                  DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+              Map<String, dynamic> result = await MarketPriceApi.sellMarket(
+                token: accessToken,
+                stockCode: widget.stockCode,
+                quantity: _quantity,
+                orderTime: orderTime,
+              );
+
+              // 결과 처리
+              _showConfirmationSheet(result, false, true);
+              // showDialog(
+              //   context: context,
+              //   builder: (context) => AlertDialog(
+              //     title: Text('주문 완료'),
+              //     content: Text('매도 주문이 성공적으로 처리되었습니다.\n'
+              //         '주문 금액: ${result['totalPrice']}원\n'
+              //         '주문 수량: ${result['quantity']}주'),
+              //     actions: [
+              //       TextButton(
+              //         child: Text('확인'),
+              //         onPressed: () => Navigator.of(context).pop(),
+              //       ),
+              //     ],
+              //   ),
+              // );
+            } catch (e) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('오류'),
+                  content: Text('주문 처리 중 오류가 발생했습니다: ${e.toString()}'),
+                  actions: [
+                    TextButton(
+                      child: Text('확인'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        },
+        child:
+            Text('매도하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+      ),
+    );
+  }
+
+  // 지정가 매도
+  Widget _buildLimitSellButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () async {
+          if (_quantity <= 0) {
+            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          } else if (_quantity > _totalHoldingQuantity) {
+            _showErrorDialog('보유 수량 초과', '보유한 주식 수량보다 많이 팔 수 없습니다.');
+          } else {
+            String? accessToken = await storage.read(key: 'accessToken');
+            if (accessToken == null) {
+              throw Exception('No access token found');
+            }
+            try {
+              String orderTime =
+                  DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+              Map<String, dynamic> result = await FixedPriceApi.sellMarket(
+                token: accessToken,
+                stockCode: widget.stockCode,
+                bid: _limitPrice,
+                quantity: _quantity,
+                orderTime: orderTime,
+              );
+
+              // 결과 처리
+              _showConfirmationSheet(result, false, false);
+              // showDialog(
+              //   context: context,
+              //   builder: (context) => AlertDialog(
+              //     title: Text('주문 완료'),
+              //     content: Text('매도 주문이 성공적으로 처리되었습니다.\n'
+              //         '주문 금액: ${result['totalPrice']}원\n'
+              //         '주문 수량: ${result['quantity']}주'),
+              //     actions: [
+              //       TextButton(
+              //         child: Text('확인'),
+              //         onPressed: () => Navigator.of(context).pop(),
+              //       ),
+              //     ],
+              //   ),
+              // );
+            } catch (e) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('오류'),
+                  content: Text('주문 처리 중 오류가 발생했습니다: ${e.toString()}'),
+                  actions: [
+                    TextButton(
+                      child: Text('확인'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        },
+        child:
+            Text('매도하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+      ),
+    );
+  }
+
+  void _showConfirmationSheet(
+      Map<String, dynamic> result, bool isBuy, bool isMarketOrder) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -662,73 +1012,61 @@ class _StockTradingPageState extends State<StockTradingPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '삼성전자',
+                widget.stockName,
                 style: TextStyle(color: Colors.white, fontSize: 15),
               ),
-              SizedBox(
-                height: 5,
-              ),
+              SizedBox(height: 5),
               Text(
-                '구매 1,000주',
+                '${isBuy ? "매수" : "매도"} ${result['quantity']}주',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 23,
                     fontWeight: FontWeight.bold),
               ),
+              Text(
+                isMarketOrder ? '시장가 주문' : '지정가 주문',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
               SizedBox(height: 16),
               FractionallySizedBox(
-                  widthFactor: 0.8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '주당 구매가',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      Text(
-                        '74,300원',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      )
-                    ],
-                  )),
+                widthFactor: 0.8,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '주당 ${isBuy ? "매수가" : "매도가"}',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                    Text(
+                      '${(result['totalPrice'] / result['quantity']).toStringAsFixed(0)}원',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    )
+                  ],
+                ),
+              ),
               FractionallySizedBox(
-                  widthFactor: 0.8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '수수료(0.015%)',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      Text(
-                        '11,205원',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      )
-                    ],
-                  )),
-              FractionallySizedBox(
-                  widthFactor: 0.8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '총 주문 금액',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                      Text(
-                        '74,311,205원',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      )
-                    ],
-                  )),
+                widthFactor: 0.8,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '총 주문 금액',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                    Text(
+                      '${result['totalPrice']}원',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    )
+                  ],
+                ),
+              ),
               SizedBox(height: 16),
               ElevatedButton(
                 child: Text(
-                  '매수하기',
+                  '확인',
                   style: TextStyle(color: Colors.black),
                 ),
                 onPressed: () {
-                  // Implement buy logic
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
