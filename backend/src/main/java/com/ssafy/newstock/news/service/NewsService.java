@@ -1,7 +1,7 @@
 package com.ssafy.newstock.news.service;
 
-import com.ssafy.newstock.news.controller.response.NewsCategoryResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
+import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.domain.News;
 import com.ssafy.newstock.news.repository.NewsRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,17 +27,24 @@ public class NewsService {
                 .collect(Collectors.toList());
     }
 
-    public List<NewsCategoryResponse> findTop5NewsByCategory(String category) {
+    public List<NewsResponse> findTop5NewsByCategory(String category) {
         List<News> newsList = newsRepository.findTop5ByCategoryOrderByDateDesc(category);
-        List<NewsCategoryResponse> responseList = new ArrayList<>();
+        List<NewsResponse> responseList = new ArrayList<>();
 
         for (News news : newsList) {
             String formattedDate = calculateTime(news.getDate());
-            NewsCategoryResponse response = NewsCategoryResponse.from(news);
+            NewsResponse response = NewsResponse.from(news);
             response.setDate(formattedDate);
             responseList.add(response);
         }
         return responseList;
+    }
+
+    public List<NewsResponse> newsList() {
+        List<News> newsList = newsRepository.findAllByOrderByDateDesc();
+        return newsList.stream()
+                .map(NewsResponse::from)
+                .collect(Collectors.toList());
     }
 
     public String calculateTime(String date) {

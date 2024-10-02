@@ -1,7 +1,7 @@
 package com.ssafy.newstock.news.controller;
 
-import com.ssafy.newstock.news.controller.response.NewsCategoryResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
+import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.service.NewsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +21,12 @@ public class NewsController {
     }
 
     @GetMapping("/news")
-    public List<NewsCategoryResponse> getNewsByCategory(@RequestParam String category) {
+    public List<NewsResponse> getNewsByCategory(@RequestParam String category) {
         return newsService.findTop5NewsByCategory(category);
+    }
+
+    @GetMapping("/news/list")
+    public List<NewsResponse> getNewsList() {
+        return newsService.newsList();
     }
 }
