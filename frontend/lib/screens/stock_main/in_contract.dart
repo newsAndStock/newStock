@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/trading_api/in_trading_api.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 
 enum PromiseType {
-  buyType,
-  sellType,
+  BUY,
+  SELL,
 }
 
 class InContract {
-  final String stockName;
-  final PromiseType promiseType;
-  final double promisePrice;
-  final double promiseQuantity;
+  final int id;
+  final String name;
+  final PromiseType orderType;
+  final double bid;
+  final double quantity;
 
   InContract({
-    required this.stockName,
-    required this.promiseType,
-    required this.promisePrice,
-    required this.promiseQuantity,
+    required this.id,
+    required this.name,
+    required this.orderType,
+    required this.bid,
+    required this.quantity,
   });
 
   factory InContract.fromJson(Map<String, dynamic> json) {
     return InContract(
-      stockName: json['stockName'],
-      promiseType: PromiseType.values.firstWhere(
-          (e) => e.toString() == 'PromiseType.${json['promiseType']}'),
-      promisePrice: json['promisePrice'].toDouble(),
-      promiseQuantity: json['promiseQuantity'].toDouble(),
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      orderType:
+          json['orderType'] == 'BUY' ? PromiseType.BUY : PromiseType.SELL,
+      bid: (json['bid'] ?? 0).toDouble(),
+      quantity: (json['quantity'] ?? 0).toDouble(),
     );
   }
 }
@@ -41,6 +46,7 @@ class _InContractListState extends State<InContractList>
   late TabController _tabController;
   List<InContract> _contracts = [];
   bool _isLoading = false;
+  final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -51,40 +57,31 @@ class _InContractListState extends State<InContractList>
 
   Future<void> _fetchContracts() async {
     setState(() => _isLoading = true);
-    // 실제 API 호출을 시뮬레이션. 실제 구현시 http 패키지 등을 사용하여 API를 호출해야 합니다.
-    await Future.delayed(Duration(seconds: 1));
-    final List<Map<String, dynamic>> apiResponse = [
-      {
-        'stockName': '삼성전자',
-        'promiseType': 'buyType',
-        'promisePrice': 70000,
-        'promiseQuantity': 10
-      },
-      {
-        'stockName': 'SK하이닉스',
-        'promiseType': 'sellType',
-        'promisePrice': 120000,
-        'promiseQuantity': 5
-      },
-      {
-        'stockName': '네이버',
-        'promiseType': 'buyType',
-        'promisePrice': 350000,
-        'promiseQuantity': 2
-      },
-      {
-        'stockName': '카카오',
-        'promiseType': 'sellType',
-        'promisePrice': 80000,
-        'promiseQuantity': 15
-      },
-    ];
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
 
-    setState(() {
-      _contracts =
-          apiResponse.map((json) => InContract.fromJson(json)).toList();
-      _isLoading = false;
-    });
+      // API 호출
+      List<dynamic> buyingStocks =
+          await InTradingApi.getInBuyingStocks(accessToken);
+      List<dynamic> sellingStocks =
+          await InTradingApi.getInSellingStocks(accessToken);
+
+      setState(() {
+        _contracts = [
+          ...buyingStocks.map((json) => InContract.fromJson(json)),
+          ...sellingStocks.map((json) => InContract.fromJson(json))
+        ];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load contracts: ${e.toString()}')),
+      );
+    }
   }
 
   @override
@@ -134,8 +131,8 @@ class _InContractListState extends State<InContractList>
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildContractList(PromiseType.buyType),
-                      _buildContractList(PromiseType.sellType),
+                      _buildContractList(PromiseType.BUY),
+                      _buildContractList(PromiseType.SELL),
                     ],
                   ),
           ),
@@ -144,9 +141,17 @@ class _InContractListState extends State<InContractList>
     );
   }
 
+  Future<void> deletingTrades(int id) async {
+    String? accessToken = await storage.read(key: 'accessToken');
+    if (accessToken == null) {
+      throw Exception('No access token found');
+    }
+    await InTradingApi.cancelTrading(accessToken, id);
+  }
+
   Widget _buildContractList(PromiseType type) {
     final filteredContracts =
-        _contracts.where((contract) => contract.promiseType == type).toList();
+        _contracts.where((contract) => contract.orderType == type).toList();
     return ListView.builder(
       itemCount: filteredContracts.length,
       itemBuilder: (context, index) {
@@ -175,13 +180,13 @@ class _InContractListState extends State<InContractList>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    contract.stockName,
+                    contract.name,
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '${contract.promiseType == PromiseType.buyType ? "매수" : "매도"} ${contract.promisePrice}원 x ${contract.promiseQuantity}주',
+                    '${contract.orderType == PromiseType.BUY ? "매수" : "매도"} ${contract.bid}원 x ${contract.quantity}주',
                     style: const TextStyle(fontSize: 14),
                   ),
                   SizedBox(height: 2),
@@ -196,7 +201,7 @@ class _InContractListState extends State<InContractList>
               icon: Icon(Icons.close, size: 20),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(),
-              onPressed: _showConfirmationSheet,
+              onPressed: () => _showConfirmationSheet(contract),
             ),
           ],
         ),
@@ -204,7 +209,7 @@ class _InContractListState extends State<InContractList>
     );
   }
 
-  void _showConfirmationSheet() {
+  void _showConfirmationSheet(InContract contract) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -247,9 +252,11 @@ class _InContractListState extends State<InContractList>
                   '취소하기',
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   // Implement buy logic
+                  await deletingTrades(contract.id);
                   Navigator.pop(context);
+                  _fetchContracts();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xff3A2E6A),
