@@ -18,7 +18,7 @@ public class MinuteStockItemReader implements ItemReader<Stock> {
 
     @Override
     public Stock read() {
-        if (stockList == null) {
+        if (index == 0) {
             stockList = stockRepository.findAll();
         }
 
@@ -26,6 +26,7 @@ public class MinuteStockItemReader implements ItemReader<Stock> {
             return stockList.get(index++);
         }
 
+        index = 0;
         return null;
     }
 }
