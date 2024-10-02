@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/news_api_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/news/news_all.dart';
 import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
 import 'package:frontend/screens/news/news_search.dart';
 import 'package:frontend/screens/notification_screen.dart';
-import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
 import 'package:frontend/models/news/news_model.dart';
@@ -19,37 +20,71 @@ class NewsMainScreen extends StatefulWidget {
 }
 
 class _NewsMainScreenState extends State<NewsMainScreen> {
+  final storage = FlutterSecureStorage();
   String selectedCategory = '금융'; // 기본 선택된 카테고리
-  late Future<List<News>> futureNewsList; // 뉴스 리스트 저장
   List<News> filteredNewsList = []; // 카테고리별 필터링된 뉴스 리스트
   List<News> recentNewsList = []; // 최근 뉴스 리스트
 
   @override
   void initState() {
     super.initState();
-    futureNewsList = NewsService().fetchNews(); // 뉴스 데이터 로드
-    _loadInitialNews(); // 뉴스 데이터를 초기화
+    _loadInitialNews();
+    _loadRecentNews();
   }
 
-  // 초기 데이터 로드
-  void _loadInitialNews() async {
-    final allNews = await NewsService().fetchNews();
-    setState(() {
-      // 최근 뉴스는 최신 뉴스에서 상위 4개만 가져옴
-      recentNewsList = allNews.take(4).toList();
-      // 기본 카테고리 뉴스 필터링
-      filteredNewsList =
-          allNews.where((news) => news.category == selectedCategory).toList();
-    });
+  // 초기 데이터 로드 (전체 뉴스)
+  Future<void> _loadInitialNews() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('No access token found. Please log in.');
+      }
+
+      final allNews = await NewsService()
+          .fetchNewsByCategory(accessToken, selectedCategory);
+      setState(() {
+        // 기본 카테고리 뉴스 필터링
+        filteredNewsList = allNews.take(5).toList(); // 기본 카테고리 뉴스에서 상위 5개만 가져옴
+      });
+    } catch (e) {
+      print('Failed to load initial news: $e');
+    }
+  }
+
+  // 최근 뉴스 데이터 로드
+  Future<void> _loadRecentNews() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('No access token found. Please log in.');
+      }
+
+      final recentNews = await NewsService().fetchRecentNews(accessToken);
+      setState(() {
+        recentNewsList = recentNews.toList();
+      });
+    } catch (e) {
+      print('Failed to load recent news: $e');
+    }
   }
 
   // 선택된 카테고리로 뉴스 필터링
-  void _filterNewsByCategory(String category) async {
-    final allNews = await NewsService().fetchNews();
-    setState(() {
-      filteredNewsList =
-          allNews.where((news) => news.category == category).toList();
-    });
+  Future<void> _filterNewsByCategory(String category) async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('No access token found. Please log in.');
+      }
+
+      final allNews =
+          await NewsService().fetchNewsByCategory(accessToken, category);
+      setState(() {
+        selectedCategory = category;
+        filteredNewsList = allNews.toList();
+      });
+    } catch (e) {
+      print('Failed to filter news by category: $e');
+    }
   }
 
   @override
@@ -75,9 +110,9 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     );
                   },
                   child: SizedBox(
-                    height: 20, // Adjust this size for the logo
+                    height: 20, // 로고 사이즈 조정
                     child: Image.asset(
-                      'assets/images/NEWstock.png', // Ensure this is the correct path to your image
+                      'assets/images/NEWstock.png',
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -93,11 +128,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     );
                   },
                   child: const SizedBox(
-                    height: 30, // Adjust the size for the notification icon
+                    height: 30,
                     child: Icon(
                       Icons.notifications_outlined,
-                      size: 30, // You can adjust the size of the icon
-                      color: Colors.black, // Change color if necessary
+                      size: 30,
+                      color: Colors.black,
                     ),
                   ),
                 ),
@@ -108,6 +143,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 검색 창
             GestureDetector(
               onTap: () => {},
               child: Padding(
@@ -131,7 +167,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             // 최근 뉴스와 전체보기 버튼을 한 줄에 배치
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -166,203 +202,178 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                 ],
               ),
             ),
-            FutureBuilder<List<News>>(
-              future: futureNewsList,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator()); // 데이터 로딩 중
-                } else if (snapshot.hasError) {
-                  return Center(
-                      child: Text('Error: ${snapshot.error}')); // 에러 발생 시
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('뉴스가 없습니다.'));
-                } else {
-                  return Column(
+            // 최근 뉴스 섹션
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              height: 200,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: recentNewsList.length,
+                itemBuilder: (context, index) {
+                  final news = recentNewsList[index];
+                  return Row(
                     children: [
-                      // 최근 뉴스 섹션
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 10),
-                        height: 200,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.none,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: recentNewsList.length,
-                          itemBuilder: (context, index) {
-                            final news = recentNewsList[index];
-                            return Row(
-                              children: [
-                                NewsCard(
-                                  imageUrl: news.imageUrl,
-                                  title: news.title,
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => NewsDetailScreen(
-                                          title: news.title,
-                                          dateTime: news.date,
-                                          content: news.content,
-                                          imageUrl: news.imageUrl,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 20),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: GestureDetector(
-                          onTap: () {
-                            // 스크랩 기사 클릭 시 스크랩 화면으로 이동
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const NewsMyScrapScreen(), // 스크랩 화면으로 이동
+                      NewsCard(
+                        imageUrl: news.imageUrl,
+                        title: news.title,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NewsDetailScreen(
+                                title: news.title,
+                                dateTime: news.date,
+                                content: news.content,
+                                imageUrl: news.imageUrl,
                               ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20, horizontal: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(25),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
                             ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '스크랩 기사 바로가기',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.black,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 20),
-                      // Categories section 가로 스크롤
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Row(
-                            children: [
-                              NewsCategory(
-                                categories: const [
-                                  '금융',
-                                  '증권',
-                                  '산업/재계',
-                                  '부동산',
-                                  '글로벌 경제',
-                                  '경제 일반'
-                                ],
-                                selectedCategory: selectedCategory,
-                                onCategorySelected: (category) {
-                                  setState(() {
-                                    selectedCategory = category;
-                                    _filterNewsByCategory(
-                                        category); // 카테고리 변경 시 필터링
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // 뉴스 리스트를 감싸는 박스 (그림자 포함)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filteredNewsList.length,
-                                itemBuilder: (context, index) {
-                                  final news = filteredNewsList[index];
-                                  return Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    NewsDetailScreen(
-                                                  title: news.title,
-                                                  dateTime: news.date,
-                                                  content: news.content,
-                                                  imageUrl: news.imageUrl,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          child: buildNewsListTile(news, index),
-                                        ),
-                                      ),
-                                      if (index != filteredNewsList.length - 1)
-                                        Divider(
-                                          color: Colors.grey.shade300,
-                                          thickness: 0.5,
-                                          indent: 20,
-                                          endIndent: 20,
-                                        ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
+                      const SizedBox(width: 20),
                     ],
                   );
-                }
-              },
+                },
+              ),
             ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GestureDetector(
+                onTap: () {
+                  // 스크랩 기사 클릭 시 스크랩 화면으로 이동
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NewsMyScrapScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '스크랩 기사 바로가기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.black,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // 카테고리 섹션
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Row(
+                  children: [
+                    NewsCategory(
+                      categories: const [
+                        '금융',
+                        '증권',
+                        '산업/재계',
+                        '부동산',
+                        '글로벌경제',
+                        '경제일반'
+                      ],
+                      selectedCategory: selectedCategory,
+                      onCategorySelected: (category) {
+                        _filterNewsByCategory(category); // 카테고리 변경 시 필터링
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // 카테고리별 뉴스 표시
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredNewsList.length,
+                      itemBuilder: (context, index) {
+                        final news = filteredNewsList[index];
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => NewsDetailScreen(
+                                        title: news.title,
+                                        dateTime: news.date,
+                                        content: news.content,
+                                        imageUrl: news.imageUrl,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: buildNewsListTile(news, index),
+                              ),
+                            ),
+                            if (index != filteredNewsList.length - 1)
+                              Divider(
+                                color: Colors.grey.shade300,
+                                thickness: 0.5,
+                                indent: 20,
+                                endIndent: 20,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
           ],
         ),
       ),
@@ -415,7 +426,10 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 image: DecorationImage(
-                  image: NetworkImage(news.imageUrl),
+                  image: news.imageUrl.isNotEmpty
+                      ? NetworkImage(news.imageUrl)
+                      : AssetImage('assets/images/default-image.png')
+                          as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),

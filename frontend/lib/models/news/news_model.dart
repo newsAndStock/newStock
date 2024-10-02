@@ -1,5 +1,3 @@
-// lib/models/news/news_model.dart
-
 class News {
   final String title;
   final String date;
@@ -20,12 +18,12 @@ class News {
   // JSON 데이터를 모델 객체로 변환하는 팩토리 메서드
   factory News.fromJson(Map<String, dynamic> json) {
     return News(
-      title: json['title'],
-      date: json['date'],
-      content: json['content'],
-      press: json['press'],
-      imageUrl: json['image_url'],
-      category: json['category'], // category 필드 추가
+      title: json['title'] ?? 'No title available',
+      date: json['date'] ?? 'Unknown date',
+      content: json['content'] ?? 'No content available',
+      press: json['press'] ?? 'Unknown press',
+      imageUrl: json['imageUrl'] ?? '',
+      category: json['category'] ?? 'General',
     );
   }
 
@@ -37,7 +35,7 @@ class News {
       'content': content,
       'press': press,
       'image_url': imageUrl,
-      'category': category, // category 필드 추가
+      'category': category,
     };
   }
 }
