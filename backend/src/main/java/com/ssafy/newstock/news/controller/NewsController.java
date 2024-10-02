@@ -1,5 +1,6 @@
 package com.ssafy.newstock.news.controller;
 
+import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.service.NewsService;
@@ -29,4 +30,10 @@ public class NewsController {
     public List<NewsResponse> getNewsList() {
         return newsService.newsList();
     }
+
+    @GetMapping("/news/detail")
+    public NewsDetailResponse getNewsDetail(@RequestParam String newsId) {
+        return newsService.getNewsDetail(newsId);
+    }
 }
+
