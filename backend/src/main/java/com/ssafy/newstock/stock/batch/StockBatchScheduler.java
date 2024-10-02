@@ -1,6 +1,7 @@
 package com.ssafy.newstock.stock.batch;
 
 import com.ssafy.newstock.common.util.BatchNotificationSender;
+import com.ssafy.newstock.stock.repository.MinuteStockInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -10,6 +11,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 @Configuration
@@ -20,6 +23,7 @@ public class StockBatchScheduler {
     private final Job dayStockDataJob;
     private final Job minuteStockDataJob;
     private final BatchNotificationSender batchNotificationSender;
+    private final MinuteStockInfoRepository minuteStockInfoRepository;
 
     private final Set<LocalDate> holidays = Set.of(
             LocalDate.of(2024, 10, 1),
@@ -33,7 +37,6 @@ public class StockBatchScheduler {
     }
 
     @Scheduled(cron = "0 30,0 9-15 * * MON-FRI", zone = "Asia/Seoul")
-//    @Scheduled(cron = "0 38 15 * * *", zone = "Asia/Seoul")
     public void runMinuteStockDataJob() {
         runBatchJob("분 단위 주식 데이터 작업", minuteStockDataJob);
     }
@@ -42,7 +45,8 @@ public class StockBatchScheduler {
         LocalDate today = LocalDate.now();
         if (holidays.contains(today)) return;
 
-        batchNotificationSender.sendNotificationToMattermost("배치 시작: " + jobDescription);
+        String startTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+        batchNotificationSender.sendNotificationToMattermost("배치 시작: " + jobDescription + " (시작 시간: " + startTime + ")");
 
         try {
             jobLauncher.run(
@@ -55,5 +59,10 @@ public class StockBatchScheduler {
         } catch (Exception e) {
             batchNotificationSender.sendNotificationToMattermost("배치 작업 실패: " + jobDescription + " - " + e.getMessage());
         }
+    }
+
+    @Scheduled(cron = "0 0 16 * * *", zone = "Asia/Seoul")
+    public void deleteMinuteStockInfo() {
+        minuteStockInfoRepository.deleteAll();
     }
 }

@@ -1,5 +1,6 @@
 package com.ssafy.newstock.stock.controller;
 
+import com.ssafy.newstock.stock.controller.response.MinuteStockInfoResponse;
 import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
 import com.ssafy.newstock.stock.service.FetchStockService;
 import com.ssafy.newstock.stock.service.StockService;
@@ -25,5 +26,10 @@ public class StockController {
     @GetMapping("/stocks")
     public List<StockInfoResponse> getStockInfo(@RequestParam String stockCode, @RequestParam String period) {
         return stockService.getStockInfo(stockCode, period);
+    }
+
+    @GetMapping("/stocks/daily")
+    public List<MinuteStockInfoResponse> getDailyStockInfo(@RequestParam String stockCode) {
+        return stockService.getDailyStockInfo(stockCode);
     }
 }
