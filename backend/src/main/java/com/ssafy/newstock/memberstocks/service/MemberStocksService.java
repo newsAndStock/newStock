@@ -95,7 +95,13 @@ public class MemberStocksService {
             oldPrice+=memberStock.getAveragePrice()*memberStock.getHoldings();
         }
         long profitAndLoss=newPrice-oldPrice;
-        double ROI= (double)(newPrice-oldPrice)/oldPrice*100;
+        double ROI;
+        if(oldPrice==0){
+            ROI=0;
+        }else{
+            ROI= (double)(newPrice-oldPrice)/oldPrice*100;
+        }
+
         DecimalFormat df = new DecimalFormat("0.0");
         String formattedROI = df.format(ROI);
         totalPrice=deposit+newPrice;
