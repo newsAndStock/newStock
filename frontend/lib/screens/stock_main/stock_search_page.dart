@@ -24,6 +24,7 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _fetchTopVolumeStocks();
+    _fetchRecentSearches();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -54,6 +55,19 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         _recentSearches = keywords;
       });
+    } catch (e) {
+      print('Error fetching recent searches: $e');
+    }
+  }
+
+  Future<void> _savesearch(keyword) async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      await StockSearchgApi.saveRecentKeyword(accessToken, keyword);
+      await _fetchRecentSearches();
     } catch (e) {
       print('Error fetching recent searches: $e');
     }
@@ -103,12 +117,10 @@ class _SearchPageState extends State<SearchPage> {
 
     try {
       String? accessToken = await storage.read(key: 'accessToken');
-      int memberId = 11; //일단 kimsw0516@naver.com memberId 값으로 저장
-
       if (accessToken == null) {
         throw Exception('No access token found');
       }
-      final stocks = await StockSearchgApi.searchStocks(keyword, accessToken);
+      final stocks = await StockSearchgApi.searchStocks(accessToken, keyword);
       setState(() {
         _searchResults = stocks;
         _isLoadingSearch = false;
@@ -155,61 +167,59 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.all(8.0),
             child: SearchBar(
               controller: _searchController,
-              onSearch: (keyword) {
-                if (keyword.isNotEmpty) {
-                  _navigateToStockDetail(_searchResults.first['stockName'],
+              onSearch: (keyword) async {
+                if (_searchResults.isNotEmpty) {
+                  await _savesearch(_searchResults.first['name']);
+                  _navigateToStockDetail(_searchResults.first['name'],
                       _searchResults.first['stockCode']);
                 }
               },
             ),
           ),
-          if (_searchResults.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: _searchResults.length,
-                itemBuilder: (context, index) {
-                  final stock = _searchResults[index];
-                  return ListTile(
-                    title: Text(stock['stockName']),
-                    subtitle: Text(stock['stockCode']),
-                    onTap: () {
-                      _searchController.text = stock['stockName'];
-                      _navigateToStockDetail(
-                          stock['stockName'], stock['stockCode']);
+          Expanded(
+            child: _searchResults.isNotEmpty
+                ? ListView.builder(
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      final stock = _searchResults[index];
+                      return ListTile(
+                        title: Text(stock['name']),
+                        subtitle: Text(stock['stockCode']),
+                        onTap: () async {
+                          await _savesearch(stock['name']);
+                          _navigateToStockDetail(
+                              stock['name'], stock['stockCode']);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
-            )
-          else
-            Expanded(
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
-                  children: [
-                    TabBar(
-                      tabs: [
-                        Tab(
-                            child: Text('거래많은 주식',
-                                style: TextStyle(fontSize: 16))),
-                        Tab(
-                            child:
-                                Text('최근 검색어', style: TextStyle(fontSize: 16))),
+                  )
+                : DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        TabBar(
+                          tabs: [
+                            Tab(
+                                child: Text('거래많은 주식',
+                                    style: TextStyle(fontSize: 16))),
+                            Tab(
+                                child: Text('최근 검색어',
+                                    style: TextStyle(fontSize: 16))),
+                          ],
+                          labelColor: Color(0xff3A2E6A),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildTrendingStocks(),
+                              _buildRecentSearches(),
+                            ],
+                          ),
+                        ),
                       ],
-                      labelColor: Color(0xff3A2E6A),
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildTrendingStocks(),
-                          _buildRecentSearches(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+          ),
         ],
       ),
     );
@@ -236,11 +246,13 @@ class _SearchPageState extends State<SearchPage> {
           child: FractionallySizedBox(
             widthFactor: 0.9,
             child: ListTile(
-              title: Text('${index + 1}. ${stock['stockName']}'),
-              subtitle: Text('${stock['stockCode']}'),
-              onTap: () => _navigateToStockDetail(
-                  stock['stockName'], stock['stockCode']),
-            ),
+                title: Text('${index + 1}. ${stock['stockName']}'),
+                subtitle: Text('${stock['stockCode']}'),
+                onTap: () async {
+                  await _savesearch(stock['stockName']);
+                  _navigateToStockDetail(
+                      stock['stockName'], stock['stockCode']);
+                }),
           ),
         ),
         Center(
@@ -275,14 +287,13 @@ class _SearchPageState extends State<SearchPage> {
               child: FractionallySizedBox(
                 widthFactor: 0.9,
                 child: ListTile(
-                  title: Text(_recentSearches[index]['stockName']),
+                  title: Text(_recentSearches[index]['keyword']),
                   trailing: IconButton(
                     icon: Icon(Icons.close, size: 15, color: Color(0xFFB4B4B4)),
                     onPressed: () =>
                         _deleteRecentKeyword(_recentSearches[index]['id']),
                   ),
-                  onTap: () =>
-                      _searchStocks(_recentSearches[index]['stockName']),
+                  onTap: () => _searchStocks(_recentSearches[index]['keyword']),
                 ),
               ),
             ),

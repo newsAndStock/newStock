@@ -78,6 +78,8 @@ class StockSearchgApi {
     }
   }
 
+  // 검색어 저장
+
   static Future<void> saveRecentKeyword(String token, String keyword) async {
     final url = Uri.parse('$apiServerUrl/recent-stock-keyword');
 
@@ -88,16 +90,43 @@ class StockSearchgApi {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({"keyword": keyword}),
+        body: jsonEncode({
+          'memberId': 11,
+          'keyword': keyword,
+        }),
       );
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        // 성공적으로 저장됨
+        print('Recent keyword saved successfully');
+      } else {
         throw Exception('Failed to save recent keyword');
       }
     } catch (e) {
       throw Exception('Failed to save recent keyword: ${e.toString()}');
     }
   }
+
+  // static Future<void> saveRecentKeyword(String token, String keyword) async {
+  //   final url = Uri.parse('$apiServerUrl/recent-stock-keyword');
+
+  //   try {
+  //     final response = await http.post(
+  //       url,
+  //       headers: {
+  //         'Authorization': 'Bearer $token',
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: jsonEncode({"keyword": keyword}),
+  //     );
+
+  //     if (response.statusCode != 200) {
+  //       throw Exception('Failed to save recent keyword');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Failed to save recent keyword: ${e.toString()}');
+  //   }
+  // }
 
   static Future<void> deleteRecentKeyword(
       String accessToken, int keywordId) async {
