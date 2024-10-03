@@ -3,8 +3,10 @@ package com.ssafy.newstock.news.service;
 import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
+import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.news.domain.News;
 import com.ssafy.newstock.news.repository.NewsRepository;
+import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NewsService {
     private final NewsRepository newsRepository;
+    private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
 
     public List<NewsRecentResponse> getRecentNews() {
         List<News> newsList = newsRepository.findTop10ByOrderByDateDesc();
@@ -76,6 +79,10 @@ public class NewsService {
         else {
             return subDay + "일 전";
         }
+    }
+
+    public List<NewsSearchResponse> searchNews(String keyword) {
+        return newsRepositoryQuerydsl.searchNewsTitleOrKeyword(keyword);
     }
 }
 

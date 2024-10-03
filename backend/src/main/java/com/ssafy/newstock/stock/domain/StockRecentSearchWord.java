@@ -31,4 +31,8 @@ public class StockRecentSearchWord {
         this.date = date;
         this.member = member;
     }
+
+    public void updateSearchDate() {
+        this.date = new Date();
+    }
 }

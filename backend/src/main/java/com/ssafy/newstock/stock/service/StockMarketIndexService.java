@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -76,6 +77,7 @@ public class StockMarketIndexService {
             // Redis 저장
             String nasdaqKey = "nasdaqData";
             redisTemplate.opsForValue().set(nasdaqKey, objectMapper.writeValueAsString(nasdaqData));
+            redisTemplate.expire(nasdaqKey, Duration.ofSeconds(-1));
             log.info("NASDAQ data saved to Redis: " + nasdaqKey);
 
             // USD/KRW 데이터 가져오기
@@ -101,6 +103,7 @@ public class StockMarketIndexService {
             // Redis에 저장
             String usdkrwKey = "usdkrwData";
             redisTemplate.opsForValue().set(usdkrwKey, objectMapper.writeValueAsString(usdkrwData));
+            redisTemplate.expire(usdkrwKey, Duration.ofSeconds(-1));
             log.info("USD/KRW data saved to Redis: " + usdkrwKey);
 
 
@@ -127,6 +130,7 @@ public class StockMarketIndexService {
             // Redis에 저장
             String spxKey = "spxData";
             redisTemplate.opsForValue().set(spxKey, objectMapper.writeValueAsString(spxData));
+            redisTemplate.expire(spxKey, Duration.ofSeconds(-1));
             log.info("SPX data saved to Redis: " + spxKey);
 
 
@@ -173,6 +177,7 @@ public class StockMarketIndexService {
 
             String kosdaqKey = "kosdaqData";
             redisTemplate.opsForValue().set(kosdaqKey, objectMapper.writeValueAsString(kosdaqData));
+            redisTemplate.expire(kosdaqKey, Duration.ofSeconds(-1));
             System.out.println("KOSDAQ data saved to Redis: " + kosdaqKey);
             log.info("kosdaq 데이터 저장 성공");
 
@@ -190,6 +195,7 @@ public class StockMarketIndexService {
 
             String kospiKey = "kospiData";
             redisTemplate.opsForValue().set(kospiKey, objectMapper.writeValueAsString(kospiData));
+            redisTemplate.expire(kospiKey, Duration.ofSeconds(-1));
             System.out.println("KOSPI data saved to Redis: " + kospiKey);
             log.info("kospi 데이터 저장 성공");
 

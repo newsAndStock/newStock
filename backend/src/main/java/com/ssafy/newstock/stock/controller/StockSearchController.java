@@ -23,8 +23,8 @@ public class StockSearchController {
     private final StockMarketIndexService stockMarketIndexService;
 
     @PostMapping("/recent-stock-keyword")
-    public void addRecentKeyword(@RequestBody SearchKeywordRequest request){
-        stockSearchService.addSearchKeyword(request.getMemberId(), request.getKeyword());
+    public void addRecentKeyword(@RequestBody SearchKeywordRequest request, @LoginMember Long memberId) {
+        stockSearchService.addSearchKeyword(memberId, request.getKeyword());
     }
 
     @GetMapping("/recent-stock-keyword")

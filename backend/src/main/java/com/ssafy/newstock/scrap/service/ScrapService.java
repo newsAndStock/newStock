@@ -23,19 +23,25 @@ public class ScrapService {
 
     //첫 스크랩 저장
     @Transactional
-    public void saveScrap(String newsId, Long memberId) {
+    public Long saveScrap(String newsId, Long memberId) {
         News news = newsRepository.findById(newsId)
                 .orElseThrow(() -> new IllegalArgumentException("뉴스를 찾을 수 없습니다. ID: " + newsId));
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + memberId));
         Scrap scrap = new Scrap(news.getContent(), news, member);
         scrapRepository.save(scrap);
+        return scrap.getId();
     }
 
     // 사용자의 스크랩 목록 조회
     @Transactional(readOnly = true)
-    public List<ScrapResponse> getScrapsByMember(Long memberId) {
-        List<Scrap> scraps = scrapRepository.findByMemberId(memberId);
+    public List<ScrapResponse> getScrapsByMember(Long memberId, String sort) {
+        List<Scrap> scraps = null;
+        if(sort.equals("oldest")) {
+            scraps = scrapRepository.findByMemberIdOrderByScrapDate(memberId);
+        }else if(sort.equals("latest")) {
+            scraps = scrapRepository.findByMemberIdOrderByScrapDateDesc(memberId); //최신순
+        }
         return scraps.stream().map(scrap -> new ScrapResponse(
                 scrap.getId(),
                 scrap.getNews().getNewsId(),    // 지연 로딩된 News 엔티티 접근

@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ScrapRepository extends JpaRepository<Scrap, Long> {
-    List<Scrap> findByMemberId(Long memberId);
+    List<Scrap> findByMemberIdOrderByScrapDate(Long memberId);
+    List<Scrap> findByMemberIdOrderByScrapDateDesc(Long memberId);
 }

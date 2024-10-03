@@ -45,7 +45,7 @@ class _SigninScreenState extends State<SigninScreen> {
 
     final response = await MemberApiService().memberInfo();
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 200) {
       print('accessToken이 만료되었습니다. 토큰을 재발급합니다.');
       await MemberApiService().refreshToken(refreshToken);
 
@@ -78,11 +78,10 @@ class _SigninScreenState extends State<SigninScreen> {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
+        print(jsonDecode(utf8.decode(response.bodyBytes)));
 
         String accessToken = data['accessToken'];
         String refreshToken = data['refreshToken'];
-        print(accessToken);
-
         await storage.write(key: 'accessToken', value: accessToken);
         await storage.write(key: 'refreshToken', value: refreshToken);
         Navigator.of(context).pushReplacement(
@@ -97,8 +96,6 @@ class _SigninScreenState extends State<SigninScreen> {
     } catch (e, stackTrace) {
       print(stackTrace); // 스택 트레이스 출력
     } finally {
-      String? token = await storage.read(key: 'accessToken');
-      print("accessToken $token");
       setState(() {
         isLoading = false;
       });

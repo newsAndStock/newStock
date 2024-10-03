@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,8 +20,10 @@ public class ScrapController {
 
     @PostMapping("/scrap")
     public ResponseEntity<?> saveScrap(@RequestParam String newsId, @LoginMember Long memberId) {
-        scrapService.saveScrap(newsId, memberId);
-        return ResponseEntity.ok("저장 성공");
+        Long id = scrapService.saveScrap(newsId, memberId);
+        Map<String, Long> result = new HashMap<>();
+        result.put("scrapId", id);
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/scrap")
@@ -30,8 +34,8 @@ public class ScrapController {
 
     // 특정 회원의 스크랩 목록 조회
     @GetMapping("/scrap-list")
-    public ResponseEntity<List<?>> getScrapsByMember(@LoginMember Long memberId) {
-        List<ScrapResponse> scraps = scrapService.getScrapsByMember(memberId);
+    public ResponseEntity<List<?>> getScrapsByMember(@LoginMember Long memberId, @RequestParam String sort) {
+        List<ScrapResponse> scraps = scrapService.getScrapsByMember(memberId, sort);
         return ResponseEntity.ok(scraps);
     }
 
