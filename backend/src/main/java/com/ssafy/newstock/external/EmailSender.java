@@ -4,6 +4,7 @@ import com.ssafy.newstock.external.exception.EmailSendFailException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,9 @@ public class EmailSender {
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
+    @Value("${spring.mail.username}")
+    private String senderEmail;
+
     public void sendTemporaryPassword(String email, String id, String temporaryPassword) {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 
@@ -30,6 +34,7 @@ public class EmailSender {
 
         try {
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            mimeMessageHelper.setFrom(senderEmail);
             mimeMessageHelper.setTo(email);
             mimeMessageHelper.setSubject("[NEWSTOCK] 임시 비밀번호입니다");
             mimeMessageHelper.setText(emailContent, true);
