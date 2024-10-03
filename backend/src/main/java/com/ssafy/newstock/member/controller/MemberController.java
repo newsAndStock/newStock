@@ -2,6 +2,7 @@ package com.ssafy.newstock.member.controller;
 
 import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.member.controller.request.SignUpRequest;
+import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -11,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,5 +58,15 @@ public class MemberController {
     @GetMapping("/attendance")
     public List<String> getAttendance(@LoginMember Long memberId, @RequestParam int month) {
         return memberService.getAttendance(memberId, month);
+    }
+
+    @GetMapping("/deposit")
+    public Map<String,Long> getDeposit(@LoginMember Long memberId){
+        Member member=memberService.findById(memberId);
+        String nickname=member.getNickname();
+        Long deposit=member.getDeposit();
+        Map<String,Long> result=new HashMap<>();
+        result.put(nickname,deposit);
+        return result;
     }
 }
