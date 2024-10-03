@@ -7,6 +7,8 @@ import com.ssafy.newstock.memberstocks.controller.response.AssetInfoResponse;
 import com.ssafy.newstock.memberstocks.controller.response.MemberStockResponse;
 import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
+import com.ssafy.newstock.rank.service.RankService;
+import com.ssafy.newstock.rank.service.RedisService;
 import com.ssafy.newstock.stock.service.StockService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +24,14 @@ public class MemberStocksService {
     private final MemberService memberService;
     private final KisService kisService;
     private final StockService stockService;
+    private final RedisService redisService;
 
-    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService,KisService kisService, StockService stockService){
+    public MemberStocksService(MemberStocksRepository memberStocksRepository, MemberService memberService, KisService kisService, StockService stockService, RedisService redisService){
         this.memberStocksRepository=memberStocksRepository;
         this.memberService = memberService;
         this.kisService=kisService;
         this.stockService=stockService;
+        this.redisService = redisService;
     }
 
     public Long getHoldingsByMemberAndStockCode(Long memberId, String stockCode){
@@ -79,6 +83,7 @@ public class MemberStocksService {
 
     public AssetInfoResponse getMemberAssetInfo(Long memberId){
         Long deposit=memberService.findById(memberId).getDeposit();
+        String nickname=memberService.findById(memberId).getNickname();
         Long totalPrice=0L;
         long oldPrice=0L;
         long newPrice=0L;
@@ -94,8 +99,13 @@ public class MemberStocksService {
         DecimalFormat df = new DecimalFormat("0.0");
         String formattedROI = df.format(ROI);
         totalPrice=deposit+newPrice;
-        return new AssetInfoResponse(totalPrice,deposit,profitAndLoss,formattedROI);
+        Long rank=redisService.getMemberRank(memberId);
+        String rankSaveTime= redisService.getRankTime();
+
+        return new AssetInfoResponse(nickname,totalPrice,deposit,profitAndLoss,formattedROI,rank,rankSaveTime);
     }
+
+
 
     public List<MemberStockResponse> getMemberStocks(Long memberId){
         List<MemberStock> memberStocks=memberStocksRepository.findByMember_Id(memberId);
@@ -114,6 +124,10 @@ public class MemberStocksService {
         }
 
         return memberStockResponses;
+    }
+
+    public List<MemberStock> findByMember_Id(Long memberId){
+        return memberStocksRepository.findByMember_Id(memberId);
     }
 
     private Long calculateProfitAndLoss(Long currentPrice, Long userPrice, Long quantity){
