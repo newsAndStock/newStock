@@ -35,8 +35,19 @@ public class StockSearchService {
     public void addSearchKeyword(Long memberId, String keyword) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
-        StockRecentSearchWord recentSearchWord = new StockRecentSearchWord(keyword, new Date(), member);
-        recentSearchWordRepository.save(recentSearchWord);
+
+        // 해당 멤버의 동일 키워드가 있는지 확인
+        StockRecentSearchWord existingSearchWord = recentSearchWordRepository.findByMemberAndKeyword(member, keyword);
+
+        if (existingSearchWord != null) {
+            // 이미 존재하는 키워드의 날짜를 업데이트
+            existingSearchWord.updateSearchDate();
+            recentSearchWordRepository.save(existingSearchWord);
+        } else {
+            // 새로운 검색어 추가
+            StockRecentSearchWord newSearchWord = new StockRecentSearchWord(keyword, new Date(), member);
+            recentSearchWordRepository.save(newSearchWord);
+        }
     }
     //최근 검색어 조회
     public List<StockRecentSearchWord> getRecentSearchKeyword(Long memberId) {

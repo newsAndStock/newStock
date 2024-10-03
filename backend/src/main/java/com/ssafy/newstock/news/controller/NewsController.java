@@ -3,6 +3,8 @@ package com.ssafy.newstock.news.controller;
 import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
+import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
+import com.ssafy.newstock.news.domain.News;
 import com.ssafy.newstock.news.service.NewsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +36,11 @@ public class NewsController {
     @GetMapping("/news/detail")
     public NewsDetailResponse getNewsDetail(@RequestParam String newsId) {
         return newsService.getNewsDetail(newsId);
+    }
+
+    @GetMapping("/news-search")
+    public List<NewsSearchResponse> searchNews(@RequestParam String keyword) {
+        return newsService.searchNews(keyword);
     }
 }
 

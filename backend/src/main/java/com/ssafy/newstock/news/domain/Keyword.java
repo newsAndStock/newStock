@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "keyword")
+@Table(name = "keyword", indexes = {
+        @Index(name = "idx_keyword_word", columnList = "word")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Keyword {

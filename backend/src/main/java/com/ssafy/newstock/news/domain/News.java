@@ -1,15 +1,16 @@
 package com.ssafy.newstock.news.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
-@Table(name = "news")
+@Table(name = "news", indexes = {
+        @Index(name = "idx_news_title", columnList = "title")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class News {
@@ -35,4 +36,7 @@ public class News {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @OneToMany(mappedBy = "news", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Keyword> keywords;
 }

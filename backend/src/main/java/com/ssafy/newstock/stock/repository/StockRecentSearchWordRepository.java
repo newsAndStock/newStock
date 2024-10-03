@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface StockRecentSearchWordRepository extends JpaRepository<StockRecentSearchWord, Long> {
     List<StockRecentSearchWord> findByMemberOrderByDateDesc(Member member);
+    StockRecentSearchWord findByMemberAndKeyword(Member member, String keyword);
 }

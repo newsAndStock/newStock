@@ -85,7 +85,7 @@ class MemberApiService {
         'Content-Type': 'application/json',
       },
     );
-
+    print(jsonDecode(utf8.decode(response.bodyBytes)));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       String accessToken = data['accessToken']; // 새로운 액세스 토큰 갱신
@@ -94,7 +94,9 @@ class MemberApiService {
       await storage.write(key: 'accessToken', value: accessToken);
       await storage.write(key: 'refreshToken', value: refreshToken);
     } else {
-      throw Exception('Failed to refresh token');
+      await storage.delete(key: 'accessToken');
+      await storage.delete(key: 'refreshToken');
+      print("토큰 재발급 실패");
     }
   }
 

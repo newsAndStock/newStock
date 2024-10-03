@@ -8,6 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SearchKeywordRequest {
-    private Long memberId;
     private String keyword;
 }
