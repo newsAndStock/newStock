@@ -14,7 +14,7 @@ import lombok.Setter;
 public class NewsResponse {
     private String newsId;
     private String title;
-    private String date;
+    private String createDate;
     private String press;
     private String imageUrl;
 
