@@ -27,7 +27,7 @@ public class NewsController {
     }
 
     @GetMapping("/news/list")
-    public List<NewsResponse> getNewsList() {
+    public List<NewsDetailResponse> getNewsList() {
         return newsService.newsList();
     }
 

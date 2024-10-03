@@ -36,31 +36,23 @@ public class NewsService {
         for (News news : newsList) {
             String formattedDate = calculateTime(news.getDate());
             NewsResponse response = NewsResponse.from(news);
-            response.setDate(formattedDate);
+            response.setCreateDate(formattedDate);
             responseList.add(response);
         }
         return responseList;
     }
 
-    public List<NewsResponse> newsList() {
+    public List<NewsDetailResponse> newsList() {
         List<News> newsList = newsRepository.findAllByOrderByDateDesc();
         return newsList.stream()
-                .map(NewsResponse::from)
+                .map(NewsDetailResponse::from)
                 .collect(Collectors.toList());
     }
 
     public NewsDetailResponse getNewsDetail(String newsId) {
         Optional<News> optionalNews = newsRepository.findById(newsId);
         News news = optionalNews.orElseThrow(() -> new RuntimeException("News not found"));
-
-        return new NewsDetailResponse(
-                news.getNewsId(),
-                news.getTitle(),
-                news.getPress(),
-                news.getDate(),
-                news.getContent(),
-                news.getImageUrl()
-        );
+        return NewsDetailResponse.from(news);
     }
 
     public String calculateTime(String date) {
