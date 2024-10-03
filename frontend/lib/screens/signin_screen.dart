@@ -35,13 +35,34 @@ class _SigninScreenState extends State<SigninScreen> {
     // read 함수로 key값에 맞는 정보를 불러오고 데이터타입은 String 타입
     // 데이터가 없을때는 null을 반환
     userInfo = await storage.read(key: 'accessToken');
+    String? accessToken = await storage.read(key: 'accessToken');
+    String? refreshToken = await storage.read(key: 'refreshToken');
 
-    // user의 정보가 있다면 로그인 후 들어가는 첫 페이지로 넘어가게 합니다.
-    if (userInfo != null) {
+    if (accessToken == null || refreshToken == null) {
+      print('로그인이 필요합니다');
+      return;
+    }
+
+    final response = await MemberApiService().memberInfo();
+
+    if (response.statusCode == 401) {
+      print('accessToken이 만료되었습니다. 토큰을 재발급합니다.');
+      await MemberApiService().refreshToken(refreshToken);
+
+      final retryResponse = await MemberApiService().memberInfo();
+
+      if (retryResponse.statusCode == 200) {
+        print('토큰 재발급 후 회원 정보 조회 성공');
+        // 회원 정보가 성공적으로 조회되면 메인 화면으로 이동
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainScreen()));
+      } else {
+        print('재발급 후 회원 정보 조회 실패');
+      }
+    } else if (response.statusCode == 200) {
+      print("토큰 유효 확인 성공");
       Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainScreen()));
-    } else {
-      print('로그인이 필요합니다');
     }
     setState(() {});
   }
@@ -181,7 +202,7 @@ class _SigninScreenState extends State<SigninScreen> {
                             ),
                           ),
                         ),
-                      SizedBox(
+                      const SizedBox(
                         height: 10,
                       ),
                       // 비밀번호 찾기 링크
