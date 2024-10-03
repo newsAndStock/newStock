@@ -75,7 +75,7 @@ public class RedisService {
     public Long getMemberRank(Long memberId) {
         // 내림차순에서 멤버의 순위를 가져옴
         Long rank = redisTemplateRank.opsForZSet().reverseRank("memberRank", memberId);
-        return rank != null ? rank + 1 : null; // 순위는 0부터 시작하므로 1을 더해줌
+        return rank != null ? rank + 1 : 0; // 순위는 0부터 시작하므로 1을 더해줌
     }
 
 }
