@@ -241,7 +241,7 @@ public class StockSearchService {
     public void saveRanking(){
         List<StockRankingResponse> topVolume = getTopVolume();
         try {
-            Thread.sleep(1000);  // 5초 지연
+            Thread.sleep(1000);  // 1초 지연
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();  // 인터럽트 처리
             log.error("스레드가 중단되었습니다.", e);
@@ -249,7 +249,7 @@ public class StockSearchService {
         List<StockRankingResponse> topChangeRate = getTopChangeRate(true);
 
         try {
-            Thread.sleep(1000);  // 5초 지연
+            Thread.sleep(1000);  // 1초 지연
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();  // 인터럽트 처리
             log.error("스레드가 중단되었습니다.", e);
@@ -258,7 +258,7 @@ public class StockSearchService {
         List<StockRankingResponse> bottomChangeRate = getTopChangeRate(false);
 
         try {
-            Thread.sleep(1000);  // 5초 지연
+            Thread.sleep(1000);  // 1초 지연
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();  // 인터럽트 처리
             log.error("스레드가 중단되었습니다.", e);
