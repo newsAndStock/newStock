@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class MemberApiService {
+  final storage = const FlutterSecureStorage();
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
 
   // 로그인
@@ -72,6 +74,54 @@ class MemberApiService {
       },
     );
     print(response.body);
+    return response;
+  }
+
+  //토큰 재발급
+  Future<void> refreshToken(String refreshToken) async {
+    final response = await http.post(
+      Uri.parse('$apiServerUrl/refresh?refreshToken=$refreshToken'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      String accessToken = data['accessToken']; // 새로운 액세스 토큰 갱신
+      String refreshToken = data['refreshToken'];
+
+      await storage.write(key: 'accessToken', value: accessToken);
+      await storage.write(key: 'refreshToken', value: refreshToken);
+    } else {
+      throw Exception('Failed to refresh token');
+    }
+  }
+
+  //회원 정보
+  Future<http.Response> memberInfo() async {
+    String? token =
+        await storage.read(key: 'accessToken'); // 명시적으로 한글을 URL 인코딩하여 전송
+    final url = Uri.parse('$apiServerUrl/member-summary');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return response;
+  }
+
+  //비밀번호 재발급
+  Future<http.Response> resetPassword(String email) async {
+    final url = Uri.parse('$apiServerUrl/send-email?email=$email');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
     return response;
   }
 }

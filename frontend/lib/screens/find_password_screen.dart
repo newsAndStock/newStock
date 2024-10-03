@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/member_api_service.dart';
+import 'package:frontend/screens/signin_screen.dart';
 
 class FindPasswordScreen extends StatefulWidget {
   const FindPasswordScreen({super.key});
@@ -9,6 +11,53 @@ class FindPasswordScreen extends StatefulWidget {
 
 class _FindPasswordScreenState extends State<FindPasswordScreen> {
   final TextEditingController emailController = TextEditingController();
+
+  Future<void> _resetPassword() async {
+    final email = emailController.text;
+    setState(() {});
+
+    try {
+      final response = await MemberApiService().resetPassword(email);
+      if (response.statusCode == 200) {
+        // 성공: 로그인 페이지로 이동
+        _showAlertDialog("성공", "비밀번호 재설정 메일이 발송되었습니다.", () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const SigninScreen()),
+          );
+        });
+      } else {
+        // 실패: 오류 알림창
+        _showAlertDialog("오류", "비밀번호 재설정에 실패했습니다. 이메일을 확인해주세요.");
+      }
+    } catch (e) {
+      _showAlertDialog("오류", "서버 요청 중 오류가 발생했습니다.");
+    }
+  }
+
+  // 알림창을 띄우는 메서드
+  void _showAlertDialog(String title, String message,
+      [VoidCallback? onConfirm]) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (onConfirm != null) {
+                  onConfirm();
+                }
+              },
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +119,7 @@ class _FindPasswordScreenState extends State<FindPasswordScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: _resetPassword,
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
