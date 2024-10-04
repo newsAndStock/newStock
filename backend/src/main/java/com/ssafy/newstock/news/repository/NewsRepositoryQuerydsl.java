@@ -58,5 +58,30 @@ public class NewsRepositoryQuerydsl {
         );
     }
 
+    public List<NewsSearchResponse> searchRecentNewsTitleOrKeyword(String searchTerm) {
+        QNews news = QNews.news;
+        QKeyword keyword = QKeyword.keyword;
+
+        // 동적 검색 조건
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.or(news.title.containsIgnoreCase(searchTerm));
+        builder.or(keyword.word.containsIgnoreCase(searchTerm));
+
+        // 최신순으로 5개의 뉴스만 가져오기
+        List<News> newsList = queryFactory
+                .selectFrom(news)
+                .leftJoin(news.keywords, keyword)
+                .fetchJoin()
+                .where(builder)
+                .distinct()
+                .orderBy(news.date.desc()) // 최신순 정렬
+                .limit(5) // 5개 제한
+                .fetch();
+
+        return newsList.stream()
+                .map(this::convertToDTO) // 엔티티 -> DTO 변환
+                .collect(Collectors.toList());
+    }
+
 
 }

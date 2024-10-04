@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.newstock.common.util.WebClientUtil;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
+import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
+import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
 import com.ssafy.newstock.stock.controller.response.FavoriteStockResponse;
 import com.ssafy.newstock.stock.controller.response.MemberFavoriteStockResponse;
 import com.ssafy.newstock.stock.domain.FavoriteStock;
@@ -31,6 +33,7 @@ public class FavoriteStockService {
     private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
     private final WebClientUtil webClientUtil;
+    private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
 
     //관심 주식 추가
     @Transactional
@@ -46,6 +49,32 @@ public class FavoriteStockService {
 
         FavoriteStock favoriteStock = new FavoriteStock(member, stock);
         favoriteStockRepository.save(favoriteStock);
+    }
+
+    //필요없는 문자열 제거
+    public String removeStockTypeSuffix(String stockName) {
+        // 정규식으로 '보통주', '우선주', 숫자(1,2 등)을 제거
+        return stockName.replaceAll("(\\d?우선주|보통주|\\s*\\(.*\\))", "").trim();
+    }
+
+    Map<String, List<NewsSearchResponse>> stockNewsMap = new HashMap<>();
+
+    //관심종목 + 관련 뉴스 조회
+    public Map<String, List<NewsSearchResponse>>  searchNewsForFavoriteStocks(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원을 찾을 수 없습니다."));
+        List<FavoriteStock> favoriteStocks = favoriteStockRepository.findByMember(member);
+
+        // 각 주식에 대한 뉴스 검색
+        for (FavoriteStock favoriteStock : favoriteStocks) {
+            String stockName = removeStockTypeSuffix(favoriteStock.getStock().getName());
+            List<NewsSearchResponse> newsResponses = newsRepositoryQuerydsl.searchRecentNewsTitleOrKeyword(stockName);
+
+            // 주식명을 key로 뉴스 리스트를 저장
+            stockNewsMap.put(stockName, newsResponses);
+        }
+
+        return stockNewsMap;
     }
 
     //관심 주식 조회
