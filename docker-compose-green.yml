@@ -30,6 +30,7 @@ services:
             - PROD_APPSECRET=${PROD_APPSECRET}
             - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
             - MARKETINDEX_API_KEY=${MARKETINDEX_API_KEY}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
     network_mode: host  # Host 모드 사용
 
 volumes:
