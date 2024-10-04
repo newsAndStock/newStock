@@ -38,7 +38,8 @@ public class MinuteStockItemProcessor implements ItemProcessor<Stock, MinuteStoc
 
         long totalVolume = 0;
 
-        for (JsonNode stockData : output2) {
+        for (int i = 0; i < 10; i++) {
+            JsonNode stockData = output2.get(i);
             String currentHigh = stockData.path("stck_hgpr").asText();
             String currentLow = stockData.path("stck_lwpr").asText();
             long volume = stockData.path("cntg_vol").asLong();

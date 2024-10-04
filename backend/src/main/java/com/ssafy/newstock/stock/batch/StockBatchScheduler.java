@@ -36,7 +36,8 @@ public class StockBatchScheduler {
         runBatchJob("일 단위 주식 데이터 작업", dayStockDataJob);
     }
 
-    @Scheduled(cron = "0 30,0 9-15 * * MON-FRI", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0,10,20,30,40,50 9-14 * * MON-FRI", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0,10,20,30 15 * * MON-FRI", zone = "Asia/Seoul")
     public void runMinuteStockDataJob() {
         runBatchJob("분 단위 주식 데이터 작업", minuteStockDataJob);
     }
