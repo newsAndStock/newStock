@@ -3,6 +3,7 @@ import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/models/news/news_model.dart';
 import 'package:frontend/api/news_api_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class NewsAllScreen extends StatefulWidget {
   const NewsAllScreen({Key? key}) : super(key: key);
@@ -12,25 +13,29 @@ class NewsAllScreen extends StatefulWidget {
 }
 
 class _NewsAllScreenState extends State<NewsAllScreen> {
+  final storage = FlutterSecureStorage();
   String selectedCategory = '금융'; // 기본 선택된 카테고리
   late Future<List<News>> futureNewsList; // Future 타입으로 뉴스 리스트 설정
-  List<News> filteredNewsList = []; // 필터링된 뉴스 리스트
 
   @override
   void initState() {
     super.initState();
-    futureNewsList = NewsService().fetchNews(); // 뉴스 데이터 로드
-    _filterNewsByCategory(selectedCategory); // 기본 카테고리로 필터링
+    futureNewsList = _loadAllNews(); // 뉴스 데이터 로드
   }
 
-  // 선택된 카테고리로 뉴스 필터링
-  void _filterNewsByCategory(String category) async {
-    final allNews = await NewsService().fetchNews();
-    setState(() {
-      filteredNewsList = allNews
-          .where((news) => news.category == category)
-          .toList(); // 카테고리별 필터링
-    });
+  // 모든 뉴스를 가져오는 메서드
+  Future<List<News>> _loadAllNews() async {
+    try {
+      // NewsService를 사용하여 모든 뉴스 데이터를 가져오는 함수 호출
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('No access token found. Please log in.');
+      }
+      return await NewsService().fetchAllNews(accessToken);
+    } catch (e) {
+      print('Failed to load all news: $e');
+      return [];
+    }
   }
 
   @override
@@ -61,12 +66,11 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
               child: Row(
                 children: [
                   NewsCategory(
-                    categories: ['금융', '증권', '산업/재계', '부동산', '글로벌 경제', '경제 일반'],
+                    categories: ['금융', '증권', '산업/재계', '부동산', '글로벌경제', '경제일반'],
                     selectedCategory: selectedCategory,
                     onCategorySelected: (category) {
                       setState(() {
                         selectedCategory = category;
-                        _filterNewsByCategory(category); // 카테고리 변경 시 필터링
                       });
                     },
                   ),
@@ -87,10 +91,15 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('뉴스가 없습니다.'));
                 } else {
+                  // 필터링된 뉴스 리스트
+                  List<News> displayedNews = snapshot.data!
+                      .where((news) => news.category == selectedCategory)
+                      .toList();
+
                   return ListView.builder(
-                    itemCount: filteredNewsList.length,
+                    itemCount: displayedNews.length,
                     itemBuilder: (context, index) {
-                      final news = filteredNewsList[index];
+                      final news = displayedNews[index];
                       return Column(
                         children: [
                           // 뉴스 항목에만 패딩 적용
@@ -104,18 +113,15 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => NewsDetailScreen(
-                                      title: news.title,
-                                      dateTime: news.date,
-                                      content: news.content,
-                                      imageUrl: news.imageUrl,
+                                      newsId: news.newsId,
                                     ),
                                   ),
                                 );
                               },
-                              child: buildNewsListTile(news, index),
+                              child: buildNewsListTile(news),
                             ),
                           ),
-                          if (index != filteredNewsList.length - 1)
+                          if (index != displayedNews.length - 1)
                             Divider(
                               color: Colors.grey.shade300,
                               thickness: 0.5,
@@ -135,7 +141,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
     );
   }
 
-  Widget buildNewsListTile(News news, int index) {
+  Widget buildNewsListTile(News news) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Container(
@@ -162,7 +168,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    news.date,
+                    news.createDate,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 5),
@@ -181,7 +187,10 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 image: DecorationImage(
-                  image: NetworkImage(news.imageUrl),
+                  image: news.imageUrl.isNotEmpty
+                      ? NetworkImage(news.imageUrl)
+                      : const AssetImage('assets/images/default-image.png')
+                          as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),

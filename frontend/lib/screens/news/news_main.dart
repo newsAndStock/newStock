@@ -5,7 +5,6 @@ import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/news/news_all.dart';
 import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
-import 'package:frontend/screens/news/news_search.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
@@ -153,11 +152,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     widthFactor: 0.95,
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const NewsSearchScreen()),
-                        );
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //       builder: (context) => const NewsSearchScreen()),
+                        // );
                       },
                       child: const AbsorbPointer(
                         child: NewsSearchbar(),
@@ -223,10 +222,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => NewsDetailScreen(
-                                title: news.title,
-                                dateTime: news.date,
-                                content: news.content,
-                                imageUrl: news.imageUrl,
+                                newsId: news.newsId, // 뉴스 ID를 전달
                               ),
                             ),
                           );
@@ -243,7 +239,6 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GestureDetector(
                 onTap: () {
-                  // 스크랩 기사 클릭 시 스크랩 화면으로 이동
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -347,10 +342,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => NewsDetailScreen(
-                                        title: news.title,
-                                        dateTime: news.date,
-                                        content: news.content,
-                                        imageUrl: news.imageUrl,
+                                        newsId: news.newsId, // 뉴스 ID를 전달
                                       ),
                                     ),
                                   );
@@ -407,7 +399,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    news.date,
+                    news.createDate,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 5),
