@@ -59,7 +59,7 @@ public class StockSearchController {
 
     @GetMapping("/market-data")
     public ResponseEntity<?> getMarketData(){
-        List<Map<String, String>> marketData = stockMarketIndexService.getMarketData();
+        List<Map<String, Object>> marketData = stockMarketIndexService.getMarketData();
         return ResponseEntity.ok(marketData);
     }
 
@@ -70,5 +70,11 @@ public class StockSearchController {
             return ResponseEntity.ok("검색 결과가 없습니다.");
         }
         return ResponseEntity.ok(stocks);
+    }
+
+    @GetMapping("/store-market-data")
+    public ResponseEntity<?> getStoreMarketData(){
+        stockMarketIndexService.saveStockDataToRedis();
+        return ResponseEntity.ok("저장 완료");
     }
 }

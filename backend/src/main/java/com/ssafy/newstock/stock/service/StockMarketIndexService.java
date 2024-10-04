@@ -38,6 +38,60 @@ public class StockMarketIndexService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    public void saveStockDataToRedis() {
+        // 날짜 형식을 yyyy-MM-dd로 포맷팅
+        String formattedDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        // NASDAQ 데이터 생성
+        Map<String, Object> nasdaqData = new HashMap<>();
+        nasdaqData.put("name", "NASDAQ");
+        nasdaqData.put("ndxCloseToday", 17918.48);
+        nasdaqData.put("price_difference", -6.65);
+        nasdaqData.put("fluctuation_rate", -0.04);
+        nasdaqData.put("date", formattedDate);
+
+        // SPX 데이터 생성
+        Map<String, Object> spxData = new HashMap<>();
+        spxData.put("name", "SPX");
+        spxData.put("spxCloseToday", 5699.94);
+        spxData.put("price_difference", -9.60);
+        spxData.put("fluctuation_rate", -0.17);
+        spxData.put("date", formattedDate);
+
+        // USD/KRW 데이터 생성
+        Map<String, Object> usdkrwData = new HashMap<>();
+        usdkrwData.put("name", "USD/KRW");
+        usdkrwData.put("usdkrwCloseToday", 1333.80);
+        usdkrwData.put("price_difference", -2.20);
+        usdkrwData.put("fluctuation_rate", -0.16);
+        usdkrwData.put("date", formattedDate);
+
+        // 코스피(KOSPI) 데이터 생성
+        Map<String, Object> kospiData = new HashMap<>();
+        kospiData.put("name", "KOSPI");
+        kospiData.put("kospiCloseToday", 2497.21);
+        kospiData.put("price_difference", -5.73);
+        kospiData.put("fluctuation_rate", -0.23);
+        kospiData.put("date", formattedDate);
+
+        // 코스닥(KOSDAQ) 데이터 생성
+        Map<String, Object> kosdaqData = new HashMap<>();
+        kosdaqData.put("name", "KOSDAQ");
+        kosdaqData.put("kosdaqCloseToday", 829.17);
+        kosdaqData.put("price_difference", -2.89);
+        kosdaqData.put("fluctuation_rate", -0.35);
+        kosdaqData.put("date", formattedDate);
+
+        // 데이터를 Redis에 저장
+        redisTemplate.opsForValue().set("kospiData", kospiData);
+        redisTemplate.opsForValue().set("kosdaqData", kosdaqData);
+        redisTemplate.opsForValue().set("nasdaqData", nasdaqData);
+        redisTemplate.opsForValue().set("spxData", spxData);
+        redisTemplate.opsForValue().set("usdkrwData", usdkrwData);
+
+        log.info("데이터가 Redis에 저장되었습니다.");
+    }
+
     @Scheduled(cron = "0 0 9 * * ?")
     public void storeNASDAQAndExchangeRate() {
         // API 호출
@@ -205,28 +259,26 @@ public class StockMarketIndexService {
         }
     }
 
-    public List<Map<String, String>> getMarketData(){
-        List<Map<String, String>> result = new ArrayList<>();
+    public List<Map<String, Object>> getMarketData(){
+        List<Map<String, Object>> result = new ArrayList<>();
         try {
-            String nasdaqDataJson = (String) redisTemplate.opsForValue().get("nasdaqData");
-            String usdkrwDataJson = (String) redisTemplate.opsForValue().get("usdkrwData");
-            String kosdaqDataJson = (String) redisTemplate.opsForValue().get("kosdaqData");
-            String kospiDataJson = (String) redisTemplate.opsForValue().get("kospiData");
-            String spxDataJson = (String) redisTemplate.opsForValue().get("spxData");
+            // 데이터를 Object로 먼저 읽어오기
+            Map<String, Object> nasdaqData = (Map<String, Object>) redisTemplate.opsForValue().get("nasdaqData");
+            Map<String, Object> usdkrwData = (Map<String, Object>) redisTemplate.opsForValue().get("usdkrwData");
+            Map<String, Object> kosdaqData = (Map<String, Object>) redisTemplate.opsForValue().get("kosdaqData");
+            Map<String, Object> kospiData = (Map<String, Object>) redisTemplate.opsForValue().get("kospiData");
+            Map<String, Object> spxData = (Map<String, Object>) redisTemplate.opsForValue().get("spxData");
 
-            Map<String, String> nasdaqData = objectMapper.readValue(nasdaqDataJson, new TypeReference<Map<String, String>>() {});
-            Map<String, String> usdkrwData = objectMapper.readValue(usdkrwDataJson, new TypeReference<Map<String, String>>() {});
-            Map<String, String> kosdaqData = objectMapper.readValue(kosdaqDataJson, new TypeReference<Map<String, String>>() {});
-            Map<String, String> kospiData = objectMapper.readValue(kospiDataJson, new TypeReference<Map<String, String>>() {});
-            Map<String, String> spxData = objectMapper.readValue(spxDataJson, new TypeReference<Map<String, String>>() {});
-
+            // 결과 리스트에 추가
             result.add(nasdaqData);
             result.add(usdkrwData);
             result.add(kosdaqData);
             result.add(kospiData);
             result.add(spxData);
+        } catch (ClassCastException e) {
+            log.error("ClassCastException 발생: 데이터 형식이 맞지 않습니다.", e);
         } catch (Exception e) {
-            throw new RuntimeException("주가 정보 가져오는데 실패하였습니다");
+            throw new RuntimeException("주가 정보 가져오는데 실패하였습니다", e);
         }
         return result;
     }
