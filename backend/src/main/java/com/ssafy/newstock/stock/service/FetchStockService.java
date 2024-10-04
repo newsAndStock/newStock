@@ -66,7 +66,7 @@ public class FetchStockService {
         );
 
         try {
-            log.info("30분 단위 주식 데이터 가져오기: {}, time: {}", stockCode, time);
+            log.info("10분 단위 주식 데이터 가져오기: {}, time: {}", stockCode, time);
             return webClientUtil.sendRequest(url, queryParams, headers);
         } catch (Exception ex) {
             throw new RuntimeException("주식 데이터 가져오기 실패: " + stockCode, ex);
