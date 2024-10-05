@@ -2,6 +2,7 @@ package com.ssafy.newstock.stock.controller;
 
 import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.stock.controller.response.MinuteStockInfoResponse;
+import com.ssafy.newstock.stock.controller.response.StockDetailResponse;
 import com.ssafy.newstock.stock.controller.response.StockHoldingsResponse;
 import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
 import com.ssafy.newstock.stock.service.FetchStockService;
@@ -35,5 +36,10 @@ public class StockController {
     @GetMapping("/stocks/{stockCode}/holdings")
     public StockHoldingsResponse getMemberStockHoldings(@LoginMember Long memberId, @PathVariable String stockCode) {
         return stockService.getMemberStockHoldings(memberId, stockCode);
+    }
+
+    @GetMapping("/stocks/{stockCode}")
+    public StockDetailResponse getStockDetail(@PathVariable String stockCode) throws Exception {
+        return stockService.getStockDetail(stockCode);
     }
 }
