@@ -57,10 +57,9 @@ public class FavoriteStockService {
         return stockName.replaceAll("(\\d?우선주|보통주|\\s*\\(.*\\))", "").trim();
     }
 
-    Map<String, List<NewsSearchResponse>> stockNewsMap = new HashMap<>();
-
     //관심종목 + 관련 뉴스 조회
     public Map<String, List<NewsSearchResponse>>  searchNewsForFavoriteStocks(Long memberId) {
+        Map<String, List<NewsSearchResponse>> stockNewsMap = new HashMap<>();
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 회원을 찾을 수 없습니다."));
         List<FavoriteStock> favoriteStocks = favoriteStockRepository.findByMember(member);
