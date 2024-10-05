@@ -1,5 +1,6 @@
 package com.ssafy.newstock.news.controller;
 
+import com.ssafy.newstock.auth.supports.LoginMember;
 import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
@@ -39,8 +40,8 @@ public class NewsController {
     }
 
     @GetMapping("/news-search")
-    public List<NewsSearchResponse> searchNews(@RequestParam String keyword) {
-        return newsService.searchNews(keyword);
+    public List<NewsSearchResponse> searchNews(@RequestParam String keyword, @LoginMember Long memberId) {
+        return newsService.searchNews(keyword,memberId);
     }
 }
 

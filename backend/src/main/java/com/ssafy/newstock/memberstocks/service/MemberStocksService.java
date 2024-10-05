@@ -119,6 +119,7 @@ public class MemberStocksService {
         for(MemberStock memberStock:memberStocks){
             Long currentPrice=Long.parseLong(kisService.getCurrentStockPrice(memberStock.getStockCode()));
             MemberStockResponse memberStockResponse=MemberStockResponse.builder()
+                    .stockCode(memberStock.getStockCode())
                     .name(stockService.findNameByStockCode(memberStock.getStockCode()))
                     .currentPrice(currentPrice)
                     .userPrice(memberStock.getAveragePrice())

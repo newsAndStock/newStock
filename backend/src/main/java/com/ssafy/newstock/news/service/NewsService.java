@@ -1,12 +1,16 @@
 package com.ssafy.newstock.news.service;
 
+import com.ssafy.newstock.member.domain.Member;
+import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.news.controller.response.NewsDetailResponse;
 import com.ssafy.newstock.news.controller.response.NewsRecentResponse;
 import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.news.domain.News;
+import com.ssafy.newstock.news.domain.RecentSearchWord;
 import com.ssafy.newstock.news.repository.NewsRepository;
 import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
+import com.ssafy.newstock.news.repository.RecentSearchWordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +28,8 @@ import java.util.stream.Collectors;
 public class NewsService {
     private final NewsRepository newsRepository;
     private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
+    private final RecentSearchWordRepository recentSearchWordRepository;
+    private final MemberService memberService;
 
     public List<NewsRecentResponse> getRecentNews() {
         List<News> newsList = newsRepository.findTop10ByOrderByDateDesc();
@@ -81,7 +87,12 @@ public class NewsService {
         }
     }
 
-    public List<NewsSearchResponse> searchNews(String keyword) {
+    public List<NewsSearchResponse> searchNews(String keyword,Long memberId) {
+        Member member=memberService.findById(memberId);
+        if(!keyword.isBlank()){
+            recentSearchWordRepository.save(new RecentSearchWord(keyword,LocalDateTime.now(),member));
+        }
+
         return newsRepositoryQuerydsl.searchNewsTitleOrKeyword(keyword);
     }
 }
