@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.newstock.common.util.WebClientUtil;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
+import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
+import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
+import com.ssafy.newstock.stock.domain.FavoriteStock;
 import com.ssafy.newstock.stock.domain.Stock;
 import com.ssafy.newstock.stock.domain.StockRecentSearchWord;
 import com.ssafy.newstock.stock.repository.StockRecentSearchWordRepository;
@@ -30,6 +33,7 @@ public class StockSearchService {
     private final WebClientUtil webClientUtil;
     private final StockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
     //최근 검색어 추가
     @Transactional
     public void addSearchKeyword(Long memberId, String keyword) {
@@ -309,5 +313,25 @@ public class StockSearchService {
     //주식 검색
     public List<Stock> searchStock(String keyword) {
         return stockRepository.findByNameContaining(keyword);
+    }
+
+    //필요없는 문자열 제거
+    public String removeStockTypeSuffix(String stockName) {
+        // 정규식으로 '보통주', '우선주', 숫자(1,2 등)을 제거
+        return stockName.replaceAll("(\\d?우선주|보통주|\\s*\\(.*\\))", "").trim();
+    }
+
+    //주식으로 뉴스 검색
+    //관심종목 + 관련 뉴스 조회
+    public Map<String, List<NewsSearchResponse>>  searchNewsForStock(String stockCode) {
+        Map<String, List<NewsSearchResponse>> stockNewsMap = new HashMap<>();
+        Stock stock = stockRepository.findByStockCode(stockCode)
+                .orElseThrow(() -> new IllegalArgumentException("주식이 존재하지 않습니다."));
+
+        String stockName = removeStockTypeSuffix(stock.getName());
+        List<NewsSearchResponse> newsResponses = newsRepositoryQuerydsl.searchNewsTitleOrKeyword(stockName);
+        stockNewsMap.put(stockName, newsResponses);
+
+        return stockNewsMap;
     }
 }

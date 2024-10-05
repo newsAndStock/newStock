@@ -1,6 +1,7 @@
 package com.ssafy.newstock.stock.controller;
 
 import com.ssafy.newstock.auth.supports.LoginMember;
+import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.stock.controller.request.SearchKeywordRequest;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
 import com.ssafy.newstock.stock.domain.Stock;
@@ -76,5 +77,11 @@ public class StockSearchController {
     public ResponseEntity<?> getStoreMarketData(){
         stockMarketIndexService.saveStockDataToRedis();
         return ResponseEntity.ok("저장 완료");
+    }
+
+    @GetMapping("/stock-news-search")
+    public ResponseEntity<?> getNewsSearch(@RequestParam String stockCode){
+        Map<String, List<NewsSearchResponse>> stringListMap = stockSearchService.searchNewsForStock(stockCode);
+        return ResponseEntity.ok(stringListMap);
     }
 }
