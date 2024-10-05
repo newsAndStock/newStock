@@ -174,15 +174,24 @@ public class StockSearchService {
                 throw new RuntimeException("output 필드가 없거나 비어있습니다.");
             }
 
-            // 거래량 상위 5개의 데이터를 가져옴
-            for (int i = 0; i < Math.min(5, output.size()); i++) {
+            // 거래량 상위 주식 중 "선물", "인버스"가 포함된 주식을 제외하고 상위 5개 데이터를 가져옴
+            for (int i = 0, validStockCount = 0; i < output.size() && validStockCount < 5; i++) {
                 JsonNode stockData = output.get(i);
                 String stockName = stockData.get("hts_kor_isnm").asText();
+
+                // "선물" 또는 "인버스"가 포함된 주식명은 제외
+                if (stockName.contains("선물") || stockName.contains("인버스")) {
+                    continue;
+                }
+
+                // 유효한 주식만 카운트
+                validStockCount++;
+
                 String stockCode = stockData.get("mksc_shrn_iscd").asText();
                 String currentPrice = stockData.get("stck_prpr").asText();
-                String priceChangeAmount = stockData.get("prdy_vrss").asText(); //전일 대비 가격
-                String priceChangeRate = stockData.get("prdy_ctrt").asText(); //전일 대비 퍼센트
-                String priceChangeSign = stockData.get("prdy_vrss_sign").asText(); //전일 대비 부호
+                String priceChangeAmount = stockData.get("prdy_vrss").asText(); // 전일 대비 가격
+                String priceChangeRate = stockData.get("prdy_ctrt").asText(); // 전일 대비 퍼센트
+                String priceChangeSign = stockData.get("prdy_vrss_sign").asText(); // 전일 대비 부호
                 top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice, priceChangeAmount, priceChangeRate, priceChangeSign));
             }
         } catch (Exception e) {
@@ -201,15 +210,21 @@ public class StockSearchService {
                 throw new RuntimeException("output 필드가 없거나 비어있습니다.");
             }
 
-            // 거래량 상위 5개의 데이터를 가져옴
-            for (int i = 0; i < Math.min(5, output.size()); i++) {
+            for (int i = 0, validStockCount = 0; i < output.size() && validStockCount < 5; i++) {
                 JsonNode stockData = output.get(i);
                 String stockName = stockData.get("hts_kor_isnm").asText();
+
+                if (stockName.contains("선물") || stockName.contains("인버스")) {
+                    continue;
+                }
+
+                validStockCount++;
+
                 String stockCode = stockData.get("stck_shrn_iscd").asText();
                 String currentPrice = stockData.get("stck_prpr").asText();
-                String priceChangeAmount = stockData.get("prdy_vrss").asText(); //전일 대비 가격
-                String priceChangeRate = stockData.get("prdy_ctrt").asText(); //전일 대비 퍼센트
-                String priceChangeSign = stockData.get("prdy_vrss_sign").asText(); //전일 대비 부호
+                String priceChangeAmount = stockData.get("prdy_vrss").asText();
+                String priceChangeRate = stockData.get("prdy_ctrt").asText();
+                String priceChangeSign = stockData.get("prdy_vrss_sign").asText();
                 top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice, priceChangeAmount, priceChangeRate, priceChangeSign));
             }
         } catch (Exception e) {
@@ -231,6 +246,9 @@ public class StockSearchService {
 
             for (JsonNode stockData : output) {
                 String stockName = stockData.get("hts_kor_isnm").asText();
+                if (stockName.contains("선물") || stockName.contains("인버스")) {
+                    continue;
+                }
                 String stockCode = stockData.get("stck_shrn_iscd").asText();
                 String currentPrice = stockData.get("stck_prpr").asText();
                 String priceChangeAmount = stockData.get("prdy_vrss").asText(); // 전일 대비 가격
