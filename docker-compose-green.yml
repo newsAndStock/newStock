@@ -12,6 +12,7 @@ services:
     volumes:
       - /home/ubuntu/redis.conf:/etc/redis/redis.conf
       - redisVolume:/data  # redisVolume을 /data에 마운트
+    command: ["redis-server", "/etc/redis/redis.conf"]  # 설정 파일 로드
   green:
     image: ${imageTag}
     container_name: green
