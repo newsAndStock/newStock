@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Table(name = "minute_stock_info")
@@ -15,6 +17,9 @@ public class MinuteStockInfo {
 
     @Column(name = "stock_code", nullable = false)
     private String stockCode;
+
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
 
     @Column(name = "time", nullable = false)
     private String time;
@@ -37,6 +42,7 @@ public class MinuteStockInfo {
     public MinuteStockInfo(String stockCode, String time, String openingPrice, String closingPrice, String highestPrice,
                            String lowestPrice, Long volume) {
         this.stockCode = stockCode;
+        this.date = LocalDate.now();
         this.time = time;
         this.openingPrice = openingPrice;
         this.closingPrice = closingPrice;

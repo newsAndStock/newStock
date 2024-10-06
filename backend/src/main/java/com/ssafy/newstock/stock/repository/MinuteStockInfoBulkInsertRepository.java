@@ -13,18 +13,19 @@ public class MinuteStockInfoBulkInsertRepository {
     private final JdbcTemplate jdbcTemplate;
 
     public void bulkInsert(List<MinuteStockInfo> stockInfos) {
-        String sql = "INSERT INTO minute_stock_info (stock_code, time, opening_price, closing_price, highest_price, lowest_price, volume) " +
+        String sql = "INSERT INTO minute_stock_info (stock_code, date, time, opening_price, closing_price, highest_price, lowest_price, volume) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, stockInfos, stockInfos.size(),
                 (ps, stockInfo) -> {
                     ps.setString(1, stockInfo.getStockCode());
-                    ps.setString(2, stockInfo.getTime());
-                    ps.setString(3, stockInfo.getOpeningPrice());
-                    ps.setString(4, stockInfo.getClosingPrice());
-                    ps.setString(5, stockInfo.getHighestPrice());
-                    ps.setString(6, stockInfo.getLowestPrice());
-                    ps.setLong(7, stockInfo.getVolume());
+                    ps.setObject(2, stockInfo.getDate());
+                    ps.setString(3, stockInfo.getTime());
+                    ps.setString(4, stockInfo.getOpeningPrice());
+                    ps.setString(5, stockInfo.getClosingPrice());
+                    ps.setString(6, stockInfo.getHighestPrice());
+                    ps.setString(7, stockInfo.getLowestPrice());
+                    ps.setLong(8, stockInfo.getVolume());
                 });
     }
 }

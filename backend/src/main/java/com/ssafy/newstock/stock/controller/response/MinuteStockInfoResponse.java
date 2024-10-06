@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class MinuteStockInfoResponse {
+    private String date;
     private String time;
     private String openingPrice;
     private String closingPrice;
@@ -16,7 +17,8 @@ public class MinuteStockInfoResponse {
 
     public static MinuteStockInfoResponse from(MinuteStockInfo minuteStockInfo) {
         return new MinuteStockInfoResponse(
-                formatTime(minuteStockInfo.getTime()), minuteStockInfo.getOpeningPrice(), minuteStockInfo.getClosingPrice(),
+                minuteStockInfo.getDate().toString(), formatTime(minuteStockInfo.getTime()),
+                minuteStockInfo.getOpeningPrice(), minuteStockInfo.getClosingPrice(),
                 minuteStockInfo.getHighestPrice(), minuteStockInfo.getLowestPrice(), minuteStockInfo.getVolume()
         );
     }
