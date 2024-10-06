@@ -10,6 +10,7 @@ services:
       - TZ=Asia/Seoul  # 한국 시간대로 설정
     network_mode: host  # Host 모드 사용
     volumes:
+      - /home/ubuntu/redis.conf:/etc/redis/redis.conf
       - redisVolume:/data  # redisVolume을 /data에 마운트
   blue:
     image: ${imageTag}
