@@ -61,9 +61,4 @@ public class StockBatchScheduler {
             batchNotificationSender.sendNotificationToMattermost("배치 작업 실패: " + jobDescription + " - " + e.getMessage());
         }
     }
-
-    @Scheduled(cron = "0 0 16 * * *", zone = "Asia/Seoul")
-    public void deleteMinuteStockInfo() {
-        minuteStockInfoRepository.deleteAll();
-    }
 }
