@@ -31,4 +31,12 @@ public class StockDetailResponse {
     // 종목정보 / 예탁원정보(배당일정)
     private String dividendAmount;         // 배당금
     private String dividendYield;          // 배당수익률
+
+    // 종목정보 / 국내주식 재무비율
+    private String PER;
+    private String EPS;
+    private String PBR;
+    private String BPS;
+    private String ROE;
+    private String ROA;
 }
