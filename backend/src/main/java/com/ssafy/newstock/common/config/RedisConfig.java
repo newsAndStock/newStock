@@ -14,13 +14,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.redis.host:localhost}")  // Redis 호스트
+
+    @Value("${spring.data.redis.host}")  // Redis 호스트
     private String redisHost;
 
-    @Value("${spring.redis.port:6379}")       // Redis 포트
+    @Value("${spring.data.redis.port}")       // Redis 포트
     private int redisPort;
 
-    @Value("${spring.redis.password:}")        // Redis 비밀번호
+    @Value("${spring.data.redis.password}")        // Redis 비밀번호
     private String redisPassword;
 
     @Bean
