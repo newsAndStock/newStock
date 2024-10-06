@@ -52,17 +52,8 @@ class _QuizScreenState extends State<QuizScreen> {
       // 서버에 퀴즈 건너뛰기 요청
       await _apiService.skipQuiz(accessToken);
 
-      // 다음 퀴즈로 이동
-      if (_currentIndex < _quizData.length - 1) {
-        setState(() {
-          _currentIndex++;
-          _initializeControllers(); // 다음 퀴즈에 맞게 컨트롤러 초기화
-        });
-      } else {
-        // 모든 퀴즈를 완료했을 경우 처리
-        print("모든 퀴즈를 완료했습니다.");
-        // 예를 들어, 완료 화면으로 이동하거나 종료 메시지를 표시할 수 있습니다.
-      }
+      // 다음 퀴즈 데이터 다시 불러오기
+      await _fetchQuizData();
     } catch (e) {
       print('Failed to skip quiz: $e');
     }
@@ -94,6 +85,9 @@ class _QuizScreenState extends State<QuizScreen> {
       } else {
         _showResultDialog(false, 0);
       }
+
+      // 다음 퀴즈 데이터 다시 불러오기
+      await _fetchQuizData();
     } catch (e) {
       print('Failed to submit answer: $e');
     }
@@ -164,9 +158,8 @@ class _QuizScreenState extends State<QuizScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                if (isCorrect) {
-                  _goToNextQuiz();
-                }
+
+                _fetchQuizData(); // 정답일 때 새로운 퀴즈 데이터를 다시 가져옴
               },
               child: Text(
                 '확인',
@@ -177,19 +170,6 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       },
     );
-  }
-
-  // 다음 퀴즈로 이동하는 함수
-  void _goToNextQuiz() {
-    if (_currentIndex < _quizData.length - 1) {
-      setState(() {
-        _currentIndex++;
-        _initializeControllers(); // 다음 퀴즈에 맞게 컨트롤러 초기화
-      });
-    } else {
-      // 모든 퀴즈 완료 시 처리
-      print("모든 퀴즈를 완료했습니다.");
-    }
   }
 
   // word 길이에 맞춰 컨트롤러를 초기화하는 함수
@@ -203,9 +183,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // 한 글자를 입력할 때 다음 필드로 자동 포커스 이동
   void _nextField(String value, int index) {
-    RegExp completeHangul = RegExp(r'^[가-힣]$');
+    RegExp completeHangul = RegExp(r'^[가-힣ㄱ-ㅎㅏ-ㅣ]+$');
 
-    if (completeHangul.hasMatch(value) && index < _controllers.length - 1) {
+    if (value.isNotEmpty && index < _controllers.length - 1) {
       FocusScope.of(context).nextFocus(); // 다음 필드로 포커스 이동
     }
   }
@@ -271,7 +251,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 ],
               ),
               child: Text(
-                '오늘의 퀴즈 ${_currentIndex + 1}/${_quizData.length}',
+                '오늘의 퀴즈 ${_currentIndex + 1}/3',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -371,4 +351,4 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
     );
   }
-} 
+}

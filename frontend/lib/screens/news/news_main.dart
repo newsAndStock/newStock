@@ -8,7 +8,7 @@ import 'package:frontend/screens/news/news_my_scrap.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
-import 'package:frontend/models/news/news_model.dart';
+import 'package:frontend/models/news_model.dart';
 import 'package:frontend/widgets/news/news_searchbar.dart';
 
 class NewsMainScreen extends StatefulWidget {
@@ -222,7 +222,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => NewsDetailScreen(
-                                newsId: news.newsId, // 뉴스 ID를 전달
+                                newsId: news.newsId.toString(), // 뉴스 ID를 전달
                               ),
                             ),
                           );
@@ -342,7 +342,8 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => NewsDetailScreen(
-                                        newsId: news.newsId, // 뉴스 ID를 전달
+                                        newsId:
+                                            news.newsId, // 뉴스 ID를 전달
                                       ),
                                     ),
                                   );

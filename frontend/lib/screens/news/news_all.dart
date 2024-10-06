@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/widgets/news/news_category.dart';
-import 'package:frontend/models/news/news_model.dart';
+import 'package:frontend/models/news_model.dart';
 import 'package:frontend/api/news_api_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

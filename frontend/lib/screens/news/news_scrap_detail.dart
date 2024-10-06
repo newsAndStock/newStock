@@ -2,55 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/models/news_model.dart';
-import 'package:frontend/screens/news/news_scrap.dart';
 
-class NewsDetailScreen extends StatefulWidget {
-  final String newsId; // 뉴스 ID
+class NewsScrapDetailScreen extends StatefulWidget {
+  final String scrapId; // 스크랩 ID
 
-  const NewsDetailScreen({Key? key, required this.newsId}) : super(key: key);
+  const NewsScrapDetailScreen({Key? key, required this.scrapId})
+      : super(key: key);
 
   @override
-  _NewsDetailScreenState createState() => _NewsDetailScreenState();
+  _NewsScrapDetailScreenState createState() => _NewsScrapDetailScreenState();
 }
 
-class _NewsDetailScreenState extends State<NewsDetailScreen> {
+class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
   final storage = FlutterSecureStorage();
   late Future<News> newsDetailFuture;
 
   @override
   void initState() {
     super.initState();
-    newsDetailFuture = _loadNewsDetail(); // 뉴스 상세 정보 로드
+    newsDetailFuture = _loadScrapDetail(); // 스크랩 상세 정보 로드
   }
 
-  Future<News> _loadNewsDetail() async {
+  Future<News> _loadScrapDetail() async {
     try {
       String? accessToken = await storage.read(key: 'accessToken');
       if (accessToken == null || accessToken.isEmpty) {
         throw Exception('No access token found. Please log in.');
       }
 
-      // 뉴스 상세 정보 가져오기
-      return await NewsService().fetchNewsDetail(accessToken, widget.newsId);
+      // 스크랩 상세 정보 가져오기
+      return await NewsService().fetchScrap(accessToken, widget.scrapId);
     } catch (e) {
-      print('Failed to load news detail: $e');
+      print('Failed to load scrap detail: $e');
       throw e; // 에러 발생 시 다시 던져서 FutureBuilder가 처리하게 함
     }
   }
 
-  Future<String> _createScrap(String newsId) async {
+  Future<void> _deleteScrap() async {
     try {
       String? accessToken = await storage.read(key: 'accessToken');
       if (accessToken == null || accessToken.isEmpty) {
         throw Exception('No access token found. Please log in.');
       }
 
-      // 스크랩 생성 요청
-      String scrapId = await NewsService().saveScrap(accessToken, newsId);
-      return scrapId; // 스크랩 ID를 반환
+      int scrapId = int.parse(widget.scrapId);
+
+      // 디버깅을 위해 로그 추가
+      print("Attempting to delete scrap with ID: $scrapId");
+      print("Access Token: $accessToken");
+
+      await NewsService().deleteScrap(accessToken, scrapId);
+
+      // 삭제 후 피드백을 주고 이전 화면으로 돌아감
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('스크랩이 성공적으로 삭제되었습니다.')),
+      );
+      Navigator.pop(context);
     } catch (e) {
-      print('Failed to create scrap: $e');
-      throw e; // 에러 처리
+      print('Failed to delete scrap: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('스크랩 삭제에 실패했습니다. 다시 시도해주세요.')),
+      );
     }
   }
 
@@ -62,11 +74,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         future: newsDetailFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator()); // 로딩 중일 때
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(
-                child:
-                    Text('Failed to load news: ${snapshot.error}')); // 에러 발생 시
+              child: Text('Failed to load scrap detail: ${snapshot.error}'),
+            );
           } else if (snapshot.hasData) {
             final news = snapshot.data!;
             return Stack(
@@ -93,7 +105,6 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     },
                   ),
                 ),
-                // DraggableScrollableSheet로 제목, 작성일시, 내용 표시
                 DraggableScrollableSheet(
                   initialChildSize: 0.75, // 초기 크기
                   minChildSize: 0.75, // 최소 크기
@@ -108,8 +119,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       child: SingleChildScrollView(
                         controller: scrollController,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 30, // 기존보다 넉넉한 패딩 추가
-                          vertical: 10, // 상하 패딩도 넉넉하게 추가
+                          horizontal: 30,
+                          vertical: 10,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,29 +147,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // 뉴스 출처 (press)
-                            Text(
-                              news.press,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            // 뉴스 작성일시 (createDate)
-                            Text(
-                              news.createDate,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
                             // 구분선 추가
                             const Divider(
-                              thickness: 1, // 두께 설정
-                              color:
-                                  Color.fromARGB(255, 201, 201, 201), // 구분선 색상
+                              thickness: 1,
+                              color: Color.fromARGB(255, 201, 201, 201),
                             ),
                             const SizedBox(height: 20),
                             // 뉴스 내용
@@ -176,47 +168,74 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     );
                   },
                 ),
-                // 하단에 고정된 스크랩하기 버튼
+                // 하단에 고정된 수정 및 삭제 버튼
                 Positioned(
                   bottom: 30,
                   left: 30,
                   right: 30,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        // 스크랩 생성
-                        String scrapId = await _createScrap(widget.newsId);
-                        // 스크랩 페이지로 이동
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NewsScrapScreen(
-                              scrapId: scrapId,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 수정 버튼
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // 편집 기능 구현 (구체적인 기능 추가 필요)
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('편집 기능은 아직 구현되지 않았습니다.'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(
+                                  255, 218, 218, 218), // 회색 배경
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: const Text(
+                              '편집',
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 16),
                             ),
                           ),
-                        );
-                      } catch (e) {
-                        print('Failed to create scrap or navigate: $e');
-                        // 오류 처리 (예: 에러 다이얼로그 표시)
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3A2E6A), // 버튼 색상
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40),
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      '스크랩하기',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                      // 삭제 버튼
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _deleteScrap();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(0xFF3A2E6A), // 보라색 배경
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: const Text(
+                              '삭제',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             );
           } else {
-            return const Center(child: Text('뉴스 데이터를 불러올 수 없습니다.'));
+            return const Center(child: Text('스크랩 데이터를 불러올 수 없습니다.'));
           }
         },
       ),

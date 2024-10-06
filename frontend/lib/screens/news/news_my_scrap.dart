@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/news_api_service.dart'; // NewsService를 가져와서 API 호출 사용
-import 'package:frontend/models/news/news_model.dart'; // 뉴스 모델
+import 'package:frontend/models/news_model.dart'; // 뉴스 모델
 import 'package:frontend/screens/main_screen.dart';
-import 'package:frontend/screens/news/news_detail.dart'; // 뉴스 상세 페이지로 이동하기 위한 스크린
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/screens/news/news_main.dart';
+import 'package:frontend/screens/news/news_scrap_detail.dart';
 
 class NewsMyScrapScreen extends StatefulWidget {
   const NewsMyScrapScreen({Key? key}) : super(key: key);
@@ -15,6 +16,7 @@ class NewsMyScrapScreen extends StatefulWidget {
 class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
   final storage = FlutterSecureStorage();
   late Future<List<News>> scrapedNewsFuture;
+  String sortType = 'latest'; // 기본 정렬 방식 설정
 
   @override
   void initState() {
@@ -24,18 +26,22 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
 
   Future<List<News>> _loadScrapedNews() async {
     try {
-      // 액세스 토큰 가져오기
       String? accessToken = await storage.read(key: 'accessToken');
       if (accessToken == null || accessToken.isEmpty) {
         throw Exception('No access token found. Please log in.');
       }
-
-      // 스크랩 리스트를 가져오기
-      return await NewsService().fetchScrapList(accessToken, sort: 'latest');
+      return await NewsService().fetchScrapList(accessToken, sort: sortType);
     } catch (e) {
       print('Failed to load scraped news: $e');
-      throw e; // 오류 발생 시 다시 던져서 FutureBuilder가 처리하게 함
+      throw e;
     }
+  }
+
+  void _setSortType(String type) {
+    setState(() {
+      sortType = type; // 정렬 타입 설정
+      scrapedNewsFuture = _loadScrapedNews(); // 새로고침
+    });
   }
 
   @override
@@ -56,178 +62,191 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
           style: TextStyle(color: Colors.black),
         ),
       ),
-      body: FutureBuilder<List<News>>(
-        future: scrapedNewsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Failed to load scraped news: ${snapshot.error}'),
-            );
-          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            final scrapedNews = snapshot.data!;
-            return Column(
-              children: [
-                // 상단 스크랩한 기사 소개
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 10),
-                  child: Row(
-                    children: const [
-                      Text(
-                        '띵슈롱',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text('님이 스크랩한 기사예요'),
-                    ],
-                  ),
-                ),
-                // 정렬 방식 (최신순, 오래된순)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        children: [
+          FutureBuilder<List<News>>(
+            future: scrapedNewsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Failed to load scraped news: ${snapshot.error}'),
+                );
+              } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                final scrapedNews = snapshot.data!;
+                return Padding(
+                  padding: const EdgeInsets.only(
+                      bottom: 10.0), // 버튼 위치를 고려하여 리스트 위쪽 패딩 추가
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            scrapedNewsFuture = _loadScrapedNews();
-                          });
-                        },
+                      // 사용자 이름 텍스트
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30.0, vertical: 10),
                         child: const Text(
-                          '최신순',
-                          style: TextStyle(color: Colors.black),
+                          '띵슈롱님이 스크랩한 기사예요',
+                          style: TextStyle(fontSize: 16),
+                          textAlign: TextAlign.left,
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // 오래된순 정렬 (여기선 실제 구현을 위해 매개변수를 변경할 수 있습니다.)
-                        },
-                        child: const Text(
-                          '오래된순',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 스크랩된 뉴스 리스트
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: scrapedNews.length,
-                    itemBuilder: (context, index) {
-                      final news = scrapedNews[index];
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                              vertical: 10.0,
-                            ),
-                            child: GestureDetector(
-                              onTap: () {
-                                // 뉴스 상세 페이지로 이동
-                                // Navigator.push(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //     builder: (context) => NewsDetailScreen(),
-                                //   ),
-                                // );
+                      // 정렬 버튼
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                _setSortType('latest'); // 최신순 정렬
                               },
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 뉴스 썸네일
-                                  Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: NetworkImage(news.imageUrl),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  // 뉴스 제목 및 날짜
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          news.title,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 5),
-                                        // Text(
-                                        //   news.dateTime,
-                                        //   style: const TextStyle(
-                                        //     fontSize: 12,
-                                        //     color: Colors.grey,
-                                        //   ),
-                                        // ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                '최신순',
+                                style: TextStyle(
+                                  color: sortType == 'latest'
+                                      ? Colors.black
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          if (index != scrapedNews.length - 1)
-                            const Divider(
-                              thickness: 0.5,
-                              indent: 20,
-                              endIndent: 20,
-                              color: Colors.grey,
+                            TextButton(
+                              onPressed: () {
+                                _setSortType('oldest'); // 오래된순 정렬
+                              },
+                              child: Text(
+                                '오래된순',
+                                style: TextStyle(
+                                  color: sortType == 'oldest'
+                                      ? Colors.black
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                // 하단 버튼
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // 뉴스 홈으로 이동
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const MainScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6A1B9A), // 보라색 배경
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
+                          ],
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
                       ),
-                      child: const Text(
-                        '뉴스 홈으로',
+                      // 스크랩된 뉴스 리스트
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: scrapedNews.length,
+                          itemBuilder: (context, index) {
+                            final news = scrapedNews[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20.0,
+                                vertical: 10.0,
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  // 뉴스 스크랩 디테일 페이지로 이동
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          NewsScrapDetailScreen(
+                                        scrapId: news.scrapId
+                                            .toString(), // 스크랩 ID 전달
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Card(
+                                  color: Colors.white, // 카드 배경색을 하얀색으로 설정
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(40),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // 뉴스 썸네일 (왼쪽 40%)
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        height: 150,
+                                        decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(40),
+                                            bottomLeft: Radius.circular(40),
+                                          ),
+                                          image: DecorationImage(
+                                            image: NetworkImage(news.imageUrl),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      // 뉴스 정보 (오른쪽 60%)
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(15.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                news.title,
+                                                style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                );
+              } else {
+                return const Center(
+                  child: Text('스크랩한 뉴스가 없습니다.'),
+                );
+              }
+            },
+          ),
+          // 하단에 고정된 '뉴스 홈으로' 버튼
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // 뉴스 홈으로 이동
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const NewsMainScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3A2E6A), // 보라색 배경
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-              ],
-            );
-          } else {
-            return const Center(
-              child: Text('스크랩한 뉴스가 없습니다.'),
-            );
-          }
-        },
+                child: const Text(
+                  '뉴스 홈으로',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
