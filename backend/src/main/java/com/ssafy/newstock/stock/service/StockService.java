@@ -37,7 +37,11 @@ public class StockService {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-    private long currentPrice;
+    private long currentPrice; // 현재가
+    private long listedStockCount; // 상장주수
+    private long netIncome; // 당기순이익
+    private long totalAssets;  // 자산총계
+    private long totalLiabilities;  // 부채총계
 
     public List<StockInfoResponse> getStockInfo(String stockCode, String period) {
         LocalDate currentDate = LocalDate.now();
@@ -80,36 +84,34 @@ public class StockService {
     }
 
     public StockDetailResponse getStockDetail(String stockCode) throws Exception {
-        CompletableFuture<Map<String, String>> stockPriceInfoFuture = CompletableFuture.supplyAsync(() -> getStockPrice(stockCode));
-        Map<String, String> stockPriceInfo = stockPriceInfoFuture.get();
+        var stockPriceInfoFuture = CompletableFuture.supplyAsync(() -> getStockPrice(stockCode));
+        var stockBasicInfoFuture = CompletableFuture.supplyAsync(() -> getStockBasicInfo(stockCode));
+        var incomeStatementFuture = CompletableFuture.supplyAsync(() -> getIncomeStatement(stockCode));
+        var balanceSheetFuture = CompletableFuture.runAsync(() -> getBalanceSheet(stockCode));
 
-        CompletableFuture<Map<String, String>> stockBasicInfoFuture = CompletableFuture.supplyAsync(() -> getStockBasicInfo(stockCode));
-        CompletableFuture<Map<String, String>> incomeStatementFuture = CompletableFuture.supplyAsync(() -> getIncomeStatement(stockCode));
-        CompletableFuture<Map<String, String>> dividendInfoFuture = CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode));
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(stockBasicInfoFuture, incomeStatementFuture, dividendInfoFuture);
+        var dividendInfoFuture = stockPriceInfoFuture.thenCompose(
+                stockPriceInfo -> CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode)));
+
+        var financialRatioFuture = CompletableFuture.allOf(stockBasicInfoFuture, incomeStatementFuture, balanceSheetFuture)
+                .thenCompose(unused -> CompletableFuture.supplyAsync(() -> getFinancialRatio(stockCode)));
+
+        var allFutures = CompletableFuture.allOf(stockPriceInfoFuture, stockBasicInfoFuture, dividendInfoFuture, financialRatioFuture, incomeStatementFuture);
         allFutures.get();
 
-        Map<String, String> stockBasicInfo = stockBasicInfoFuture.get();
-        Map<String, String> incomeStatement = incomeStatementFuture.get();
-        Map<String, String> dividendInfo = dividendInfoFuture.get();
+        var stockPriceInfo = stockPriceInfoFuture.get();
+        var stockBasicInfo = stockBasicInfoFuture.get();
+        var incomeStatement = incomeStatementFuture.get();
+        var dividendInfo = dividendInfoFuture.get();
+        var financialRatio = financialRatioFuture.get();
 
         return new StockDetailResponse(
-                stockBasicInfo.get("marketIdCode"),
-                stockBasicInfo.get("industryCodeName"),
-                stockBasicInfo.get("listingDate"),
-                stockBasicInfo.get("settlementMonth"),
-                stockBasicInfo.get("capital"),
-                stockBasicInfo.get("listedStockCount"),
-                incomeStatement.get("salesRevenue"),
-                incomeStatement.get("netIncome"),
-                stockPriceInfo.get("marketCap"),
-                stockPriceInfo.get("previousClosePrice"),
-                stockPriceInfo.get("highPrice250Days"),
-                stockPriceInfo.get("lowPrice250Days"),
-                stockPriceInfo.get("yearlyHighPrice"),
-                stockPriceInfo.get("yearlyLowPrice"),
-                dividendInfo.get("dividendAmount"),
-                dividendInfo.get("dividendYield")
+                stockBasicInfo.get("marketIdCode"), stockBasicInfo.get("industryCodeName"), stockBasicInfo.get("listingDate"),
+                stockBasicInfo.get("settlementMonth"), stockBasicInfo.get("capital"), stockBasicInfo.get("listedStockCount"),
+                incomeStatement.get("salesRevenue"), incomeStatement.get("netIncome"), stockPriceInfo.get("marketCap"),
+                stockPriceInfo.get("previousClosePrice"), stockPriceInfo.get("highPrice250Days"), stockPriceInfo.get("lowPrice250Days"),
+                stockPriceInfo.get("yearlyHighPrice"), stockPriceInfo.get("yearlyLowPrice"), dividendInfo.get("dividendAmount"),
+                dividendInfo.get("dividendYield"), financialRatio.get("PER"), financialRatio.get("EPS"), financialRatio.get("PBR"),
+                financialRatio.get("BPS"), financialRatio.get("ROE"), financialRatio.get("ROA")
         );
     }
 
@@ -123,6 +125,7 @@ public class StockService {
             String response = webClientUtil.sendRequest(url, queryParams, headers);
 
             JsonNode node = objectMapper.readTree(response).path("output");
+            listedStockCount = node.path("lstg_stqt").asLong();
 
             Map<String, String> resultMap = new HashMap<>();
             resultMap.put("marketIdCode", node.path("mket_id_cd").asText());
@@ -130,7 +133,7 @@ public class StockService {
             resultMap.put("listingDate", node.path("scts_mket_lstg_dt").asText());
             resultMap.put("settlementMonth", node.path("setl_mmdd").asText());
             resultMap.put("capital", node.path("cpta").asText());
-            resultMap.put("listedStockCount", node.path("lstg_stqt").asText());
+            resultMap.put("listedStockCount", String.valueOf(listedStockCount));
 
             return resultMap;
         } catch (Exception ex) {
@@ -147,12 +150,12 @@ public class StockService {
             log.info("손익계산서 API 호출: {}", stockCode);
             String response = webClientUtil.sendRequest(url, queryParams, headers);
 
-            JsonNode array = objectMapper.readTree(response).path("output");
-            JsonNode node = array.get(1);
+            JsonNode node = objectMapper.readTree(response).path("output").get(1);
+            netIncome = node.path("thtr_ntin").asLong();
 
             Map<String, String> resultMap = new HashMap<>();
             resultMap.put("salesRevenue", node.path("sale_account").asText());
-            resultMap.put("netIncome", node.path("thtr_ntin").asText());
+            resultMap.put("netIncome", String.valueOf(netIncome));
 
             return resultMap;
         } catch (Exception ex) {
@@ -170,8 +173,7 @@ public class StockService {
 
             JsonNode node = objectMapper.readTree(response).path("output");
 
-            long currentPrice = node.path("stck_prpr").asLong(); // 현재가
-            this.currentPrice = currentPrice;
+            currentPrice = node.path("stck_prpr").asLong();
             long marketCap = node.path("lstn_stcn").asLong() * currentPrice; // 시가총액 = 상장주식수 * 현재가
 
             Map<String, String> resultMap = new HashMap<>();
@@ -201,16 +203,64 @@ public class StockService {
             JsonNode node = objectMapper.readTree(response).path("output1").get(0);
 
             double dividendAmount = node.path("per_sto_divi_amt").asDouble();
-            double dividendYield = (dividendAmount / this.currentPrice) * 100;
-            String formattedDividendYield = String.format("%.2f", dividendYield);
+            double dividendYield = (dividendAmount / currentPrice) * 100;
 
             Map<String, String> resultMap = new HashMap<>();
             resultMap.put("dividendAmount", String.valueOf(dividendAmount));
-            resultMap.put("dividendYield", formattedDividendYield);
+            resultMap.put("dividendYield", String.format("%.2f", dividendYield));
 
             return resultMap;
         } catch (Exception ex) {
             throw new RuntimeException("예탁원정보 API 호출 실패: " + stockCode, ex);
+        }
+    }
+
+    public Map<String, String> getFinancialRatio(String stockCode) {
+        String url = "/uapi/domestic-stock/v1/finance/financial-ratio";
+        Map<String, String> queryParams = Map.of("fid_cond_mrkt_div_code", "J", "fid_input_iscd", stockCode, "fid_div_cls_code", "0");
+        Map<String, String> headers = Map.of("tr_id", "FHKST66430300", "custtype", "P");
+
+        try {
+            log.info("국내주식 재무비율 API 호출: {}", stockCode);
+            String response = webClientUtil.sendRequest(url, queryParams, headers);
+
+            JsonNode node = objectMapper.readTree(response).path("output").get(1);
+
+            double EPS = node.path("eps").asDouble();
+            double PER = listedStockCount / EPS; // 발행주수 / EPS
+            double BPS = node.path("bps").asDouble();
+            double PBR = currentPrice / BPS; // 주가 / BPS
+            double ROE = node.path("roe_val").asDouble(); // 자기자본 순이익율
+            double ROA = (netIncome / (double) (totalAssets + totalLiabilities)) * 100;
+
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("PER", String.format("%.2f", PER));
+            resultMap.put("EPS", String.format("%.2f", EPS));
+            resultMap.put("PBR", String.format("%.2f", PBR));
+            resultMap.put("BPS", String.format("%.2f", BPS));
+            resultMap.put("ROE", String.format("%.2f", ROE));
+            resultMap.put("ROA", String.format("%.2f", ROA));
+
+            return resultMap;
+        } catch (Exception ex) {
+            throw new RuntimeException("국내주식 재무비율 API 호출 실패: " + stockCode, ex);
+        }
+    }
+
+    public void getBalanceSheet(String stockCode) {
+        String url = "/uapi/domestic-stock/v1/finance/balance-sheet";
+        Map<String, String> queryParams = Map.of("fid_cond_mrkt_div_code", "J", "fid_input_iscd", stockCode, "fid_div_cls_code", "0");
+        Map<String, String> headers = Map.of("tr_id", "FHKST66430100", "custtype", "P");
+
+        try {
+            log.info("국내주식 대차대조표 API 호출: {}", stockCode);
+            String response = webClientUtil.sendRequest(url, queryParams, headers);
+
+            JsonNode node = objectMapper.readTree(response).path("output").get(0);
+            totalAssets = node.path("total_aset").asLong();
+            totalLiabilities = node.path("total_lblt").asLong();
+        } catch (Exception ex) {
+            throw new RuntimeException("국내주식 대차대조표 API 호출 실패: " + stockCode, ex);
         }
     }
 }
