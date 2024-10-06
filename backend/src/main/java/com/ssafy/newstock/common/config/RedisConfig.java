@@ -1,5 +1,6 @@
 package com.ssafy.newstock.common.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,9 +13,21 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
+
+    @Value("${spring.redis.host:localhost}")  // Redis 호스트
+    private String redisHost;
+
+    @Value("${spring.redis.port:6379}")       // Redis 포트
+    private int redisPort;
+
+    @Value("${spring.redis.password:}")        // Redis 비밀번호
+    private String redisPassword;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory();
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisHost, redisPort);
+        factory.setPassword(redisPassword); // 비밀번호 설정
+        return factory;
     }
 
     @Bean
@@ -22,9 +35,9 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
 
-        template.setKeySerializer(new StringRedisSerializer()); //키는 String으로 저장
+        template.setKeySerializer(new StringRedisSerializer()); // 키는 String으로 저장
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        template.setValueSerializer(serializer); //value는 Json으로 저장
+        template.setValueSerializer(serializer); // value는 Json으로 저장
         return template;
     }
 
