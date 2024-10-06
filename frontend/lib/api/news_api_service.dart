@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/data/news/mock_news_data.dart';
 import 'package:http/http.dart' as http;
-import 'package:frontend/models/news/news_model.dart';
+import 'package:frontend/models/news_model.dart';
 
 class NewsService {
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
@@ -290,6 +290,30 @@ class NewsService {
       }
     } catch (e) {
       throw Exception('Failed to load scrap list: $e');
+    }
+  }
+
+  // 스크랩 삭제 함수 추가
+  Future<void> deleteScrap(String accessToken, int scrapId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$apiServerUrl/scrap/$scrapId'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      // 상태 코드가 200 또는 204인 경우 삭제 성공으로 처리합니다.
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception(
+            'Failed to delete scrap: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      throw Exception('Failed to delete scrap: $e');
     }
   }
 }

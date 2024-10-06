@@ -103,7 +103,7 @@ class MemberApiService {
   //회원 정보
   Future<http.Response> memberInfo() async {
     String? token =
-        await storage.read(key: 'accessToken'); // 명시적으로 한글을 URL 인코딩하여 전송
+        await storage.read(key: 'accessToken');
     final url = Uri.parse('$apiServerUrl/member-summary');
     final response = await http.get(
       url,
