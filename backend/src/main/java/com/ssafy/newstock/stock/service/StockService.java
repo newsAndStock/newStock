@@ -95,10 +95,13 @@ public class StockService {
         var dividendInfoFuture = stockPriceInfoFuture.thenCompose(
                 stockPriceInfo -> CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode)));
 
-        var financialRatioFuture = CompletableFuture.allOf(stockBasicInfoFuture, incomeStatementFuture, balanceSheetFuture)
+        var financialRatioFuture = CompletableFuture
+                .allOf(stockBasicInfoFuture, incomeStatementFuture, stockPriceInfoFuture, balanceSheetFuture)
                 .thenCompose(unused -> CompletableFuture.supplyAsync(() -> getFinancialRatio(stockCode)));
 
-        var allFutures = CompletableFuture.allOf(stockPriceInfoFuture, stockBasicInfoFuture, dividendInfoFuture, financialRatioFuture, incomeStatementFuture);
+        var allFutures = CompletableFuture.allOf(
+                stockPriceInfoFuture, stockBasicInfoFuture, dividendInfoFuture, financialRatioFuture, incomeStatementFuture, balanceSheetFuture
+        );
         allFutures.get();
 
         var stockPriceInfo = stockPriceInfoFuture.get();
