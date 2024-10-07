@@ -7,19 +7,23 @@ import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
+import com.ssafy.newstock.stock.controller.response.MarketDataResponse;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
-import com.ssafy.newstock.stock.domain.FavoriteStock;
 import com.ssafy.newstock.stock.domain.Stock;
 import com.ssafy.newstock.stock.domain.StockRecentSearchWord;
 import com.ssafy.newstock.stock.repository.StockRecentSearchWordRepository;
 import com.ssafy.newstock.stock.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +38,7 @@ public class StockSearchService {
     private final StockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
+
     //최근 검색어 추가
     @Transactional
     public void addSearchKeyword(Long memberId, String keyword) {
@@ -53,17 +58,20 @@ public class StockSearchService {
             recentSearchWordRepository.save(newSearchWord);
         }
     }
+
     //최근 검색어 조회
     public List<StockRecentSearchWord> getRecentSearchKeyword(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
         return recentSearchWordRepository.findByMemberOrderByDateDesc(member);
     }
+
     //최근 검색어 삭제
     @Transactional
     public void deleteRecentSearchWord(Long searchId) {
         recentSearchWordRepository.deleteById(searchId);
     }
+
     //거래량 상위 5
     public List<StockRankingResponse> getTopVolume() {
         String url = "/uapi/domestic-stock/v1/quotations/volume-rank";
@@ -86,17 +94,17 @@ public class StockSearchService {
                 new AbstractMap.SimpleEntry<>("tr_id", "FHPST01710000")
         );
 
-        try{
+        try {
             log.info("거래량 상위 5개 주식 데이터 요청");
             String response = webClientUtil.sendRequest(url, queryParams, headers);
             return parseTop5VolumeStocks(response);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("거래량 상위 5개 주식 데이터 가져오기 실패", e);
         }
     }
 
     // 등락률 순위 5개 종목
-    public List<StockRankingResponse> getTopChangeRate(boolean flag){
+    public List<StockRankingResponse> getTopChangeRate(boolean flag) {
         String url = "/uapi/domestic-stock/v1/ranking/fluctuation";
 
         Map<String, String> queryParams = Map.ofEntries(
@@ -123,9 +131,9 @@ public class StockSearchService {
         try {
             log.info("등락률 상위 5개 주식 데이터 요청");
             String response = webClientUtil.sendRequest(url, queryParams, headers);
-            if(flag){
+            if (flag) {
                 return parseChangeRanking(response);
-            }else{
+            } else {
                 return parseChangeReverseRanking(response);
             }
         } catch (Exception e) {
@@ -134,7 +142,7 @@ public class StockSearchService {
     }
 
     // 시가총액 순위 5개 종목
-    public List<StockRankingResponse> getCapitalization(){
+    public List<StockRankingResponse> getCapitalization() {
         String url = "/uapi/domestic-stock/v1/ranking/market-cap";
 
         Map<String, String> queryParams = Map.ofEntries(
@@ -200,6 +208,7 @@ public class StockSearchService {
 
         return top5Stocks;
     }
+
     //등락률 상위 5개 추출
     public List<StockRankingResponse> parseChangeRanking(String response) {
         List<StockRankingResponse> top5Stocks = new ArrayList<>();
@@ -271,7 +280,7 @@ public class StockSearchService {
 
     //Redis 저장
     @Scheduled(fixedRate = 3600000)
-    public void saveRanking(){
+    public void saveRanking() {
         List<StockRankingResponse> topVolume = getTopVolume();
         try {
             Thread.sleep(1000);  // 1초 지연
@@ -308,23 +317,24 @@ public class StockSearchService {
         redisTemplate.opsForValue().set("topCapitalizationStocks", topCapitalizationRate);
         log.info("시가총액 하위 5개 주식이 Redis에 업데이트되었습니다.");
     }
+
     //거래량 순위 가져오기
-    public List<StockRankingResponse> getTopVolumeStocksFromRedis(){
+    public List<StockRankingResponse> getTopVolumeStocksFromRedis() {
         return (List<StockRankingResponse>) redisTemplate.opsForValue().get("topVolumeStocks");
     }
 
     //등락률 순위 가져오기
-    public List<StockRankingResponse> getTopChangeStocksFromRedis(){
+    public List<StockRankingResponse> getTopChangeStocksFromRedis() {
         return (List<StockRankingResponse>) redisTemplate.opsForValue().get("topChangeStocks");
     }
 
     //등락률 하위 순위 가져오기
-    public List<StockRankingResponse> getBottomChangeStocksFromRedis(){
+    public List<StockRankingResponse> getBottomChangeStocksFromRedis() {
         return (List<StockRankingResponse>) redisTemplate.opsForValue().get("bottomChangeStocks");
     }
 
     //시가 총액 순위 가져오기
-    public List<StockRankingResponse> getCapitalizationStocksFromRedis(){
+    public List<StockRankingResponse> getCapitalizationStocksFromRedis() {
         return (List<StockRankingResponse>) redisTemplate.opsForValue().get("topCapitalizationStocks");
     }
 
@@ -349,5 +359,66 @@ public class StockSearchService {
         List<NewsSearchResponse> newsResponses = newsRepositoryQuerydsl.searchNewsTitleOrKeyword(stockName);
 
         return newsResponses;
+    }
+
+    //코스피, 코스닥, 나스닥 S&P 500 환율
+    public MarketDataResponse getMarketData() {
+        try {
+            String domesticUrl = "https://finance.naver.com/sise/"; //국내 증시
+            String worldUrl = "https://finance.naver.com/world/"; // 해외 증시
+            String rateUrl = "https://finance.naver.com/marketindex/"; // 환율
+
+            // 웹 페이지 로드
+            Document domesticDocument = Jsoup.connect(domesticUrl).get();
+            Document worldDocument = Jsoup.connect(worldUrl).get();
+            Document rateDocument = Jsoup.connect(rateUrl).get();
+
+            // KOSPI
+            String kospi = "코스피";
+            String kospiPrice = domesticDocument.select("#KOSPI_now").text();
+            String kospiDifference = domesticDocument.select("#KOSPI_change").text();
+            String kospiState = domesticDocument.select("#KOSPI_change > span.blind").text();
+
+            // KOSDAQ
+            String kosdaq = "코스닥";
+            String kosdaqPrice = domesticDocument.select("#KOSDAQ_now").text();
+            String kosdaqDifference = domesticDocument.select("#KOSDAQ_change").text();
+            String kosdaqState = domesticDocument.select("#KOSPI_change > span.blind").text();
+
+            // NASDAQ
+            String nasdaq = "나스닥";
+            String nasdaqPrice = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > em").text();
+            String nasdaqDifference = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span:nth-child(3)").text();
+            String nasdaqState = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span.blind").text();
+
+            // S&P 500
+            String sp500 = "S&P 500";
+            String sp500Price = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > strong").text();
+            String sp500Difference = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > em").text();
+            String sp500State = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > span.blind").text();
+
+            // 환율
+            String rate = "환율";
+            String ratePrice = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.value").text();
+            String rateDifference = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.change").text();
+            String rateState = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.blind").text();
+
+            // 날짜
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(("yyyy-MM-dd"));
+            String date = now.format(formatter);
+
+            return new MarketDataResponse(
+                    kospi, kospiPrice, kospiDifference, kospiState,
+                    kosdaq, kosdaqPrice, kosdaqDifference, kosdaqState,
+                    nasdaq, nasdaqPrice, nasdaqDifference, nasdaqState,
+                    sp500, sp500Price, sp500Difference, sp500State,
+                    rate, ratePrice, rateDifference, rateState,
+                    date
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
