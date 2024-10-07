@@ -54,7 +54,9 @@ class _MyPageState extends State<MyPage> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => RankingPage()));
+                              builder: (context) => RankingPage(
+                                    userNickname: userData['nickname'],
+                                  )));
                     },
                   ),
                   InContractComponent(),

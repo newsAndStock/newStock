@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/favorite_stock_api.dart';
 import 'package:frontend/api/stock_api/trading_api/fixed_price_api.dart';
 import 'package:frontend/api/stock_api/trading_api/in_trading_api.dart';
 import 'package:frontend/api/stock_api/trading_api/market_price_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 import 'dart:async';
+import 'package:frontend/api/stock_api/stock_detail_api.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StockTradingPage extends StatefulWidget {
   final String stockName;
@@ -46,6 +49,13 @@ class _StockTradingPageState extends State<StockTradingPage>
   late Timer? _timer;
   late dynamic _holdingCounts;
 
+  bool _isFavorite = false;
+  bool _isLoading = false;
+  final FlutterSecureStorage _storage = FlutterSecureStorage();
+
+  CurrentStockPriceResponse? _currentStockPrice;
+  Timer? _priceUpdateTimer;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +68,9 @@ class _StockTradingPageState extends State<StockTradingPage>
     _availableBalance = 0;
     _balanceType = 'USER';
     _holdingCounts = 0;
+    _fetchCurrentStockPrice();
+    _startPriceUpdateTimer();
+    _checkFavoriteStatus();
 
     // 비동기 초기화를 위한 Future 사용
     Future.microtask(() async {
@@ -74,6 +87,43 @@ class _StockTradingPageState extends State<StockTradingPage>
     });
   }
 
+  void _startPriceUpdateTimer() {
+    _priceUpdateTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _fetchCurrentStockPrice();
+    });
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      final favoriteStocks = await FavoriteStockApi.getFavoriteStocks(token);
+      setState(() => _isFavorite = favoriteStocks['stocks']
+          .any((stock) => stock['stockCode'] == widget.stockCode));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to load favorite status: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchCurrentStockPrice() async {
+    try {
+      final data =
+          await StockDetailApi().getCurrentStockPrice(widget.stockCode);
+      setState(() {
+        _currentStockPrice = data;
+      });
+    } catch (e) {
+      print('Error fetching current stock price: $e');
+    }
+  }
+
   @override
   void dispose() {
     _tabController.removeListener(_handleTabChange);
@@ -83,6 +133,7 @@ class _StockTradingPageState extends State<StockTradingPage>
     _quantityFocusNode.dispose();
     _limitPriceController.dispose();
     _timer?.cancel();
+    _priceUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -138,6 +189,28 @@ class _StockTradingPageState extends State<StockTradingPage>
     });
   }
 
+  Future<void> _toggleFavorite() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      if (_isFavorite) {
+        await FavoriteStockApi.removeFavoriteStock(token, widget.stockCode);
+      } else {
+        await FavoriteStockApi.addFavoriteStock(token, widget.stockCode);
+      }
+      setState(() => _isFavorite = !_isFavorite);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to update favorite status: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,10 +220,10 @@ class _StockTradingPageState extends State<StockTradingPage>
         title: Text(widget.stockName),
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border),
-            onPressed: () {
-              // Implement favorite functionality
-            },
+            icon: _isLoading
+                ? CircularProgressIndicator()
+                : Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
+            onPressed: _isLoading ? null : _toggleFavorite,
           ),
         ],
       ),
@@ -201,18 +274,26 @@ class _StockTradingPageState extends State<StockTradingPage>
   }
 
   Widget _buildStockInfo() {
+    if (_currentStockPrice == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    double priceChange = double.parse(_currentStockPrice!.prdyVrss);
+    double priceChangePercentage = double.parse(_currentStockPrice!.prdyCtrt);
+    Color changeColor = priceChange >= 0 ? Colors.red : Colors.blue;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '74,500원',
+            '${_currentStockPrice!.stckPrpr}원',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
-            '+300원 (0.4%)',
-            style: TextStyle(fontSize: 16, color: Colors.red),
+            '${priceChange >= 0 ? '+' : ''}${_currentStockPrice!.prdyVrss}원 (${_currentStockPrice!.prdyCtrt}%)',
+            style: TextStyle(fontSize: 16, color: changeColor),
           ),
         ],
       ),
@@ -281,7 +362,6 @@ class _StockTradingPageState extends State<StockTradingPage>
   }
 
   Widget _buildSellTab() {
-    // Similar to _buildBuyTab(), but with sell-specific modifications
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return SingleChildScrollView(
@@ -290,16 +370,12 @@ class _StockTradingPageState extends State<StockTradingPage>
             child: IntrinsicHeight(
               child: Column(
                 children: [
-                  SizedBox(
-                    height: 15,
-                  ),
+                  SizedBox(height: 15),
                   FractionallySizedBox(
                     widthFactor: 0.9,
                     child: _buildAvailableStock(),
                   ),
-                  SizedBox(
-                    height: 15,
-                  ),
+                  SizedBox(height: 15),
                   FractionallySizedBox(
                     widthFactor: 0.9,
                     child: _buildOrderTypeSelector(),
@@ -310,9 +386,7 @@ class _StockTradingPageState extends State<StockTradingPage>
                         ? _buildMarketOrderPrice()
                         : _buildLimitOrderPrice(),
                   ),
-                  SizedBox(
-                    height: 15,
-                  ),
+                  SizedBox(height: 15),
                   FractionallySizedBox(
                     widthFactor: 0.9,
                     child: Container(
@@ -330,13 +404,16 @@ class _StockTradingPageState extends State<StockTradingPage>
                       ),
                     ),
                   ),
+                  if (_showKeypad) Expanded(child: _buildKeypad()),
+                  if (!_isMarketOrder && _showPriceVolumeChart)
+                    Expanded(child: _buildPriceVolumeChart()),
                 ],
               ),
             ),
           ),
         );
       },
-    ); // Placeholder
+    );
   }
 
   Widget _buildAvailableBalance() {
@@ -553,35 +630,68 @@ class _StockTradingPageState extends State<StockTradingPage>
   }
 
   Widget _buildPriceVolumeChart() {
+    if (_currentStockPrice == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    List<MapEntry<String, String>> askpEntries =
+        _currentStockPrice!.askpMap.entries.toList();
+    List<MapEntry<String, String>> bidpEntries =
+        _currentStockPrice!.bidpMap.entries.toList();
+
+    askpEntries.sort((a, b) => int.parse(b.key).compareTo(int.parse(a.key)));
+    bidpEntries.sort((a, b) => int.parse(b.key).compareTo(int.parse(a.key)));
+
+    int maxVolume = [...askpEntries, ...bidpEntries]
+        .map((e) => int.parse(e.value))
+        .reduce((a, b) => a > b ? a : b);
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
-      // 높이 제한을 설정합니다. 필요에 따라 조정하세요.
-      height: 240, // 예시 높이
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            for (var i = 0; i < 7; i++)
-              _buildPriceVolumeRow(
-                sellVolume: 48459 - i * 1000,
-                price: 74800 - i * 100,
-                buyVolume: 71096 + i * 100000,
-                isCurrentPrice: i == 3,
-              ),
-          ],
-        ),
+      margin: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      child: Column(
+        children: [
+          for (var i = 0; i < 5 && i < askpEntries.length; i++)
+            _buildPriceVolumeRow(
+              volume: int.parse(askpEntries[i].value),
+              price: int.parse(askpEntries[i].key),
+              maxVolume: maxVolume,
+              isAsk: true,
+            ),
+          _buildCurrentPriceRow(int.parse(_currentStockPrice!.stckPrpr)),
+          for (var i = 0; i < 5 && i < bidpEntries.length; i++)
+            _buildPriceVolumeRow(
+              volume: int.parse(bidpEntries[i].value),
+              price: int.parse(bidpEntries[i].key),
+              maxVolume: maxVolume,
+              isAsk: false,
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildPriceVolumeRow({
-    required int sellVolume,
+    required int volume,
     required int price,
-    required int buyVolume,
-    bool isCurrentPrice = false,
+    required int maxVolume,
+    required bool isAsk,
   }) {
+    Color barColor =
+        isAsk ? Colors.blue.withOpacity(0.1) : Colors.red.withOpacity(0.1);
+    Color textColor = isAsk ? Colors.blue : Colors.red;
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -590,37 +700,82 @@ class _StockTradingPageState extends State<StockTradingPage>
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        color: isCurrentPrice ? Colors.grey[200] : null,
-        child: Row(
+        height: 30,
+        child: Stack(
           children: [
-            Expanded(
-              child: Text(
-                sellVolume.toString(),
-                textAlign: TextAlign.right,
-                style: TextStyle(color: Colors.blue),
-              ),
-            ),
-            Container(
-              width: 80,
-              alignment: Alignment.center,
-              child: Text(
-                price.toString(),
-                style: TextStyle(
-                  fontWeight:
-                      isCurrentPrice ? FontWeight.bold : FontWeight.normal,
+            _buildVolumeBar(volume, maxVolume, barColor, isAsk),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isAsk ? NumberFormat('#,###').format(volume) : '',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: textColor, fontSize: 12),
+                  ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                buyVolume.toString(),
-                textAlign: TextAlign.left,
-                style: TextStyle(color: Colors.red),
-              ),
+                Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: Text(
+                    NumberFormat('#,###').format(price),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    !isAsk ? NumberFormat('#,###').format(volume) : '',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(color: textColor, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVolumeBar(int volume, int maxVolume, Color color, bool isAsk) {
+    double ratio = (volume / maxVolume) * 0.7; // 최대 길이를 0.7로 제한
+    return Align(
+      alignment: isAsk ? Alignment.centerLeft : Alignment.centerRight,
+      child: FractionallySizedBox(
+        widthFactor: ratio,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.horizontal(
+              left: isAsk ? Radius.circular(0) : Radius.circular(4),
+              right: isAsk ? Radius.circular(4) : Radius.circular(0),
+            ),
+          ),
+          height: 20, // 박스의 높이를 늘림
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentPriceRow(int currentPrice) {
+    return Container(
+      height: 40,
+      color: Colors.grey[200],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            NumberFormat('#,###').format(currentPrice),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+              fontSize: 16,
+            ),
+          ),
+        ],
       ),
     );
   }
