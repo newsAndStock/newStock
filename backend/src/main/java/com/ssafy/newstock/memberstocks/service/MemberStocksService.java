@@ -105,7 +105,7 @@ public class MemberStocksService {
         DecimalFormat df = new DecimalFormat("0.0");
         String formattedROI = df.format(ROI);
         totalPrice=deposit+newPrice;
-        Long rank=redisService.getMemberRank(memberId);
+        Integer rank=redisService.getMemberRank(memberId);
         String rankSaveTime= redisService.getRankTime();
 
         return new AssetInfoResponse(nickname,totalPrice,deposit,profitAndLoss,formattedROI,rank,rankSaveTime);
