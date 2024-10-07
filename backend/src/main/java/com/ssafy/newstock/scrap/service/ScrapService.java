@@ -47,7 +47,8 @@ public class ScrapService {
                 scrap.getNews().getNewsId(),    // 지연 로딩된 News 엔티티 접근
                 scrap.getNews().getTitle(),     // 지연 로딩된 News 엔티티의 필드 접근
                 scrap.getScrapContent(),
-                scrap.getScrapDate()
+                scrap.getScrapDate(),
+                scrap.getNews().getImageUrl()
         )).collect(Collectors.toList());
     }
 
@@ -65,12 +66,14 @@ public class ScrapService {
     public ScrapResponse getScrapById(Long scrapId) {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩을 찾을 수 없습니다. ID: " + scrapId));
+
         return new ScrapResponse(
                 scrap.getId(),
                 scrap.getNews().getNewsId(),
                 scrap.getNews().getTitle(),
                 scrap.getScrapContent(),
-                scrap.getScrapDate()
+                scrap.getScrapDate(),
+                scrap.getNews().getImageUrl()
         );
     }
 
