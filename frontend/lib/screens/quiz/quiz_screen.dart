@@ -49,7 +49,7 @@ class _QuizScreenState extends State<QuizScreen> {
         throw Exception('No access token found');
       }
 
-      // 서버에 퀴즈 건너뛰기 요청
+      // 서버에 퀴즈 건너뛰기 요청 
       await _apiService.skipQuiz(accessToken);
 
       // 다음 퀴즈 데이터 다시 불러오기

@@ -5,6 +5,7 @@ import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/news/news_all.dart';
 import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
+import 'package:frontend/screens/news/news_search.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:frontend/widgets/news/news_category.dart';
 import 'package:frontend/widgets/news/news_card.dart';
@@ -121,8 +122,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const NotificationScreen(), // 알림 페이지로 이동
+                        builder: (context) => const NotificationScreen(),
                       ),
                     );
                   },
@@ -152,11 +152,11 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                     widthFactor: 0.95,
                     child: GestureDetector(
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //       builder: (context) => const NewsSearchScreen()),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const NewsSearchScreen()),
+                        );
                       },
                       child: const AbsorbPointer(
                         child: NewsSearchbar(),
@@ -342,8 +342,7 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => NewsDetailScreen(
-                                        newsId:
-                                            news.newsId, // 뉴스 ID를 전달
+                                        newsId: news.newsId, // 뉴스 ID를 전달
                                       ),
                                     ),
                                   );

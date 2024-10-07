@@ -3,6 +3,7 @@ class News {
   final int? scrapId;
   final String title;
   final String createDate;
+  final String date;
   final String content;
   final String press;
   final String imageUrl;
@@ -13,6 +14,7 @@ class News {
     this.scrapId,
     required this.title,
     required this.createDate,
+    required this.date,
     required this.content,
     required this.press,
     required this.imageUrl,
@@ -26,11 +28,12 @@ class News {
       scrapId: json['scrapId'] != null ? json['scrapId'] as int : null,
       title: json['title'] ?? '',
       createDate: json['createDate'] ?? '',
+      date: json['date'] ?? '',
       content: json['content'] ?? '',
       press: json['press'] ?? '',
-      imageUrl: json['imageUrl'] != null && json['imageUrl'].isNotEmpty
+      imageUrl: json['imageUrl'] != null
           ? json['imageUrl']
-          : 'https://flexible.img.hani.co.kr/flexible/normal/970/646/imgdb/original/2024/1006/20241006501469.jpg',
+          : 'https://image.zdnet.co.kr/2024/10/04/3f073eac132912442902ec1d98a9d7b3.jpg',
       category: json['category'] ?? '',
     );
   }
@@ -42,6 +45,7 @@ class News {
       'newsId': newsId,
       'title': title,
       'createDate': createDate,
+      'date': date,
       'content': content,
       'press': press,
       'imageUrl': imageUrl,

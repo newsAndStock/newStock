@@ -316,4 +316,57 @@ class NewsService {
       throw Exception('Failed to delete scrap: $e');
     }
   }
+
+  Future<List<String>> fetchTrendingKeywords(String date) async {
+    final url = Uri.parse('$apiServerUrl/popular-word?date=$date');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        return List<String>.from(data);
+      } else {
+        throw Exception('Failed to load trending keywords');
+      }
+    } catch (e) {
+      throw Exception('Failed to load trending keywords: $e');
+    }
+  }
+
+  // 최근 검색어 API 함수 추가
+  Future<List<String>> fetchRecentKeywords(String accessToken) async {
+    final url = Uri.parse('$apiServerUrl/news/recent-word');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        return List<String>.from(data);
+      } else {
+        throw Exception('Failed to load recent keywords');
+      }
+    } catch (e) {
+      throw Exception('Failed to load recent keywords: $e');
+    }
+  }
+
+  Future<List<News>> searchNews(String keyword) async {
+    print('Searching for keyword: $keyword'); // 검색어 로그 출력
+    final response = await http.get(
+      Uri.parse('$apiServerUrl/news-search?keyword=$keyword'),
+    );
+
+    if (response.statusCode == 200) {
+      // UTF-8로 응답을 디코딩하여 한글 깨짐 방지
+      String decodedResponse = utf8.decode(response.bodyBytes);
+      List<dynamic> data = json.decode(decodedResponse);
+      return data.map((json) => News.fromJson(json)).toList();
+    } else {
+      throw Exception('뉴스 검색에 실패했습니다.');
+    }
+  }
 }
