@@ -85,7 +85,7 @@ public class KisService {
                     )
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(10)) // 타임아웃 설정
-                    .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(5)))
+                    .retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(5)))
                     .block();
 
             token = parseResponseToken(jsonResponse, "access_token");
@@ -141,6 +141,8 @@ public class KisService {
                 .header("tr_id", "FHKST01010100")
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofMillis(200)) // 타임아웃 설정
+                .retryWhen(Retry.fixedDelay(10, Duration.ofMillis(200)))
                 .block();
 
         return parseResponse(jsonResponse,"stck_prpr");
@@ -163,6 +165,8 @@ public class KisService {
                 .header("tr_id", "FHKST01010200")
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofMillis(200)) // 타임아웃 설정
+                .retryWhen(Retry.fixedDelay(10, Duration.ofMillis(200)))
                 .block();
 
         return getQuantity(jsonResponse,orderType,price);
