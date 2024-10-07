@@ -1,6 +1,8 @@
+import 'package:intl/intl.dart';
+
 class CandleData {
   /// The timestamp of this data point, in milliseconds since epoch.
-  final int timestamp;
+  final DateTime dateTime;
 
   /// The "open" price of this data point. It's acceptable to have null here for
   /// a few data points, but they must not all be null. If either [open] or
@@ -37,7 +39,7 @@ class CandleData {
   List<double?> trends;
 
   CandleData({
-    required this.timestamp,
+    required this.dateTime,
     required this.open,
     required this.close,
     required this.volume,
@@ -45,6 +47,38 @@ class CandleData {
     this.low,
     List<double?>? trends,
   }) : this.trends = List.unmodifiable(trends ?? []);
+
+  int get timestamp => dateTime.millisecondsSinceEpoch;
+
+  static double? _parseDouble(String? value) {
+    if (value == null) return null;
+    return double.tryParse(value);
+  }
+
+  static DateTime _parseDateTime(String time) {
+    final now = DateTime.now();
+    final timeComponents = time.split(':');
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(timeComponents[0]),
+      int.parse(timeComponents[1]),
+    );
+  }
+
+  factory CandleData.fromJson(Map<String, dynamic> json) {
+    return CandleData(
+      dateTime: _parseDateTime(json['time']),
+      open: _parseDouble(json['openingPrice']),
+      high: _parseDouble(json['highestPrice']),
+      low: _parseDouble(json['lowestPrice']),
+      close: _parseDouble(json['closingPrice']),
+      volume: _parseDouble(json['volume']),
+    );
+  }
+
+  String get time => DateFormat('HH:mm').format(dateTime);
 
   // 이동평균을 구하는 코드 지금은 7일기준이동평균
   static List<double?> computeMA(List<CandleData> data, [int period = 7]) {

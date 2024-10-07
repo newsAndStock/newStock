@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/favorite_stock_api.dart';
+import 'package:frontend/api/stock_api/market_index_api.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'dart:async';
 import 'components/search_bar.dart';
@@ -11,8 +12,9 @@ import 'components/stock_ranking.dart';
 import 'stock_search_page.dart';
 import 'my_page.dart';
 import 'stock_detail_page.dart';
+import 'market_index_page.dart';
 import 'package:frontend/screens/notification_screen.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StockMainPage extends StatefulWidget {
   const StockMainPage({Key? key}) : super(key: key);
@@ -26,6 +28,8 @@ class _StockMainPageState extends State<StockMainPage> {
   int _currentIndex = 0;
   Map<String, dynamic>? _favoriteStockData;
   bool _isLoadingFavStock = true;
+  List<Map<String, dynamic>> _marketIndices = [];
+  bool _isLoadingMarketIndex = true;
   final FlutterSecureStorage storage =
       FlutterSecureStorage(); // Secure storage instance
 
@@ -33,12 +37,32 @@ class _StockMainPageState extends State<StockMainPage> {
   void initState() {
     super.initState();
     _fetchFavoriteStocks();
+    _fetchMarketIndices();
     // 5초마다 MarketIndex 위젯의 애니메이션을 트리거
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       setState(() {
         _currentIndex = (_currentIndex + 1) % 4; // 4개의 지수가 있다고 가정
       });
     });
+  }
+
+  Future<void> _fetchMarketIndices() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final data = await MarketIndexApi.marketIndex(accessToken);
+      setState(() {
+        _marketIndices = data;
+        _isLoadingMarketIndex = false;
+      });
+    } catch (e) {
+      print('Error fetching market indices: $e');
+      setState(() {
+        _isLoadingMarketIndex = false;
+      });
+    }
   }
 
   Future<void> _fetchFavoriteStocks() async {
@@ -171,7 +195,22 @@ class _StockMainPageState extends State<StockMainPage> {
               ),
             ),
             const SizedBox(height: 25),
-            MarketIndex(currentIndex: _currentIndex),
+            // _isLoadingMarketIndex
+            //     ? Center(child: CircularProgressIndicator())
+            //     : _marketIndices.isEmpty
+            //         ? Center(child: Text('No market data available'))
+            //         : MarketIndex(
+            //             indexData: _marketIndices[_currentIndex],
+            //             onTap: () {
+            //               Navigator.push(
+            //                 context,
+            //                 MaterialPageRoute(
+            //                   builder: (context) =>
+            //                       MarketIndexPage(indices: _marketIndices),
+            //                 ),
+            //               );
+            //             },
+            //           ),
             const SizedBox(height: 25),
             Center(
               child: FractionallySizedBox(

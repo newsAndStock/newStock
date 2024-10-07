@@ -1,44 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/my_page_api.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class RankingPage extends StatelessWidget {
+class RankingPage extends StatefulWidget {
+  @override
+  _RankingPageState createState() => _RankingPageState();
+}
+
+class _RankingPageState extends State<RankingPage> {
+  late Future<Map<String, dynamic>> _rankingFuture;
+  static String apiServerUrl = dotenv.get("API_SERVER_URL");
+
+  @override
+  void initState() {
+    super.initState();
+    _rankingFuture = MyPageApi().getRanking();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: Text('랭킹', style: TextStyle(color: Colors.black)),
-            backgroundColor: Colors.white,
-            floating: true,
-            pinned: true,
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                '띵슈롱님, 현재 순위는 236위입니다!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildListDelegate([
-              _buildRankingItem('주식맨', 43.2, 1, true),
-              _buildRankingItem('주식킹', 42.2, 2, true),
-              _buildRankingItem('일론머스크', 41.2, 3, true),
-              _buildRankingItem('오예스', 33.2, 4, false),
-              _buildRankingItem('야구왕', 26.2, 5, false),
-              _buildRankingItem('투자고수', 25.2, 6, false),
-              SizedBox(height: 20),
-              _buildRankingItem('띵슈롱', 23.6, 236, false),
-            ]),
-          ),
-        ],
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _rankingFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final rankingData = snapshot.data!;
+            final rankingSaveTime = rankingData['rankSaveTime'];
+            final rankings = (rankingData['ranking'] as Map<String, dynamic>)
+                .entries
+                .toList();
+            rankings.sort((a, b) => b.value.compareTo(a.value)); // 내림차순 정렬
+
+            return CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  leading: IconButton(
+                    icon: Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  title: Text('랭킹', style: TextStyle(color: Colors.black)),
+                  backgroundColor: Colors.white,
+                  floating: true,
+                  pinned: true,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '랭킹 갱신일: $rankingSaveTime',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '현재 순위: ${rankings.indexWhere((item) => item.key == '1234') + 1}위',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final entry = rankings[index];
+                      return _buildRankingItem(
+                        entry.key,
+                        entry.value,
+                        index + 1,
+                        index < 3,
+                      );
+                    },
+                    childCount: rankings.length,
+                  ),
+                ),
+              ],
+            );
+          } else {
+            return Center(child: Text('No data available'));
+          }
+        },
       ),
     );
   }

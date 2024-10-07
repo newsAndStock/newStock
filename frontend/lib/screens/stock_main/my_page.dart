@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/my_page_api.dart';
 import 'package:frontend/screens/stock_main/components/in_contract_component.dart';
 import 'package:frontend/screens/stock_main/ranking.dart';
+import 'package:frontend/screens/stock_main/stock_detail_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class MyPage extends StatelessWidget {
+class MyPage extends StatefulWidget {
   const MyPage({Key? key}) : super(key: key);
+
+  @override
+  _MyPageState createState() => _MyPageState();
+}
+
+class _MyPageState extends State<MyPage> {
+  late Future<Map<String, dynamic>> _userDataFuture;
+  late Future<List<Map<String, dynamic>>> _stockHelds;
+  static String apiServerUrl = dotenv.get("API_SERVER_URL");
+
+  @override
+  void initState() {
+    super.initState();
+    _userDataFuture = MyPageApi().getMyDetail();
+    _stockHelds = MyPageApi().getMyStocks();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,26 +36,42 @@ class MyPage extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            GestureDetector(
-              child: _buildUserInfoCard(),
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => RankingPage()));
-              },
-            ),
-            InContractComponent(),
-            _buildAccountSummaryCard(),
-            _buildStockList(),
-          ],
-        ),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _userDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final userData = snapshot.data!;
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  GestureDetector(
+                    child: _buildUserInfoCard(userData),
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => RankingPage()));
+                    },
+                  ),
+                  InContractComponent(),
+                  _buildAccountSummaryCard(userData),
+                  _buildStockList(),
+                ],
+              ),
+            );
+          } else {
+            return Center(child: Text('No data available'));
+          }
+        },
       ),
     );
   }
 
-  Widget _buildUserInfoCard() {
+  Widget _buildUserInfoCard(Map<String, dynamic> userData) {
     return Container(
       padding: EdgeInsets.all(16),
       margin: EdgeInsets.all(16),
@@ -59,14 +96,14 @@ class MyPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '띵슈롱님,',
+                    '${userData['nickname']}님,',
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
                   Text(
-                    '현재 순위는 236위입니다!',
+                    '현재 순위는 ${userData['rank']}위입니다!',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ],
@@ -79,7 +116,7 @@ class MyPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountSummaryCard() {
+  Widget _buildAccountSummaryCard(Map<String, dynamic> userData) {
     return FractionallySizedBox(
       widthFactor: 0.95,
       child: Card(
@@ -89,10 +126,12 @@ class MyPage extends StatelessWidget {
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              _buildAccountItem('총자산', '12,360,000원'),
-              _buildAccountItem('예수금', '5,000,000원'),
-              _buildAccountItem('손익', '+ 2,360,000원', isProfit: true),
-              _buildAccountItem('수익률', '+23.6%', isProfit: true),
+              _buildAccountItem('총자산', '${userData['totalPrice']}원'),
+              _buildAccountItem('예수금', '${userData['deposit']}원'),
+              _buildAccountItem('손익', '${userData['profitAndLoss']}원',
+                  isProfit: userData['profitAndLoss'] >= 0),
+              _buildAccountItem('수익률', '${userData['roi']}%',
+                  isProfit: double.parse(userData['roi']) >= 0),
             ],
           ),
         ),
@@ -115,7 +154,7 @@ class MyPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: isProfit ? Colors.red : null,
+                  color: isProfit ? Colors.red : Colors.blue,
                 ),
               ),
             ],
@@ -134,9 +173,7 @@ class MyPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 12,
-        ),
+        SizedBox(height: 12),
         Padding(
           padding: EdgeInsets.only(left: 10),
           child: Text('보유종목',
@@ -145,67 +182,101 @@ class MyPage extends StatelessWidget {
                   color: Colors.black,
                   fontWeight: FontWeight.bold)),
         ),
-        SizedBox(
-          height: 12,
+        SizedBox(height: 12),
+        FutureBuilder<List<Map<String, dynamic>>>(
+          future: _stockHelds,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (snapshot.hasData) {
+              return Column(
+                children: snapshot.data!
+                    .map((stock) => _buildStockItem(stock))
+                    .toList(),
+              );
+            } else {
+              return Center(child: Text('No stocks available'));
+            }
+          },
         ),
-        _buildStockItem('삼성전자'),
-        _buildStockItem('삼성에스디에스'),
-        _buildStockItem('삼성중공업'),
       ],
     );
   }
 
-  Widget _buildStockItem(String name) {
-    return FractionallySizedBox(
-      widthFactor: 0.85,
-      child: Card(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          // side: BorderSide(color: Colors.grey.shade300, width: 1),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(name,
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text('보유종목',
-                      style: TextStyle(fontSize: 14, color: Colors.grey)),
-                ],
+  Widget _buildStockItem(Map<String, dynamic> stock) {
+    return GestureDetector(
+      onTap: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StockDetailPage(
+                stockName: stock['name'],
+                stockCode: stock['stockCode'],
               ),
-              SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('현재가', style: TextStyle(fontSize: 14)),
-                      Text('매입가', style: TextStyle(fontSize: 14)),
-                      Text('보유량', style: TextStyle(fontSize: 14)),
-                      Text('평가손익', style: TextStyle(fontSize: 14)),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('74,300 원', style: TextStyle(fontSize: 14)),
-                      Text('98,400 원', style: TextStyle(fontSize: 14)),
-                      Text('100주', style: TextStyle(fontSize: 14)),
-                      Text('-2,400,000원',
-                          style: TextStyle(fontSize: 14, color: Colors.blue)),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+            ),
+          );
+        });
+      },
+      child: FractionallySizedBox(
+        widthFactor: 0.85,
+        child: Card(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(stock['name'],
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('보유종목',
+                        style: TextStyle(fontSize: 14, color: Colors.grey)),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('현재가', style: TextStyle(fontSize: 14)),
+                        Text('매입가', style: TextStyle(fontSize: 14)),
+                        Text('보유량', style: TextStyle(fontSize: 14)),
+                        Text('평가손익', style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('${stock['currentPrice']} 원',
+                            style: TextStyle(fontSize: 14)),
+                        Text('${stock['userPrice']} 원',
+                            style: TextStyle(fontSize: 14)),
+                        Text('${stock['quantity']}주',
+                            style: TextStyle(fontSize: 14)),
+                        Text('${stock['profitAndLoss']}원',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: (stock['profitAndLoss'] as int) >= 0
+                                    ? Colors.red
+                                    : Colors.blue)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

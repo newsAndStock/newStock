@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/stock_ranking_api.dart';
+import 'package:frontend/screens/stock_main/stock_detail_page.dart';
 
 class StockItem {
   final String name;
@@ -6,7 +8,7 @@ class StockItem {
   final String price;
   final String change;
   final String changePercentage;
-  final String logoUrl;
+  final String changeSign;
 
   StockItem({
     required this.name,
@@ -14,58 +16,17 @@ class StockItem {
     required this.price,
     required this.change,
     required this.changePercentage,
-    required this.logoUrl,
+    required this.changeSign,
   });
-}
 
-class StockComponent extends StatelessWidget {
-  final StockItem stockItem;
-
-  const StockComponent({Key? key, required this.stockItem}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              stockItem.logoUrl,
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stockItem.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(stockItem.code, style: TextStyle(color: Colors.grey[600])),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                stockItem.price,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '${stockItem.change} (${stockItem.changePercentage})',
-                style: TextStyle(color: Colors.red),
-              ),
-            ],
-          ),
-        ],
-      ),
+  factory StockItem.fromApi(Map<String, dynamic> data) {
+    return StockItem(
+      name: data['stockName'],
+      code: data['stockCode'],
+      price: data['currentPrice'],
+      change: data['priceChangeAmount'],
+      changePercentage: data['priceChangeRate'],
+      changeSign: data['priceChangeSign'],
     );
   }
 }
@@ -78,60 +39,69 @@ class StockPageComponent extends StatefulWidget {
   _StockPageComponentState createState() => _StockPageComponentState();
 }
 
-class _StockPageComponentState extends State<StockPageComponent>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final List<String> _categories = ['상승', '하락', '인기', '거래량', '거래대금'];
+class _StockPageComponentState extends State<StockPageComponent> {
+  final List<String> _categories = ['상승', '하락', '거래량', '시가총액'];
   String selectedCategory = '상승';
+  List<StockItem> _stocks = [];
+  bool _isLoading = false;
+  String? _error;
+
+  final StockRankingApi _api = StockRankingApi();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _categories.length, vsync: this);
+    _fetchStocks();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  void _navigateToStockDetail(String stockCode, String stockName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StockDetailPage(
+          stockCode: stockCode,
+          stockName: stockName,
+        ),
+      ),
+    );
   }
 
-  List<StockItem> _getStocksForCategory(String category) {
-    // 테스트 데이터
-    return [
-      StockItem(
-        name: '삼성전자',
-        code: '005930',
-        price: '74,300원',
-        change: '+300원',
-        changePercentage: '0.41%',
-        logoUrl: 'https://via.placeholder.com/40',
-      ),
-      StockItem(
-        name: '삼성전자',
-        code: '005930',
-        price: '74,300원',
-        change: '+300원',
-        changePercentage: '0.41%',
-        logoUrl: 'https://via.placeholder.com/40',
-      ),
-      StockItem(
-        name: '삼성전자',
-        code: '005930',
-        price: '74,300원',
-        change: '+300원',
-        changePercentage: '0.41%',
-        logoUrl: 'https://via.placeholder.com/40',
-      ),
-      StockItem(
-        name: '삼성전자',
-        code: '005930',
-        price: '74,300원',
-        change: '+300원',
-        changePercentage: '0.41%',
-        logoUrl: 'https://via.placeholder.com/40',
-      ),
-    ];
+  Future<void> _fetchStocks() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      String category;
+      switch (selectedCategory) {
+        case '상승':
+          category = 'topchangestocks';
+          break;
+        case '하락':
+          category = 'bottomchangestocks';
+          break;
+        case '거래량':
+          category = 'topvolume';
+          break;
+        case '시가총액':
+          category = 'topcapitalizationstocks';
+          break;
+        default:
+          category = 'topchangestocks';
+      }
+
+      final data = await _api.getStockRanking(category);
+      setState(() {
+        _stocks = data.map((item) => StockItem.fromApi(item)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _buildCategoryItem(String category) {
@@ -141,6 +111,7 @@ class _StockPageComponentState extends State<StockPageComponent>
         setState(() {
           selectedCategory = category;
         });
+        _fetchStocks();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -208,15 +179,69 @@ class _StockPageComponentState extends State<StockPageComponent>
                   ),
                 ],
               ),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16.0),
-                itemCount: _getStocksForCategory(selectedCategory).length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) => StockComponent(
-                  stockItem: _getStocksForCategory(selectedCategory)[index],
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(child: Text(_error!))
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16.0),
+                          itemCount: _stocks.length,
+                          separatorBuilder: (context, index) => const Divider(),
+                          itemBuilder: (context, index) => GestureDetector(
+                            onTap: () => _navigateToStockDetail(
+                              _stocks[index].code,
+                              _stocks[index].name,
+                            ),
+                            child: StockComponent(
+                              stockItem: _stocks[index],
+                            ),
+                          ),
+                        ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StockComponent extends StatelessWidget {
+  final StockItem stockItem;
+
+  const StockComponent({Key? key, required this.stockItem}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stockItem.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(stockItem.code, style: TextStyle(color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                stockItem.price,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${stockItem.change} (${stockItem.changePercentage})',
+                style: TextStyle(
+                  color: stockItem.changeSign == '2' ? Colors.red : Colors.blue,
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),

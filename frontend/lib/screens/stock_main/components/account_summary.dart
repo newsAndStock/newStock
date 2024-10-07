@@ -1,10 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/my_page_api.dart';
+import 'package:intl/intl.dart';
 
-class AccountSummary extends StatelessWidget {
-  const AccountSummary({super.key});
+class AccountSummary extends StatefulWidget {
+  const AccountSummary({Key? key}) : super(key: key);
+
+  @override
+  _AccountSummaryState createState() => _AccountSummaryState();
+}
+
+class _AccountSummaryState extends State<AccountSummary> {
+  late Future<Map<String, dynamic>> _userDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userDataFuture = MyPageApi().getMyDetail();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _userDataFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          final userData = snapshot.data!;
+          return _buildAccountSummaryCard(userData);
+        } else {
+          return Center(child: Text('No data available'));
+        }
+      },
+    );
+  }
+
+  Widget _buildAccountSummaryCard(Map<String, dynamic> userData) {
+    final numberFormat = NumberFormat('#,###');
+    final now = DateTime.now();
+    final formattedDate = DateFormat('yyyy.MM.dd HH:mm').format(now);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -15,7 +52,7 @@ class AccountSummary extends StatelessWidget {
             color: Colors.grey.withOpacity(0.5),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: const Offset(0, 3), // 그림자의 위치 변경
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -28,14 +65,13 @@ class AccountSummary extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width *
-                          0.05), // 화면 너비의 5%만큼 왼쪽 패딩
+                      left: MediaQuery.of(context).size.width * 0.05),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('띵슈롱님, 안녕하세요!',
+                    children: [
+                      Text('${userData['nickname']}님, 안녕하세요!',
                           style: TextStyle(color: Colors.white, fontSize: 18)),
-                      Text('2024.08.30 15:07 기준',
+                      Text('$formattedDate 기준',
                           style:
                               TextStyle(color: Colors.white70, fontSize: 12)),
                     ],
@@ -53,11 +89,14 @@ class AccountSummary extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSummaryItem(context, '총자산', '12,360,000원',
+              _buildSummaryItem(context, '총자산',
+                  '${numberFormat.format(userData['totalPrice'])}원',
                   valueColor: Color(0xFF3A2E6A)),
-              _buildSummaryItem(context, '손익', '+23.6%',
-                  valueColor: Colors.red),
-              _buildSummaryItem(context, '랭킹', '236위',
+              _buildSummaryItem(context, '수익률', '${userData['roi']}%',
+                  valueColor: double.parse(userData['roi']) >= 0
+                      ? Colors.red
+                      : Colors.blue),
+              _buildSummaryItem(context, '랭킹', '${userData['rank']}위',
                   valueColor: Color(0xFF3A2E6A)),
             ],
           ),
@@ -70,7 +109,7 @@ class AccountSummary extends StatelessWidget {
   Widget _buildSummaryItem(BuildContext context, String title, String value,
       {Color? valueColor}) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.23, // 화면 너비의 20%
+      width: MediaQuery.of(context).size.width * 0.23,
       height: MediaQuery.of(context).size.width * 0.18,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
