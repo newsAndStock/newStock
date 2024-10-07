@@ -1,10 +1,7 @@
 package com.ssafy.newstock.stock.controller;
 
 import com.ssafy.newstock.auth.supports.LoginMember;
-import com.ssafy.newstock.stock.controller.response.MinuteStockInfoResponse;
-import com.ssafy.newstock.stock.controller.response.StockDetailResponse;
-import com.ssafy.newstock.stock.controller.response.StockHoldingsResponse;
-import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
+import com.ssafy.newstock.stock.controller.response.*;
 import com.ssafy.newstock.stock.service.FetchStockService;
 import com.ssafy.newstock.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +38,10 @@ public class StockController {
     @GetMapping("/stocks/{stockCode}")
     public StockDetailResponse getStockDetail(@PathVariable String stockCode) throws Exception {
         return stockService.getStockDetail(stockCode);
+    }
+
+    @GetMapping("/stocks/{stockCode}/current")
+    public CurrentStockPriceResponse getCurrentStockInfo(@PathVariable String stockCode) {
+        return stockService.getInquirePrice(stockCode);
     }
 }

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.newstock.common.util.WebClientUtil;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
-import com.ssafy.newstock.stock.controller.response.MinuteStockInfoResponse;
-import com.ssafy.newstock.stock.controller.response.StockDetailResponse;
-import com.ssafy.newstock.stock.controller.response.StockHoldingsResponse;
-import com.ssafy.newstock.stock.controller.response.StockInfoResponse;
+import com.ssafy.newstock.stock.controller.response.*;
 import com.ssafy.newstock.stock.domain.StockInfo;
 import com.ssafy.newstock.stock.repository.MinuteStockInfoRepository;
 import com.ssafy.newstock.stock.repository.StockInfoRepository;
@@ -19,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -267,6 +265,52 @@ public class StockService {
             totalLiabilities = node.path("total_lblt").asLong();
         } catch (Exception ex) {
             throw new RuntimeException("국내주식 대차대조표 API 호출 실패: " + stockCode, ex);
+        }
+    }
+
+    public CurrentStockPriceResponse getInquirePrice(String stockCode) {
+        String url = "/uapi/domestic-stock/v1/quotations/inquire-price";
+        Map<String, String> queryParams = Map.of("FID_COND_MRKT_DIV_CODE", "J", "FID_INPUT_ISCD", stockCode);
+
+        try {
+            log.info("주식현재가시세 API 호출: {}", stockCode);
+
+            String response = webClientUtil.sendRequest(url, queryParams, Map.of("tr_id", "FHKST01010100"));
+            JsonNode node = objectMapper.readTree(response).path("output");
+
+            String stckPrpr = node.path("stck_prpr").asText();
+            String prdyVrss = node.path("prdy_vrss").asText();
+            String prdyCtrt = node.path("prdy_ctrt").asText();
+
+            return getInquireAskingPrice(stockCode, stckPrpr, prdyVrss, prdyCtrt);
+        } catch (Exception ex) {
+            throw new RuntimeException("주식현재가시세 API 호출 실패: " + stockCode, ex);
+        }
+    }
+
+    public CurrentStockPriceResponse getInquireAskingPrice(String stockCode, String stckPrpr, String prdyVrss, String prdyCtrt) {
+        String url = "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn";
+        Map<String, String> queryParams = Map.of("FID_COND_MRKT_DIV_CODE", "J", "FID_INPUT_ISCD", stockCode);
+
+        try {
+            log.info("주식현재가 호가/예상체결 API 호출: {}", stockCode);
+
+            String response = webClientUtil.sendRequest(url, queryParams, Map.of("tr_id", "FHKST01010200"));
+            JsonNode node = objectMapper.readTree(response).path("output1");
+
+            Map<String, String> askpMap = new LinkedHashMap<>();
+            for (int i = 1; i <= 10; i++) {
+                askpMap.put(node.path("askp" + i).asText(), node.path("askp_rsqn" + i).asText());
+            }
+
+            Map<String, String> bidpMap = new LinkedHashMap<>();
+            for (int i = 1; i <= 10; i++) {
+                bidpMap.put(node.path("bidp" + i).asText(), node.path("bidp_rsqn" + i).asText());
+            }
+
+            return new CurrentStockPriceResponse(stckPrpr, prdyVrss, prdyCtrt, askpMap, bidpMap);
+        } catch (Exception ex) {
+            throw new RuntimeException("주식현재가 호가/예상체결 API 호출 실패: " + stockCode, ex);
         }
     }
 }
