@@ -30,4 +30,8 @@ public class NotificationResponse {
         this.createdAt = notification.getCreatedAt();
     }
 
+    public String toString(){
+        return "[ receiverId: "+id+", stockName: "+stockName+", orderType: "+orderType+", quantity: "+quantity+", price: "+price+" ]";
+    }
+
 }

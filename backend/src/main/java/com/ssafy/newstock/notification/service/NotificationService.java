@@ -1,5 +1,6 @@
 package com.ssafy.newstock.notification.service;
 
+import com.ssafy.newstock.kis.service.KisServiceSocket;
 import com.ssafy.newstock.notification.controller.response.NotificationResponse;
 import com.ssafy.newstock.notification.domain.Notification;
 import com.ssafy.newstock.notification.repository.EmitterRepository;
@@ -7,6 +8,9 @@ import com.ssafy.newstock.notification.repository.EmitterRepositoryImpl;
 import com.ssafy.newstock.notification.repository.NotificationRepository;
 import com.ssafy.newstock.trading.domain.OrderType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,15 +24,17 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
     private final EmitterRepository emitterRepository = new EmitterRepositoryImpl();
     private final NotificationRepository notificationRepository;
-    private final Lock lock = new ReentrantLock();
+    private static final Logger log = LoggerFactory.getLogger(KisServiceSocket.class);
 
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60*6;
+
+    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
 
     public SseEmitter subscribe(Long memberId, String lastEventId) {
         String emitterId = memberId + "_" + System.currentTimeMillis();
@@ -64,16 +70,26 @@ public class NotificationService {
     }
 
     private void sendToClient(SseEmitter emitter, String emitterId, Object data) {
-        lock.lock();
+
         try {
+            if(!emitterRepository.findAllEmitterStartWithByMemberId(emitterId).isEmpty()){
+                emitterRepository.saveEventCache(emitterId,data);
+            }
+            log.info("\n====sendNotification ====\n emitterId: {} \n data: {} \n===========",emitterId, data.toString());
+
             emitter.send(SseEmitter.event()
                     .id(emitterId)
                     .data(data));
+
+            emitterRepository.deleteAllEventCacheStartWithId(emitterId);
         } catch (IOException exception) {
             emitterRepository.deleteById(emitterId);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unhandled server error");
-        } finally {
-            lock.unlock();
+            //throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unhandled server error");
+            if(exception.getMessage().contains("Broken pipe")){
+                log.error("[SSE ERROR] Client disconnected: ",exception);
+            } else if (exception.getMessage().contains("Response body is already written")) {
+                log.error("[SSE ERROR] Response body is already written: ",exception);
+            }
         }
     }
 
