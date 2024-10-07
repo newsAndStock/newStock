@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/models/news_model.dart';
 import 'package:frontend/api/news_api_service.dart';
 
@@ -13,21 +14,27 @@ class NewsSearchResultScreen extends StatefulWidget {
 }
 
 class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
+  final NewsService _apiService = NewsService();
+  final FlutterSecureStorage storage = FlutterSecureStorage();
   late Future<List<News>> futureNewsList;
 
   @override
   void initState() {
     super.initState();
-    futureNewsList = NewsService().fetchNews(); // 뉴스 데이터 로드
+    futureNewsList = _fetchNews(); // 뉴스 데이터 로드
   }
 
-  // 검색어에 따라 뉴스 리스트를 필터링하는 함수
-  List<News> _filterNewsBySearchTerm(List<News> allNews) {
-    return allNews
-        .where((news) =>
-            news.title.contains(widget.searchTerm) ||
-            news.content.contains(widget.searchTerm))
-        .toList();
+  // 뉴스 데이터를 불러오는 함수
+  Future<List<News>> _fetchNews() async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      return await _apiService.searchNews(widget.searchTerm, accessToken);
+    } catch (e) {
+      throw Exception('Failed to load news: $e');
+    }
   }
 
   @override
@@ -36,7 +43,7 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text('뉴스 검색'),
+        title: Text('뉴스 검색 결과', style: TextStyle(color: Colors.black)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -64,18 +71,7 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
               itemCount: filteredNews.length,
               itemBuilder: (context, index) {
                 final news = filteredNews[index];
-                return GestureDetector(
-                  onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => NewsDetailScreen(
-                    //                             ),
-                    //   ),
-                    // );
-                  },
-                  child: buildNewsListTile(news),
-                );
+                return buildNewsListTile(news);
               },
             );
           }
@@ -86,9 +82,6 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
 
   // 뉴스 타일 위젯
   Widget buildNewsListTile(News news) {
-    // 이미지 URL 로그 출력
-    print('Image URL: ${news.imageUrl}'); // 이미지 URL 확인을 위한 로그
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Container(
@@ -128,7 +121,7 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
                   image: news.imageUrl.isNotEmpty
                       ? NetworkImage(news.imageUrl)
                       : const AssetImage('assets/placeholder.png')
-                          as ImageProvider, // 기본 이미지
+                          as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -138,5 +131,14 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
         ),
       ),
     );
+  }
+
+  // 검색어에 따라 뉴스 리스트를 필터링하는 함수 (필요 시 사용)
+  List<News> _filterNewsBySearchTerm(List<News> allNews) {
+    return allNews
+        .where((news) =>
+            news.title.contains(widget.searchTerm) ||
+            news.content.contains(widget.searchTerm))
+        .toList();
   }
 }
