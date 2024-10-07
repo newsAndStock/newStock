@@ -81,7 +81,7 @@ public class StockSearchController {
 
     @GetMapping("/stock-news-search")
     public ResponseEntity<?> getNewsSearch(@RequestParam String stockCode){
-        Map<String, List<NewsSearchResponse>> stringListMap = stockSearchService.searchNewsForStock(stockCode);
-        return ResponseEntity.ok(stringListMap);
+        List<NewsSearchResponse> stringList = stockSearchService.searchNewsForStock(stockCode);
+        return ResponseEntity.ok(stringList);
     }
 }

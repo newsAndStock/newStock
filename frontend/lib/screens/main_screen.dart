@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/member_api_service.dart';
+import 'package:frontend/api/sse_api_service.dart';
 import 'package:frontend/models/member_model.dart';
 import 'package:frontend/screens/attendance/attendance_screen.dart';
 import 'package:frontend/screens/news/news_main.dart';
@@ -11,6 +12,7 @@ import 'package:frontend/screens/signin_screen.dart';
 import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
 import 'package:frontend/widgets/common/image_button.dart';
+import 'package:frontend/widgets/notification/notification_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,11 +24,23 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final storage = const FlutterSecureStorage();
   late Future<Member> memberInfoFuture;
+  final SseApiService _sseApiService = SseApiService();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     memberInfoFuture = _loadMemberInfo();
+    _notificationService.initialize();
+    listenToSse();
+  }
+
+  // SSE 구독 및 메시지 수신 처리
+  void listenToSse() async {
+    String? token = await storage.read(key: 'accessToken');
+    _sseApiService.subscribe(token!).listen((data) {
+      _notificationService.showNotification('New SSE Event', data);
+    });
   }
 
   Future<Member> _loadMemberInfo() async {

@@ -341,15 +341,13 @@ public class StockSearchService {
 
     //주식으로 뉴스 검색
     //관심종목 + 관련 뉴스 조회
-    public Map<String, List<NewsSearchResponse>>  searchNewsForStock(String stockCode) {
-        Map<String, List<NewsSearchResponse>> stockNewsMap = new HashMap<>();
+    public List<NewsSearchResponse>  searchNewsForStock(String stockCode) {
         Stock stock = stockRepository.findByStockCode(stockCode)
                 .orElseThrow(() -> new IllegalArgumentException("주식이 존재하지 않습니다."));
 
         String stockName = removeStockTypeSuffix(stock.getName());
         List<NewsSearchResponse> newsResponses = newsRepositoryQuerydsl.searchNewsTitleOrKeyword(stockName);
-        stockNewsMap.put(stockName, newsResponses);
 
-        return stockNewsMap;
+        return newsResponses;
     }
 }
