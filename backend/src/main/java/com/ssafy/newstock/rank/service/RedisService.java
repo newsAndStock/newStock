@@ -9,10 +9,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +26,41 @@ public class RedisService {
         redisTemplateRank.opsForZSet().add("memberRank", memberId, roi);
 
     }
+
+    public void addMemberScore(Double roi, Integer score) {
+        redisTemplateRank.opsForZSet().add("memberScore", roi, score);
+    }
+
+    public Map<Double, Integer> getAllRoiWithScores() {
+        // ZSet에서 모든 수익률과 멤버 ID를 가져오기
+        Set<ZSetOperations.TypedTuple<Object>> roiScores =
+                redisTemplateRank.opsForZSet().reverseRangeWithScores("memberScore", 0, -1);
+
+        Map<Double, Integer> resultMap= roiScores != null
+                ? roiScores.stream()
+                .collect(Collectors.toMap(
+                        tuple -> {
+                            Object value = tuple.getValue();
+                            // value가 Long인 경우에만 Long으로 캐스팅
+                            if (value instanceof Number) {
+                                return ((Number) value).doubleValue();
+                            } else {
+                                throw new ClassCastException("Expected a Number but got " + value.getClass().getSimpleName());
+                            }
+                        },
+                        tuple -> {
+                            // score는 Integer로 변환
+                            Integer score = tuple.getScore() != null ? ((Number) tuple.getScore()).intValue() : null;
+                            return score;
+                        },
+                        (existing, replacement) -> existing, // 충돌 시 기존 값을 유지
+                        LinkedHashMap::new // 입력 순서를 유지하는 LinkedHashMap 사용
+                ))
+                : Collections.emptyMap();
+
+        return resultMap;
+    }
+
 
     public void setRankTime(){
         // 현재 시간을 "yyyy-MM-dd" 형식으로 가져오기
@@ -50,32 +82,38 @@ public class RedisService {
         Set<ZSetOperations.TypedTuple<Object>> topMembersWithScores =
                 redisTemplateRank.opsForZSet().reverseRangeWithScores("memberRank", 0, -1);
 
-        return topMembersWithScores != null
+        Map<Long, Double> resultMap= topMembersWithScores != null
                 ? topMembersWithScores.stream()
                 .collect(Collectors.toMap(
                         tuple -> {
                             Object value = tuple.getValue();
-                            if (value instanceof Long) {
-                                return (Long) value;
-                            } else if (value instanceof Integer) {
-                                // Integer를 Long으로 변환
-                                return ((Integer) value).longValue();
-                            } else if (value instanceof String) {
-                                // String으로 저장된 경우 Long으로 변환
-                                return Long.valueOf((String) value);
+                            // value가 Long인 경우에만 Long으로 캐스팅
+                            if (value instanceof Number) {
+                                return ((Number) value).longValue();
+                            } else {
+                                throw new ClassCastException("Expected a Number but got " + value.getClass().getSimpleName());
                             }
-                            throw new IllegalArgumentException("Unsupported memberId type: " + value.getClass());
                         },
-                        ZSetOperations.TypedTuple::getScore))
+                        ZSetOperations.TypedTuple::getScore,
+                        (existing, replacement) -> existing, // 충돌 시 기존 값을 유지
+                        LinkedHashMap::new // 입력 순서를 유지하는 LinkedHashMap 사용
+                ))
                 : Collections.emptyMap();
+
+        return resultMap;
     }
 
 
 
-    public Long getMemberRank(Long memberId) {
+
+    public Integer getMemberRank(Long memberId) {
         // 내림차순에서 멤버의 순위를 가져옴
-        Long rank = redisTemplateRank.opsForZSet().reverseRank("memberRank", memberId);
-        return rank != null ? rank + 1 : 0; // 순위는 0부터 시작하므로 1을 더해줌
+        Double roi = redisTemplateRank.opsForZSet().score("memberRank", memberId);
+        if (roi == null) {
+            return 0;
+        }
+        Double score=redisTemplateRank.opsForZSet().score("memberScore",roi);
+        return score.intValue();
     }
 
 }

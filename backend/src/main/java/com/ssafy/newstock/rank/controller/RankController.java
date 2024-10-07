@@ -19,6 +19,7 @@ public class RankController {
     @GetMapping("/makeRank")
     public HttpStatus makeRank(){
         rankService.makeRank();
+        rankService.dealSameScore();
         return HttpStatus.OK;
     }
 

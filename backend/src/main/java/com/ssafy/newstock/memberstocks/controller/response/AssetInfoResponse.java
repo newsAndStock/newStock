@@ -12,11 +12,11 @@ public class AssetInfoResponse {
     private Long deposit;
     private Long profitAndLoss;
     private String ROI;
-    private Long rank;
+    private Integer rank;
     private String rankSaveTime;
 
 
-    public AssetInfoResponse(String nickname,Long totalPrice,Long deposit, Long profitAndLoss, String ROI, Long rank,String rankSaveTime){
+    public AssetInfoResponse(String nickname,Long totalPrice,Long deposit, Long profitAndLoss, String ROI, Integer rank,String rankSaveTime){
         this.nickname=nickname;
         this.totalPrice=totalPrice;
         this.deposit=deposit;
