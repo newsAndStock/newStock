@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
@@ -24,8 +26,9 @@ public class NotificationService {
 
     private final EmitterRepository emitterRepository = new EmitterRepositoryImpl();
     private final NotificationRepository notificationRepository;
+    private final Lock lock = new ReentrantLock();
 
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
+    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60*6;
 
     public SseEmitter subscribe(Long memberId, String lastEventId) {
         String emitterId = memberId + "_" + System.currentTimeMillis();
@@ -61,6 +64,7 @@ public class NotificationService {
     }
 
     private void sendToClient(SseEmitter emitter, String emitterId, Object data) {
+        lock.lock();
         try {
             emitter.send(SseEmitter.event()
                     .id(emitterId)
@@ -68,6 +72,8 @@ public class NotificationService {
         } catch (IOException exception) {
             emitterRepository.deleteById(emitterId);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unhandled server error");
+        } finally {
+            lock.unlock();
         }
     }
 

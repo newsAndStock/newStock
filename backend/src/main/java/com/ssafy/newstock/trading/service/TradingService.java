@@ -52,13 +52,19 @@ public class TradingService {
         memberService.updateDeposit(member.getId(),(long)(trading.getBid() * trading.getQuantity()),OrderType.SELL);
         tradingRepository.save(trading);
 
-        notificationService.send(member.getId(),sellRequest.getStockCode(), (long) sellRequest.getQuantity(),OrderType.SELL,trading.getBid());
+        CompletableFuture<Void> future=sendTradeMessage(member.getId(),sellRequest.getStockCode(), (long) sellRequest.getQuantity(),OrderType.SELL,trading.getBid());
 
         return new TradeResponse(OrderType.SELL, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
     }
 
     private int getStockPrPr(String stockCode) {
         return Integer.parseInt(kisService.getCurrentStockPrice(stockCode));
+    }
+
+    private CompletableFuture<Void> sendTradeMessage(Long receiverId, String stockCode, Long quantity, OrderType orderType, Integer price){
+        return CompletableFuture.runAsync(() -> {
+            notificationService.send(receiverId,stockCode,quantity,orderType,price);
+        });
     }
 
     private void checkHoldings(Member member, TradeRequest sellRequest){
