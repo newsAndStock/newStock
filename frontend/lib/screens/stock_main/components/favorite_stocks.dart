@@ -43,8 +43,8 @@ class FavoriteStocks extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 12),
                   child: _buildFavoriteStockItem(
                     stock['name'],
-                    '가격 정보 없음',
-                    '변동 없음',
+                    stock['info']['currentPrice'] + '원',
+                    stock['info']['changedPrice'] + '원',
                   ),
                 ),
               );

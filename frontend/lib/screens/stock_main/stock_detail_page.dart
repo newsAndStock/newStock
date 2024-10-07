@@ -2,11 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:candlesticks/candlesticks.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:frontend/api/stock_api/chart_api.dart';
+import 'package:frontend/api/stock_api/stock_detail_api.dart';
 import 'package:frontend/screens/stock_main/interactive_chart/interactive_chart.dart';
 import 'package:frontend/api/stock_api/favorite_stock_api.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'stock_trading_page.dart';
 import 'interactive_chart/mock_data.dart';
+import 'interactive_chart/src/candle_data.dart';
 
 class StockData {
   final DateTime date;
@@ -37,11 +40,18 @@ class _StockDetailPageState extends State<StockDetailPage>
   bool _showCandlesticks = true;
   bool _showLineChart = true;
   String _selectedPeriod = '1일';
-  final List<CandleData> _data = MockDataTesla.candles;
+  // List<List<dynamic>>? _stockData;
+  // List<List<dynamic>>? _daystockData;
+  // List<List<dynamic>>? _weekstockData;
+  // List<List<dynamic>>? _monthstockData;
 
   bool _isFavorite = false;
   bool _isLoading = false;
+  // bool _isLoadingday = false;
+  // bool _isLoadingweek = false;
+  // bool _isLoadingmonth = false;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
+  late Map<dynamic, dynamic> details;
 
   @override
   void initState() {
@@ -49,6 +59,136 @@ class _StockDetailPageState extends State<StockDetailPage>
     _tabController = TabController(length: 3, vsync: this);
     _showLineChart = true;
     _checkFavoriteStatus();
+    // _fetchStockData();
+    // _fetchThreeMonthsStockData();
+    // _fetchYearStockData();
+    // _fetchFiveYearsStockData();
+    details = {};
+    _fetchStockDetail();
+  }
+
+  Future<void> _fetchStockDetail() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      final data = await StockDetailApi().getStockDetail(widget.stockCode);
+      setState(() {
+        details = data;
+      });
+    } catch (e) {
+      print('Error fetching stock data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+      );
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // Future<void> _fetchStockData() async {
+  //   setState(() => _isLoading = true);
+  //   try {
+  //     String? token = await _storage.read(key: 'accessToken');
+  //     if (token == null) throw Exception('No access token found');
+
+  //     final data = await ChartApi.fetchStockData(token, widget.stockCode);
+  //     setState(() {
+  //       _stockData = data;
+  //       _isLoading = false;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching stock data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+  //     );
+  //     setState(() => _isLoading = false);
+  //   }
+  // }
+
+  // Future<void> _fetchThreeMonthsStockData() async {
+  //   setState(() => _isLoadingday = true);
+  //   try {
+  //     String? token = await _storage.read(key: 'accessToken');
+  //     if (token == null) throw Exception('No access token found');
+
+  //     final data =
+  //         await ChartApi.fetchThreeMonthsStockData(token, widget.stockCode);
+  //     setState(() {
+  //       _daystockData = data;
+  //       _isLoadingday = false;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching stock data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+  //     );
+  //     setState(() => _isLoadingday = false);
+  //   }
+  // }
+
+  // Future<void> _fetchYearStockData() async {
+  //   setState(() => _isLoadingweek = true);
+  //   try {
+  //     String? token = await _storage.read(key: 'accessToken');
+  //     if (token == null) throw Exception('No access token found');
+
+  //     final data = await ChartApi.fetchYearStockData(token, widget.stockCode);
+  //     setState(() {
+  //       _weekstockData = data;
+  //       _isLoadingweek = false;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching stock data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+  //     );
+  //     setState(() => _isLoadingweek = false);
+  //   }
+  // }
+
+  // Future<void> _fetchFiveYearsStockData() async {
+  //   setState(() => _isLoadingmonth = true);
+  //   try {
+  //     String? token = await _storage.read(key: 'accessToken');
+  //     if (token == null) throw Exception('No access token found');
+
+  //     final data =
+  //         await ChartApi.fetchFiveYearsStockData(token, widget.stockCode);
+  //     setState(() {
+  //       _monthstockData = data;
+  //       _isLoadingmonth = false;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching stock data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+  //     );
+  //     setState(() => _isLoadingmonth = false);
+  //   }
+  // }
+
+  List<CandleData> _convertToCandleData(List<List<dynamic>> data) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return data.map((item) {
+      final timeString = item[0] as String;
+      final timeParts = timeString.split(':');
+      final hours = int.parse(timeParts[0]);
+      final minutes = int.parse(timeParts[1]);
+
+      final dateTime = today.add(Duration(hours: hours, minutes: minutes));
+
+      return CandleData(
+        dateTime: dateTime,
+        open: double.parse(item[1]),
+        high: double.parse(item[3]),
+        low: double.parse(item[4]),
+        close: double.parse(item[2]),
+        volume: double.parse(item[5]),
+      );
+    }).toList();
   }
 
   Future<void> _checkFavoriteStatus() async {
@@ -247,24 +387,6 @@ class _StockDetailPageState extends State<StockDetailPage>
       ),
     );
   }
-
-  // Widget _buildCandlestickChart() {
-  //   final List<Candle> candles = List.generate(
-  //     30,
-  //     (index) => Candle(
-  //       date: DateTime.now().subtract(Duration(days: 30 - index)),
-  //       high: 75000 + (index * 100),
-  //       low: 73000 + (index * 100),
-  //       open: 74000 + (index * 100),
-  //       close: 74500 + (index * 100),
-  //       volume: 1000000 + (index * 10000),
-  //     ),
-  //   );
-
-  //   return Candlesticks(
-  //     candles: candles,
-  //   );
-  // }
 
   Widget _buildCandlestickChart() {
     final random = Random();
@@ -473,26 +595,6 @@ class _StockDetailPageState extends State<StockDetailPage>
     );
   }
 
-  // Widget _buildChartTab() {
-  //   return Column(
-  //     children: [
-  //       // Padding(
-  //       //   padding: const EdgeInsets.all(16.0),
-  //       //   child: Text(
-  //       //     '주가 추이',
-  //       //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //       //   ),
-  //       // ),
-  //       Expanded(
-  //         // child: _buildChartSection(),
-  //         // child: InteractiveChart(candles: _data),
-  //         child: _buildLineChart(),
-  //       ),
-  //       // _buildPeriodSelector(),
-  //     ],
-  //   );
-  // }
-
   Widget _buildChartTab() {
     return Column(
       children: [
@@ -526,15 +628,38 @@ class _StockDetailPageState extends State<StockDetailPage>
             ],
           ),
         ),
-        Expanded(
-          child: _showLineChart
-              ? _buildLineChart()
-              : InteractiveChart(candles: _data),
-        ),
-        _buildPeriodSelector(),
+        // Expanded(
+        //   child: _isLoading ||
+        //           _isLoadingday ||
+        //           _isLoadingweek ||
+        //           _isLoadingmonth
+        //       ? Center(child: CircularProgressIndicator())
+        //       : _showLineChart
+        //           ? _buildLineChart()
+        //           : _getSelectedData() != null
+        //               ? InteractiveChart(
+        //                   candles: _convertToCandleData(_getSelectedData()!))
+        //               : Center(child: Text('No data available')),
+        // ),
+        // _buildPeriodSelector(),
       ],
     );
   }
+
+  // List<List<dynamic>>? _getSelectedData() {
+  //   switch (_selectedPeriod) {
+  //     case '1일':
+  //       return _stockData;
+  //     case '3달':
+  //       return _daystockData;
+  //     case '1년':
+  //       return _weekstockData;
+  //     case '5년':
+  //       return _monthstockData;
+  //     default:
+  //       return _stockData;
+  //   }
+  // }
 
   Widget _buildPeriodSelector() {
     return Container(
@@ -571,14 +696,82 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Widget _buildStockInfoTab() {
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+    String safeToString(dynamic value) {
+      if (value == null) return '정보 없음';
+      return value.toString();
+    }
+
+    String getFinancialData(String key) {
+      var value = details[key];
+      if (value == null) {
+        print('$key is null in details map'); // 디버깅을 위한 로그
+        return '정보 없음yoyo';
+      }
+      return safeToString(value);
+    }
+
     return ListView(
       children: [
-        ListTile(title: Text('시가총액'), trailing: Text('229.7900억 원')),
-        ListTile(title: Text('PER'), trailing: Text('37.36')),
-        ListTile(title: Text('EPS'), trailing: Text('1,993원')),
-        ListTile(title: Text('52주 최고'), trailing: Text('75,800원')),
-        ListTile(title: Text('52주 최저'), trailing: Text('51,300원')),
-        ListTile(title: Text('거래량'), trailing: Text('9,123,456주')),
+        ListTile(
+            title: Text('${widget.stockCode}'),
+            trailing: Text(safeToString(details['marketIdCode']))),
+        ListTile(
+            title: Text('시장 구분'),
+            trailing: Text(safeToString(details['marketIdCode']))),
+        ListTile(
+            title: Text('업종'),
+            trailing: Text(safeToString(details['industryCodeName']))),
+        ListTile(
+            title: Text('상장일'),
+            trailing: Text(safeToString(details['listingDate']))),
+        ListTile(
+            title: Text('결산월'),
+            trailing: Text(safeToString(details['settlementMonth']))),
+        ListTile(
+            title: Text('자본금'),
+            trailing: Text(safeToString(details['capital']))),
+        ListTile(
+            title: Text('상장주식수'),
+            trailing: Text(safeToString(details['listedStockCount']))),
+        ListTile(
+            title: Text('매출액'),
+            trailing: Text(safeToString(details['salesRevenue']))),
+        ListTile(
+            title: Text('당기순이익'),
+            trailing: Text(safeToString(details['netIncome']))),
+        ListTile(
+            title: Text('시가총액'),
+            trailing: Text(safeToString(details['marketCap']))),
+        ListTile(
+            title: Text('전일종가'),
+            trailing: Text(safeToString(details['previousClosePrice']))),
+        ListTile(
+            title: Text('250일 고가'),
+            trailing: Text(safeToString(details['high250Price']))),
+        ListTile(
+            title: Text('250일 저가'),
+            trailing: Text(safeToString(details['low250Price']))),
+        ListTile(
+            title: Text('연중 고가'),
+            trailing: Text(safeToString(details['yearlyHighPrice']))),
+        ListTile(
+            title: Text('연중 저가'),
+            trailing: Text(safeToString(details['yearlyLowPrice']))),
+        ListTile(
+            title: Text('배당금'),
+            trailing: Text(safeToString(details['dividendAmount']))),
+        ListTile(
+            title: Text('배당수익률'),
+            trailing: Text(safeToString(details['dividendYield']))),
+        ListTile(title: Text('PER'), trailing: Text(getFinancialData('PER'))),
+        ListTile(title: Text('EPS'), trailing: Text(getFinancialData('EPS'))),
+        ListTile(title: Text('PBR'), trailing: Text(getFinancialData('PBR'))),
+        ListTile(title: Text('BPS'), trailing: Text(getFinancialData('BPS'))),
+        ListTile(title: Text('ROE'), trailing: Text(getFinancialData('ROE'))),
+        ListTile(title: Text('ROA'), trailing: Text(getFinancialData('ROA'))),
       ],
     );
   }

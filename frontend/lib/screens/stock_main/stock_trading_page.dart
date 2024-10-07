@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/trading_api/fixed_price_api.dart';
+import 'package:frontend/api/stock_api/trading_api/in_trading_api.dart';
 import 'package:frontend/api/stock_api/trading_api/market_price_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
+import 'dart:async';
 
 class StockTradingPage extends StatefulWidget {
   final String stockName;
@@ -35,11 +37,14 @@ class _StockTradingPageState extends State<StockTradingPage>
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _limitPriceController = TextEditingController();
   final FocusNode _quantityFocusNode = FocusNode();
-  final double _availableBalance = 1000000;
+  late int _availableBalance;
   bool _showKeypad = false;
   bool _showPriceVolumeChart = true;
   final FlutterSecureStorage storage = FlutterSecureStorage();
   late int _totalHoldingQuantity;
+  late String _balanceType;
+  late Timer? _timer;
+  late dynamic _holdingCounts;
 
   @override
   void initState() {
@@ -50,6 +55,23 @@ class _StockTradingPageState extends State<StockTradingPage>
     _quantityFocusNode.addListener(_onQuantityFocusChange);
     _totalHoldingQuantity = widget.totalHoldingQuantity;
     _tabController.addListener(_handleTabChange);
+    _availableBalance = 0;
+    _balanceType = 'USER';
+    _holdingCounts = 0;
+
+    // 비동기 초기화를 위한 Future 사용
+    Future.microtask(() async {
+      await _loadAvailableBalance();
+      await _loadHoldingCounts(widget.stockCode);
+      if (mounted) {
+        setState(() {}); // 상태 업데이트를 강제로 트리거
+      }
+    });
+
+    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+      _loadAvailableBalance();
+      _loadHoldingCounts(widget.stockCode);
+    });
   }
 
   @override
@@ -60,7 +82,45 @@ class _StockTradingPageState extends State<StockTradingPage>
     _quantityFocusNode.removeListener(_onQuantityFocusChange);
     _quantityFocusNode.dispose();
     _limitPriceController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAvailableBalance() async {
+    try {
+      Map<String, int> deposit = await InTradingApi().getDeposit();
+      print('API Response: $deposit'); // 디버깅을 위한 출력
+      setState(() {
+        if (deposit.isNotEmpty) {
+          var entry = deposit.entries.first;
+          _balanceType = entry.key;
+          _availableBalance = entry.value;
+          print(
+              'Updated balance: $_balanceType - $_availableBalance'); // 디버깅을 위한 출력
+        } else {
+          print('Deposit map is empty'); // 디버깅을 위한 출력
+        }
+      });
+    } catch (e) {
+      print('Failed to load available balance: $e');
+    }
+  }
+
+  Future<void> _loadHoldingCounts(String stockCode) async {
+    try {
+      Map<String, dynamic> holding =
+          await InTradingApi().getHoldings(stockCode);
+      print('API Response: $holding'); // 디버깅을 위한 출력
+      setState(() {
+        if (holding.isNotEmpty) {
+          _holdingCounts = holding['holdingsCount'];
+        } else {
+          print('Holding map is empty'); // 디버깅을 위한 출력
+        }
+      });
+    } catch (e) {
+      print('Failed to load available balance: $e');
+    }
   }
 
   void _handleTabChange() {
@@ -294,9 +354,9 @@ class _StockTradingPageState extends State<StockTradingPage>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('띵슈롱님의 가용자산',
+              Text('$_balanceType님의 가용자산',
                   style: TextStyle(color: Colors.white, fontSize: 13)),
-              Text('1,000,000원',
+              Text('${_availableBalance.toStringAsFixed(0)}원',
                   style: TextStyle(color: Colors.white, fontSize: 23)),
             ],
           )
@@ -321,11 +381,11 @@ class _StockTradingPageState extends State<StockTradingPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '띵슈롱님의 가용 주식',
+                '$_balanceType님의 보유 주식',
                 style: TextStyle(color: Colors.white, fontSize: 13),
               ),
               Text(
-                '$_totalHoldingQuantity주',
+                '$_holdingCounts주',
                 style: TextStyle(color: Colors.white, fontSize: 23),
               ),
             ],
