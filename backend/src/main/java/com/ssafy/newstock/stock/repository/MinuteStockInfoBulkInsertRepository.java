@@ -14,7 +14,7 @@ public class MinuteStockInfoBulkInsertRepository {
 
     public void bulkInsert(List<MinuteStockInfo> stockInfos) {
         String sql = "INSERT INTO minute_stock_info (stock_code, date, time, opening_price, closing_price, highest_price, lowest_price, volume) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, stockInfos, stockInfos.size(),
                 (ps, stockInfo) -> {
