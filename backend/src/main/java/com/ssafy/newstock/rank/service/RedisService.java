@@ -22,12 +22,13 @@ public class RedisService {
     }
 
     public void addMemberRank(Long memberId, double roi) {
-
+        redisTemplateRank.delete("memberRank");
         redisTemplateRank.opsForZSet().add("memberRank", memberId, roi);
 
     }
 
     public void addMemberScore(Double roi, Integer score) {
+        redisTemplateRank.delete("memberScore");
         redisTemplateRank.opsForZSet().add("memberScore", roi, score);
     }
 
