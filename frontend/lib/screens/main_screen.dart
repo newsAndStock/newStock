@@ -33,7 +33,9 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final response = await MemberApiService().memberInfo();
       if (response.statusCode == 200) {
-        return Member.fromJson(jsonDecode(response.body));
+        // 응답 본문을 UTF-8로 강제 디코딩
+        final decodedResponse = utf8.decode(response.bodyBytes);
+        return Member.fromJson(jsonDecode(decodedResponse));
       } else {
         throw Exception('Failed to load member info');
       }
