@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class WebSocketService {
   WebSocketChannel? _channel;
@@ -15,6 +16,36 @@ class WebSocketService {
   Timer? _pingTimer;
   String? lastStockCode;
   String? lastTrType;
+  Timer? _keepAliveTimer;
+  Timer? _responseTimer;
+
+  int _reconnectAttempts = 0;
+  static const int MAX_RECONNECT_ATTEMPTS = 5;
+
+  // StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+
+  void _startKeepAliveTimer() {
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = Timer.periodic(Duration(seconds: 30), (_) {
+      if (_channel?.closeCode == null) {
+        _channel?.sink.add('ping');
+        print('Keep-alive ping sent');
+      }
+    });
+  }
+
+  // void initConnectivityListener() {
+  //   _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+  //     if (result != ConnectivityResult.none) {
+  //       if (_channel?.closeCode != null) {
+  //         print('Network connection restored. Attempting to reconnect...');
+  //         _reconnect();
+  //       }
+  //     } else {
+  //       print('No network connection. WebSocket may disconnect.');
+  //     }
+  //   });
+  // }
 
   Stream get stream {
     if (_channel == null) {
@@ -27,33 +58,52 @@ class WebSocketService {
 
   Future<void> connectWebsocket(Function onConnected) async {
     print('Attempting to connect to WebSocket...');
-    final url = Uri.parse('ws://ops.koreainvestment.com:21000');
-    _channel = WebSocketChannel.connect(url);
-
     try {
-      await _channel!.ready;
+      final url = Uri.parse('ws://ops.koreainvestment.com:21000');
+      _channel = WebSocketChannel.connect(url);
+
+      await _channel!.ready.timeout(Duration(seconds: 10), onTimeout: () {
+        throw TimeoutException('WebSocket connection timed out');
+      });
+
       print('WebSocket connected successfully');
 
       _subscription = _channel!.stream.listen(
         (message) {
           print('Received message: $message');
-          // ... 기존 코드 ...
+          _handleMessage(message);
         },
         onDone: () {
-          print('WebSocket connection closed');
-          _reconnect();
+          print(
+              'WebSocket connection closed. Close code: ${_channel!.closeCode}, Close reason: ${_channel!.closeReason}');
+          // _reconnect();
         },
         onError: (error) {
           print('WebSocket error: $error');
+          if (error is WebSocketChannelException) {
+            print('WebSocket channel exception: ${error.message}');
+          }
           _reconnect();
         },
       );
 
-      _startPingTimer();
+      _startKeepAliveTimer();
       onConnected();
     } catch (e) {
       print('Error connecting to WebSocket: $e');
       _reconnect();
+    }
+  }
+
+  void _handleMessage(String message) {
+    _responseTimer?.cancel();
+    try {
+      double price = parseSocketMessage(message);
+      if (price > 0 && onPriceUpdate != null) {
+        onPriceUpdate!(price);
+      }
+    } catch (e) {
+      print('Error handling message: $e');
     }
   }
 
@@ -68,19 +118,26 @@ class WebSocketService {
 
   void _reconnect() {
     _pingTimer?.cancel();
-    Future.delayed(Duration(seconds: 5), () {
-      if (_channel?.closeCode != null) {
-        print('Attempting to reconnect...');
-        connectWebsocket(() {
-          print('Reconnected, resending initial message...');
-          if (lastStockCode != null && lastTrType != null) {
-            sendMessage(lastStockCode!, lastTrType!);
-          } else {
-            print('No previous message to resend');
-          }
-        });
-      }
-    });
+    if (_reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      _reconnectAttempts++;
+      Future.delayed(Duration(seconds: _reconnectAttempts * 5), () {
+        if (_channel?.closeCode != null) {
+          print('Attempting to reconnect... (Attempt $_reconnectAttempts)');
+          connectWebsocket(() {
+            print('Reconnected, resending initial message...');
+            if (lastStockCode != null && lastTrType != null) {
+              sendMessage(lastStockCode!, lastTrType!);
+            } else {
+              print('No previous message to resend');
+            }
+          });
+        }
+      });
+    } else {
+      print(
+          'Max reconnection attempts reached. Please check your connection and try again later.');
+      // 여기에 사용자에게 연결 실패를 알리는 코드를 추가할 수 있습니다.
+    }
   }
 
   void sendMessage(String stockCode, String trType) {
@@ -94,6 +151,7 @@ class WebSocketService {
         String payload = createMessage(approvalKey, stockCode, trType);
         print('Sending message: $payload');
         _channel!.sink.add(payload);
+        _startResponseTimer();
       });
     } else {
       String approvalKey = myApprovalKey;
@@ -101,6 +159,14 @@ class WebSocketService {
       print('Sending message: $payload');
       _channel!.sink.add(payload);
     }
+  }
+
+  void _startResponseTimer() {
+    _responseTimer?.cancel();
+    _responseTimer = Timer(Duration(seconds: 5), () {
+      print('No response received within 5 seconds. Reconnecting...');
+      _reconnect();
+    });
   }
 
   String createMessage(String approvalKey, String trKey, String trType) {
@@ -178,6 +244,7 @@ class WebSocketService {
   }
 
   void dispose() {
+    _keepAliveTimer?.cancel();
     _pingTimer?.cancel();
     _subscription?.cancel();
     _channel?.sink.close();

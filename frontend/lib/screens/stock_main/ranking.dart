@@ -3,6 +3,10 @@ import 'package:frontend/api/stock_api/my_page_api.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RankingPage extends StatefulWidget {
+  final String userNickname;
+
+  const RankingPage({Key? key, required this.userNickname}) : super(key: key);
+
   @override
   _RankingPageState createState() => _RankingPageState();
 }
@@ -10,6 +14,7 @@ class RankingPage extends StatefulWidget {
 class _RankingPageState extends State<RankingPage> {
   late Future<Map<String, dynamic>> _rankingFuture;
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
+  int userRank = 0;
 
   @override
   void initState() {
@@ -33,8 +38,19 @@ class _RankingPageState extends State<RankingPage> {
             final rankingSaveTime = rankingData['rankSaveTime'];
             final rankings = (rankingData['ranking'] as Map<String, dynamic>)
                 .entries
-                .toList();
-            rankings.sort((a, b) => b.value.compareTo(a.value)); // 내림차순 정렬
+                .map((entry) {
+              final parts = entry.key.split(':');
+              return MapEntry(int.parse(parts[0]), {
+                'nickname': parts[1],
+                'percentage': entry.value,
+              });
+            }).toList();
+            rankings.sort((a, b) => a.key.compareTo(b.key)); // 오름차순 정렬 (순위 기준)
+
+            // 사용자 순위 찾기
+            userRank = rankings.indexWhere(
+                    (item) => item.value['nickname'] == widget.userNickname) +
+                1;
 
             return CustomScrollView(
               slivers: [
@@ -60,7 +76,7 @@ class _RankingPageState extends State<RankingPage> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '현재 순위: ${rankings.indexWhere((item) => item.key == '1234') + 1}위',
+                          '현재 순위: ${userRank}위',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -73,10 +89,10 @@ class _RankingPageState extends State<RankingPage> {
                     (context, index) {
                       final entry = rankings[index];
                       return _buildRankingItem(
+                        entry.value['nickname'],
+                        entry.value['percentage'],
                         entry.key,
-                        entry.value,
-                        index + 1,
-                        index < 3,
+                        entry.key <= 3,
                       );
                     },
                     childCount: rankings.length,
@@ -93,7 +109,7 @@ class _RankingPageState extends State<RankingPage> {
   }
 
   Widget _buildRankingItem(
-      String name, double percentage, int rank, bool isTop3) {
+      String nickname, double percentage, int rank, bool isTop3) {
     double widthFactor;
     if (rank == 1) {
       widthFactor = 0.9;
@@ -130,7 +146,7 @@ class _RankingPageState extends State<RankingPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '$rank위 $name',
+                    '$rank위 $nickname',
                     style: TextStyle(
                       color: isTop3 ? Colors.white : Colors.black,
                       fontWeight: FontWeight.bold,

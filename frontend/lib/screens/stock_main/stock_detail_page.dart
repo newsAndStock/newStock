@@ -4,6 +4,7 @@ import 'package:candlesticks/candlesticks.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:frontend/api/stock_api/chart_api.dart';
 import 'package:frontend/api/stock_api/stock_detail_api.dart';
+import 'package:frontend/screens/news/news_detail.dart';
 import 'package:frontend/screens/stock_main/interactive_chart/interactive_chart.dart';
 import 'package:frontend/api/stock_api/favorite_stock_api.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -53,6 +54,14 @@ class _StockDetailPageState extends State<StockDetailPage>
   final FlutterSecureStorage _storage = FlutterSecureStorage();
   late Map<dynamic, dynamic> details;
 
+  List<Map<String, dynamic>> _newsData = [];
+  bool _isLoadingNews = false;
+  bool _hasMoreNews = true;
+  int _currentPage = 1;
+  static const int _pageSize = 10;
+
+  CurrentStockPriceResponse? _currentStockPrice;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +74,69 @@ class _StockDetailPageState extends State<StockDetailPage>
     _fetchFiveYearsStockData();
     details = {};
     _fetchStockDetail();
+    _fetchStockNews();
+    _fetchCurrentStockPrice();
+  }
+
+  Future<void> _fetchCurrentStockPrice() async {
+    try {
+      final data =
+          await StockDetailApi().getCurrentStockPrice(widget.stockCode);
+      setState(() {
+        _currentStockPrice = data;
+      });
+    } catch (e) {
+      print('Error fetching current stock price: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Failed to load current stock price: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _fetchStockNews({bool refresh = false}) async {
+    if (refresh) {
+      setState(() {
+        _currentPage = 1;
+        _newsData.clear();
+        _hasMoreNews = true;
+      });
+    }
+
+    if (!_hasMoreNews || _isLoadingNews) return;
+
+    setState(() => _isLoadingNews = true);
+    try {
+      print('Fetching news for page: $_currentPage'); // Debug print
+      final news = await StockDetailApi().getStockNews(
+        widget.stockCode,
+        page: _currentPage,
+        pageSize: _pageSize,
+      );
+      print('Fetched ${news.length} news items'); // Debug print
+
+      setState(() {
+        if (news.isEmpty) {
+          _hasMoreNews = false;
+        } else {
+          _newsData.addAll(news);
+          _currentPage++;
+        }
+        _isLoadingNews = false;
+      });
+    } catch (e) {
+      print('Error fetching stock news: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
+      );
+      setState(() {
+        _isLoadingNews = false;
+        if (_newsData.isEmpty) {
+          _hasMoreNews = false;
+        }
+      });
+    }
   }
 
   Future<void> _fetchStockDetail() async {
@@ -344,18 +416,26 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Widget _buildStockInfo() {
+    if (_currentStockPrice == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    double priceChange = double.parse(_currentStockPrice!.prdyVrss);
+    double priceChangePercentage = double.parse(_currentStockPrice!.prdyCtrt);
+    Color changeColor = priceChange >= 0 ? Colors.red : Colors.blue;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '74,500원',
+            '${_currentStockPrice!.stckPrpr}원',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
-            '+300원 (0.4%)',
-            style: TextStyle(fontSize: 16, color: Colors.red),
+            '${priceChange >= 0 ? '+' : ''}${_currentStockPrice!.prdyVrss}원 (${_currentStockPrice!.prdyCtrt}%)',
+            style: TextStyle(fontSize: 16, color: changeColor),
           ),
         ],
       ),
@@ -388,49 +468,38 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Widget _buildCandlestickChart() {
-    final random = Random();
-    int candleCount;
-    switch (_selectedPeriod) {
-      case '1일':
-        candleCount = 24; // 1시간 간격으로 24개
-        break;
-      case '3달':
-        candleCount = 90; // 1일 간격으로 90개
-        break;
-      case '1년':
-        candleCount = 52; // 1주 간격으로 52개
-        break;
-      case '5년':
-        candleCount = 60; // 1달 간격으로 60개
-        break;
-      default:
-        candleCount = 30;
+    final selectedData = _getSelectedData();
+    if (selectedData == null || selectedData.isEmpty) {
+      return Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
     }
 
-    final List<Candle> candles = List.generate(
-      candleCount,
-      (index) {
-        final basePrice = 70000 + random.nextInt(10000);
-        final highLowDiff = random.nextInt(2000);
-        final openCloseDiff = random.nextInt(1000);
+    List<Candle> candles = selectedData.map((item) {
+      return Candle(
+        date: DateTime.parse(item['date']),
+        high: double.parse(item['highestPrice']),
+        low: double.parse(item['lowestPrice']),
+        open: double.parse(item['openingPrice']),
+        close: double.parse(item['closingPrice']),
+        volume: double.parse(item['volume']),
+      );
+    }).toList();
 
-        final high = basePrice + highLowDiff;
-        final low = basePrice - highLowDiff;
-        final open = basePrice +
-            (random.nextBool() ? 1 : -1) * random.nextInt(openCloseDiff);
-        final close = basePrice +
-            (random.nextBool() ? 1 : -1) * random.nextInt(openCloseDiff);
+    // 현재 가격 정보를 마지막 캔들로 추가
+    if (_currentStockPrice != null) {
+      DateTime now = DateTime.now();
+      double currentPrice = double.parse(_currentStockPrice!.stckPrpr);
 
-        return Candle(
-          date: _getDateForIndex(index),
-          high: high.toDouble(),
-          low: low.toDouble(),
-          open: open.toDouble(),
-          close: close.toDouble(),
-          volume: (1000000 + random.nextInt(1000000)).toDouble(),
-        );
-      },
-    );
+      // 마지막 캔들의 정보를 기반으로 새 캔들 생성
+      Candle lastCandle = candles.last;
+      candles.add(Candle(
+        date: now,
+        high: max(currentPrice, lastCandle.high),
+        low: min(currentPrice, lastCandle.low),
+        open: lastCandle.close, // 마지막 종가를 시가로 사용
+        close: currentPrice,
+        volume: lastCandle.volume, // 볼륨 정보가 없으므로 마지막 캔들의 볼륨을 사용
+      ));
+    }
 
     return Candlesticks(
       candles: candles,
@@ -460,10 +529,16 @@ class _StockDetailPageState extends State<StockDetailPage>
       return Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
     }
 
-    final List<FlSpot> spots = selectedData.asMap().entries.map((entry) {
+    List<FlSpot> spots = selectedData.asMap().entries.map((entry) {
       return FlSpot(entry.key.toDouble(),
           double.parse(entry.value['closingPrice'].toString()));
     }).toList();
+
+    // 현재 가격을 마지막 데이터 포인트로 추가
+    if (_currentStockPrice != null) {
+      spots.add(FlSpot(
+          spots.length.toDouble(), double.parse(_currentStockPrice!.stckPrpr)));
+    }
 
     double maxPrice = spots.map((spot) => spot.y).reduce(max);
     double minPrice = spots.map((spot) => spot.y).reduce(min);
@@ -765,19 +840,92 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Widget _buildNewsTab() {
-    return ListView.builder(
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text('${widget.stockName} 관련 뉴스 ${index + 1}'),
-          subtitle: Text(
-              '뉴스 출처 | ${DateTime.now().subtract(Duration(hours: index)).toString().substring(0, 16)}'),
-          leading: Icon(Icons.article),
-          onTap: () {
-            // 뉴스 상세 페이지로 이동
-          },
-        );
-      },
+    if (_isLoadingNews && _newsData.isEmpty) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_newsData.isEmpty && !_hasMoreNews) {
+      return Center(child: Text('관련 뉴스가 없습니다.'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _fetchStockNews(refresh: true),
+      child: ListView.separated(
+        itemCount: _newsData.length + (_hasMoreNews ? 1 : 0),
+        separatorBuilder: (context, index) => Center(
+          child: FractionallySizedBox(
+            widthFactor: 0.9,
+            child: Divider(
+              color: Colors.grey[300],
+              height: 1,
+            ),
+          ),
+        ),
+        itemBuilder: (context, index) {
+          if (index == _newsData.length && _hasMoreNews) {
+            _fetchStockNews();
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          if (index >= _newsData.length) {
+            return SizedBox.shrink();
+          }
+
+          final news = _newsData[index];
+          return FractionallySizedBox(
+            widthFactor: 0.9,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                title: Text(
+                  news['title'] ?? 'No Title',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: news['imageUrl'] != null && news['imageUrl'].isNotEmpty
+                      ? Image.network(
+                          news['imageUrl'],
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print('Error loading image: $error');
+                            return Icon(Icons.error, size: 60);
+                          },
+                        )
+                      : Icon(Icons.article, size: 60),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewsDetailScreen(
+                        newsId: news['newsId'].toString(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
