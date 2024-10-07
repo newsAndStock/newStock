@@ -15,4 +15,5 @@ public class ScrapResponse {
     private String title;
     private String content;
     private LocalDateTime dateTime;
+    private String imageUrl;
 }
