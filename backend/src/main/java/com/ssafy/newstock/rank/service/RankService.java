@@ -27,10 +27,12 @@ public class RankService {
     private final KisService kisService;
     private final MemberService memberService;
     private final RedisService redisService;
+    private final RedisTemplate<String, Object> redisTemplateRank;
 
     @Scheduled(cron = "0 0 17 * * ?") // 매일 17:00에 실행
     public void makeRank(){
         List<Member> members=memberService.findAllMember();
+        redisTemplateRank.delete("memberRank");
         for(Member member:members){
             if(memberStocksService.getMemberStocks(member.getId()).isEmpty())continue;
             double ROI=memberROI(member.getId());
@@ -40,6 +42,7 @@ public class RankService {
     }
 
     public void dealSameScore(){
+        redisTemplateRank.delete("memberScore");
         Map<Long,Double> ranks=redisService.getAllMembersWithScores();
         Map<Double,Integer> scores=new LinkedHashMap<>();
         for(Map.Entry<Long,Double> entry:ranks.entrySet()){
