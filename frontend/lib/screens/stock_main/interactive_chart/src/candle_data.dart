@@ -11,19 +11,19 @@ class CandleData {
 
   /// The "high" price. If either one of [high] or [low] is null, we won't
   /// draw the narrow part of the candlestick for that data point.
-  final double? high;
+  double? high;
 
   /// The "low" price. If either one of [high] or [low] is null, we won't
   /// draw the narrow part of the candlestick for that data point.
-  final double? low;
+  double? low;
 
   /// The "close" price of this data point. It's acceptable to have null here
   /// for a few data points, but they must not all be null. If either [open] or
   /// [close] is null for a data point, it will appear as a gap in the chart.
-  final double? close;
+  double? close;
 
   /// The volume information of this data point.
-  final double? volume;
+  double? volume;
 
   /// Data holder for additional trend lines, for this data point.
   ///

@@ -40,16 +40,16 @@ class _StockDetailPageState extends State<StockDetailPage>
   bool _showCandlesticks = true;
   bool _showLineChart = true;
   String _selectedPeriod = '1일';
-  // List<List<dynamic>>? _stockData;
-  // List<List<dynamic>>? _daystockData;
-  // List<List<dynamic>>? _weekstockData;
-  // List<List<dynamic>>? _monthstockData;
+  List<Map<String, dynamic>>? _stockData;
+  List<Map<String, dynamic>>? _daystockData;
+  List<Map<String, dynamic>>? _weekstockData;
+  List<Map<String, dynamic>>? _monthstockData;
 
   bool _isFavorite = false;
   bool _isLoading = false;
-  // bool _isLoadingday = false;
-  // bool _isLoadingweek = false;
-  // bool _isLoadingmonth = false;
+  bool _isLoadingday = false;
+  bool _isLoadingweek = false;
+  bool _isLoadingmonth = false;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
   late Map<dynamic, dynamic> details;
 
@@ -59,10 +59,10 @@ class _StockDetailPageState extends State<StockDetailPage>
     _tabController = TabController(length: 3, vsync: this);
     _showLineChart = true;
     _checkFavoriteStatus();
-    // _fetchStockData();
-    // _fetchThreeMonthsStockData();
-    // _fetchYearStockData();
-    // _fetchFiveYearsStockData();
+    _fetchStockData();
+    _fetchThreeMonthsStockData();
+    _fetchYearStockData();
+    _fetchFiveYearsStockData();
     details = {};
     _fetchStockDetail();
   }
@@ -86,109 +86,111 @@ class _StockDetailPageState extends State<StockDetailPage>
     }
   }
 
-  // Future<void> _fetchStockData() async {
-  //   setState(() => _isLoading = true);
-  //   try {
-  //     String? token = await _storage.read(key: 'accessToken');
-  //     if (token == null) throw Exception('No access token found');
+  Future<void> _fetchStockData() async {
+    setState(() => _isLoading = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
 
-  //     final data = await ChartApi.fetchStockData(token, widget.stockCode);
-  //     setState(() {
-  //       _stockData = data;
-  //       _isLoading = false;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching stock data: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
-  //     );
-  //     setState(() => _isLoading = false);
-  //   }
-  // }
+      final data = await ChartApi.fetchStockData(token, widget.stockCode);
+      setState(() {
+        _stockData = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching stock data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+      );
+      setState(() => _isLoading = false);
+    }
+  }
 
-  // Future<void> _fetchThreeMonthsStockData() async {
-  //   setState(() => _isLoadingday = true);
-  //   try {
-  //     String? token = await _storage.read(key: 'accessToken');
-  //     if (token == null) throw Exception('No access token found');
+  Future<void> _fetchThreeMonthsStockData() async {
+    setState(() => _isLoadingday = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
 
-  //     final data =
-  //         await ChartApi.fetchThreeMonthsStockData(token, widget.stockCode);
-  //     setState(() {
-  //       _daystockData = data;
-  //       _isLoadingday = false;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching stock data: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
-  //     );
-  //     setState(() => _isLoadingday = false);
-  //   }
-  // }
+      final data =
+          await ChartApi.fetchThreeMonthsStockData(token, widget.stockCode);
+      setState(() {
+        _daystockData = data;
+        _isLoadingday = false;
+      });
+    } catch (e) {
+      print('Error fetching stock data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+      );
+      setState(() => _isLoadingday = false);
+    }
+  }
 
-  // Future<void> _fetchYearStockData() async {
-  //   setState(() => _isLoadingweek = true);
-  //   try {
-  //     String? token = await _storage.read(key: 'accessToken');
-  //     if (token == null) throw Exception('No access token found');
+  Future<void> _fetchYearStockData() async {
+    setState(() => _isLoadingweek = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
 
-  //     final data = await ChartApi.fetchYearStockData(token, widget.stockCode);
-  //     setState(() {
-  //       _weekstockData = data;
-  //       _isLoadingweek = false;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching stock data: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
-  //     );
-  //     setState(() => _isLoadingweek = false);
-  //   }
-  // }
+      final data = await ChartApi.fetchYearStockData(token, widget.stockCode);
+      setState(() {
+        _weekstockData = data;
+        _isLoadingweek = false;
+      });
+    } catch (e) {
+      print('Error fetching stock data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+      );
+      setState(() => _isLoadingweek = false);
+    }
+  }
 
-  // Future<void> _fetchFiveYearsStockData() async {
-  //   setState(() => _isLoadingmonth = true);
-  //   try {
-  //     String? token = await _storage.read(key: 'accessToken');
-  //     if (token == null) throw Exception('No access token found');
+  Future<void> _fetchFiveYearsStockData() async {
+    setState(() => _isLoadingmonth = true);
+    try {
+      String? token = await _storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
 
-  //     final data =
-  //         await ChartApi.fetchFiveYearsStockData(token, widget.stockCode);
-  //     setState(() {
-  //       _monthstockData = data;
-  //       _isLoadingmonth = false;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching stock data: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
-  //     );
-  //     setState(() => _isLoadingmonth = false);
-  //   }
-  // }
+      final data =
+          await ChartApi.fetchFiveYearsStockData(token, widget.stockCode);
+      setState(() {
+        _monthstockData = data;
+        _isLoadingmonth = false;
+      });
+    } catch (e) {
+      print('Error fetching stock data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock data: ${e.toString()}')),
+      );
+      setState(() => _isLoadingmonth = false);
+    }
+  }
 
-  List<CandleData> _convertToCandleData(List<List<dynamic>> data) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    return data.map((item) {
-      final timeString = item[0] as String;
-      final timeParts = timeString.split(':');
-      final hours = int.parse(timeParts[0]);
-      final minutes = int.parse(timeParts[1]);
-
-      final dateTime = today.add(Duration(hours: hours, minutes: minutes));
-
+  List<CandleData> _convertToCandleData(List<Map<String, dynamic>> data) {
+    var result = data.map((item) {
+      final dateTime = DateTime.parse(item['date'] as String);
       return CandleData(
         dateTime: dateTime,
-        open: double.parse(item[1]),
-        high: double.parse(item[3]),
-        low: double.parse(item[4]),
-        close: double.parse(item[2]),
-        volume: double.parse(item[5]),
+        open: _parseDouble(item['openingPrice']),
+        high: _parseDouble(item['highestPrice']),
+        low: _parseDouble(item['lowestPrice']),
+        close: _parseDouble(item['closingPrice']),
+        volume: _parseDouble(item['volume']),
       );
     }).toList();
+    print('Converted CandleData length: ${result.length}');
+    return result;
+  }
+
+  double _parseDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    } else if (value is String) {
+      return double.parse(value);
+    }
+    throw FormatException('Cannot parse $value to double');
   }
 
   Future<void> _checkFavoriteStatus() async {
@@ -293,9 +295,6 @@ class _StockDetailPageState extends State<StockDetailPage>
                   ),
                 ),
               ),
-              // Tab(text: '차트'),
-              // Tab(text: '종목 정보'),
-              // Tab(text: '관련 뉴스'),
             ],
           ),
           Expanded(
@@ -453,144 +452,121 @@ class _StockDetailPageState extends State<StockDetailPage>
     }
   }
 
-  // Widget _buildLineChart() {
-  //   final List<FlSpot> spots = List.generate(
-  //     30,
-  //     (index) => FlSpot(index.toDouble(), 74000 + (index * 100)),
-  //   );
-
-  //   return LineChart(
-  //     LineChartData(
-  //       lineBarsData: [
-  //         LineChartBarData(
-  //           spots: spots,
-  //           isCurved: true,
-  //           color: Colors.blue,
-  //           barWidth: 2,
-  //           dotData: FlDotData(show: false),
-  //         ),
-  //       ],
-  //       titlesData: FlTitlesData(show: false),
-  //       borderData: FlBorderData(show: false),
-  //       gridData: FlGridData(show: false),
-  //     ),
-  //   );
-  // }
+  TouchedSpot? touchedSpot;
 
   Widget _buildLineChart() {
-    final List<StockData> stockData = generateMockStockData();
+    final selectedData = _getSelectedData();
+    if (selectedData == null || selectedData.isEmpty) {
+      return Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
+    }
 
-    final List<FlSpot> spots = stockData.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.close);
+    final List<FlSpot> spots = selectedData.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(),
+          double.parse(entry.value['closingPrice'].toString()));
     }).toList();
 
-    // 최고가와 최저가 찾기
     double maxPrice = spots.map((spot) => spot.y).reduce(max);
     double minPrice = spots.map((spot) => spot.y).reduce(min);
     int maxIndex = spots.indexWhere((spot) => spot.y == maxPrice);
     int minIndex = spots.indexWhere((spot) => spot.y == minPrice);
 
-    return Column(
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            '삼성전자',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        CustomPaint(
+          size: Size.infinite,
+          painter: PointPainter(
+            maxIndex: maxIndex,
+            minIndex: minIndex,
+            maxPrice: maxPrice,
+            minPrice: minPrice,
+            spots: spots,
+            minX: 0,
+            maxX: spots.length.toDouble() - 1,
+            minY: minPrice * 0.95,
+            maxY: maxPrice * 1.05,
           ),
         ),
-        Expanded(
-          child: Stack(
-            children: [
-              CustomPaint(
-                size: Size.infinite,
-                painter: PointPainter(
-                  maxIndex: maxIndex,
-                  minIndex: minIndex,
-                  maxPrice: maxPrice,
-                  minPrice: minPrice,
-                  spots: spots,
-                  minX: 0,
-                  maxX: spots.length.toDouble() - 1,
-                  minY: minPrice * 0.95,
-                  maxY: maxPrice * 1.05,
-                ),
-              ),
-              LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 2,
-                      dotData: FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
-                    ),
-                  ],
-                  titlesData: FlTitlesData(
-                    bottomTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    leftTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  gridData: FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  lineTouchData: LineTouchData(
-                    enabled: true,
-                    touchTooltipData: LineTouchTooltipData(
-                      // tooltipBgColor: Colors.blueAccent,
-                      getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                        return touchedBarSpots.map((barSpot) {
-                          final flSpot = barSpot;
-                          return LineTooltipItem(
-                            '${stockData[flSpot.x.toInt()].date.day}/${stockData[flSpot.x.toInt()].date.month}\n${flSpot.y.toStringAsFixed(2)}',
-                            const TextStyle(color: Colors.white),
-                          );
-                        }).toList();
-                      },
-                    ),
-                    handleBuiltInTouches: true,
-                    getTouchedSpotIndicator:
-                        (LineChartBarData barData, List<int> spotIndexes) {
-                      return spotIndexes.map((spotIndex) {
-                        return TouchedSpotIndicatorData(
-                          FlLine(
-                            color: Colors.orange, // 세로선 색상
-                            strokeWidth: 2, // 세로선 두께
-                            dashArray: [5, 5], // 점선 패턴 (5픽셀 선, 5픽셀 간격)
-                          ),
-                          FlDotData(
-                            getDotPainter: (spot, percent, barData, index) {
-                              return FlDotCirclePainter(
-                                radius: 8,
-                                color: Colors.deepOrange,
-                                strokeWidth: 2,
-                                strokeColor: Colors.white,
-                              );
-                            },
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                  extraLinesData: ExtraLinesData(
-                    extraLinesOnTop: true,
-                    horizontalLines: [],
-                  ),
-                  minX: 0,
-                  maxX: spots.length.toDouble() - 1,
-                  minY: minPrice * 0.95, // 그래프 하단에 여유 공간을 주기 위해
-                  maxY: maxPrice * 1.05, // 그래프 상단에 여유 공간을 주기 위해
-                ),
+        LineChart(
+          LineChartData(
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                color: Colors.blue,
+                barWidth: 2,
+                dotData: FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
               ),
             ],
+            titlesData: FlTitlesData(
+              bottomTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            gridData: FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+            lineTouchData: LineTouchData(
+              enabled: true,
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                  return touchedBarSpots.map((barSpot) {
+                    final flSpot = barSpot;
+                    final date =
+                        DateTime.parse(selectedData[flSpot.x.toInt()]['date']);
+                    return LineTooltipItem(
+                      '${date.day}/${date.month}\n${flSpot.y.toStringAsFixed(2)}',
+                      const TextStyle(color: Colors.white),
+                    );
+                  }).toList();
+                },
+              ),
+              handleBuiltInTouches: true,
+              getTouchedSpotIndicator:
+                  (LineChartBarData barData, List<int> spotIndexes) {
+                return spotIndexes.map((spotIndex) {
+                  return TouchedSpotIndicatorData(
+                    FlLine(
+                      color: Colors.orange,
+                      strokeWidth: 2,
+                      dashArray: [5, 5],
+                    ),
+                    FlDotData(
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 8,
+                          color: Colors.deepOrange,
+                          strokeWidth: 2,
+                          strokeColor: Colors.white,
+                        );
+                      },
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+            minX: 0,
+            maxX: spots.length.toDouble() - 1,
+            minY: minPrice * 0.95,
+            maxY: maxPrice * 1.05,
           ),
         ),
+        // CustomPaint(
+        //   size: Size.infinite,
+        //   painter: PointPainter(
+        //     maxIndex: maxIndex,
+        //     minIndex: minIndex,
+        //     maxPrice: maxPrice,
+        //     minPrice: minPrice,
+        //     spots: spots,
+        //     minX: 0,
+        //     maxX: spots.length.toDouble() - 1,
+        //     minY: minPrice * 0.95,
+        //     maxY: maxPrice * 1.05,
+        //   ),
+        // ),
       ],
     );
   }
@@ -628,38 +604,50 @@ class _StockDetailPageState extends State<StockDetailPage>
             ],
           ),
         ),
-        // Expanded(
-        //   child: _isLoading ||
-        //           _isLoadingday ||
-        //           _isLoadingweek ||
-        //           _isLoadingmonth
-        //       ? Center(child: CircularProgressIndicator())
-        //       : _showLineChart
-        //           ? _buildLineChart()
-        //           : _getSelectedData() != null
-        //               ? InteractiveChart(
-        //                   candles: _convertToCandleData(_getSelectedData()!))
-        //               : Center(child: Text('No data available')),
-        // ),
-        // _buildPeriodSelector(),
+        Expanded(
+          child: _isLoading ||
+                  _isLoadingday ||
+                  _isLoadingweek ||
+                  _isLoadingmonth
+              ? Center(child: CircularProgressIndicator())
+              : _showLineChart
+                  ? _buildLineChart()
+                  : _getSelectedData() != null &&
+                          _getSelectedData()!.length >= 3
+                      ? InteractiveChart(
+                          candles: _convertToCandleData(_getSelectedData()!))
+                      : Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.')),
+        ),
+        _buildPeriodSelector(),
       ],
     );
   }
 
-  // List<List<dynamic>>? _getSelectedData() {
-  //   switch (_selectedPeriod) {
-  //     case '1일':
-  //       return _stockData;
-  //     case '3달':
-  //       return _daystockData;
-  //     case '1년':
-  //       return _weekstockData;
-  //     case '5년':
-  //       return _monthstockData;
-  //     default:
-  //       return _stockData;
-  //   }
-  // }
+  List<Map<String, dynamic>>? _getSelectedData() {
+    List<Map<String, dynamic>>? result;
+    switch (_selectedPeriod) {
+      case '1일':
+        result = _stockData;
+        // 데이터가 3개 미만일 경우 더미 데이터 추가
+        while (result != null && result.length < 3) {
+          result.add(Map<String, dynamic>.from(result.last));
+        }
+        break;
+      case '3달':
+        result = _daystockData;
+        break;
+      case '1년':
+        result = _weekstockData;
+        break;
+      case '5년':
+        result = _monthstockData;
+        break;
+      default:
+        result = _stockData;
+    }
+    print('Selected data length: ${result?.length}');
+    return result;
+  }
 
   Widget _buildPeriodSelector() {
     return Container(
@@ -766,12 +754,12 @@ class _StockDetailPageState extends State<StockDetailPage>
         ListTile(
             title: Text('배당수익률'),
             trailing: Text(safeToString(details['dividendYield']))),
-        ListTile(title: Text('PER'), trailing: Text(getFinancialData('PER'))),
-        ListTile(title: Text('EPS'), trailing: Text(getFinancialData('EPS'))),
-        ListTile(title: Text('PBR'), trailing: Text(getFinancialData('PBR'))),
-        ListTile(title: Text('BPS'), trailing: Text(getFinancialData('BPS'))),
-        ListTile(title: Text('ROE'), trailing: Text(getFinancialData('ROE'))),
-        ListTile(title: Text('ROA'), trailing: Text(getFinancialData('ROA'))),
+        ListTile(title: Text('PER'), trailing: Text(getFinancialData('per'))),
+        ListTile(title: Text('EPS'), trailing: Text(getFinancialData('eps'))),
+        ListTile(title: Text('PBR'), trailing: Text(getFinancialData('pbr'))),
+        ListTile(title: Text('BPS'), trailing: Text(getFinancialData('bps'))),
+        ListTile(title: Text('ROE'), trailing: Text(getFinancialData('roe'))),
+        ListTile(title: Text('ROA'), trailing: Text(getFinancialData('roa'))),
       ],
     );
   }

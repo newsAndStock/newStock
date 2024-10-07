@@ -195,22 +195,22 @@ class _StockMainPageState extends State<StockMainPage> {
               ),
             ),
             const SizedBox(height: 25),
-            // _isLoadingMarketIndex
-            //     ? Center(child: CircularProgressIndicator())
-            //     : _marketIndices.isEmpty
-            //         ? Center(child: Text('No market data available'))
-            //         : MarketIndex(
-            //             indexData: _marketIndices[_currentIndex],
-            //             onTap: () {
-            //               Navigator.push(
-            //                 context,
-            //                 MaterialPageRoute(
-            //                   builder: (context) =>
-            //                       MarketIndexPage(indices: _marketIndices),
-            //                 ),
-            //               );
-            //             },
-            //           ),
+            _isLoadingMarketIndex
+                ? Center(child: CircularProgressIndicator())
+                : _marketIndices.isEmpty
+                    ? Center(child: Text('No market data available'))
+                    : MarketIndex(
+                        indexData: _marketIndices[_currentIndex],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MarketIndexPage(indices: _marketIndices),
+                            ),
+                          );
+                        },
+                      ),
             const SizedBox(height: 25),
             Center(
               child: FractionallySizedBox(
