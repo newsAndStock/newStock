@@ -20,7 +20,8 @@ spring:
     fail-on-missing-locations: true
   data:
     redis:
-      url: 127.0.0.1:6379
+      host: localhost
+      port: 6379
   batch:
     jdbc:
       initialize-schema: always
