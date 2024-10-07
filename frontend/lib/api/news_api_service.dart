@@ -317,13 +317,23 @@ class NewsService {
     }
   }
 
-  Future<List<String>> fetchTrendingKeywords(String date) async {
+  Future<List<String>> fetchTrendingKeywords(
+      String date, String accessToken) async {
     final url = Uri.parse('$apiServerUrl/popular-word?date=$date');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
       if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
+        // UTF-8로 응답을 디코딩하여 한글 깨짐 방지
+        String decodedResponse = utf8.decode(response.bodyBytes);
+        List<dynamic> data = jsonDecode(decodedResponse);
         return List<String>.from(data);
       } else {
         throw Exception('Failed to load trending keywords');
@@ -336,15 +346,20 @@ class NewsService {
   // 최근 검색어 API 함수 추가
   Future<List<String>> fetchRecentKeywords(String accessToken) async {
     final url = Uri.parse('$apiServerUrl/news/recent-word');
+
     try {
       final response = await http.get(
         url,
         headers: {
           'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
         },
       );
+
       if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
+        // UTF-8로 응답을 디코딩하여 한글 깨짐 방지
+        String decodedResponse = utf8.decode(response.bodyBytes);
+        List<dynamic> data = jsonDecode(decodedResponse);
         return List<String>.from(data);
       } else {
         throw Exception('Failed to load recent keywords');
@@ -354,10 +369,15 @@ class NewsService {
     }
   }
 
-  Future<List<News>> searchNews(String keyword) async {
+  Future<List<News>> searchNews(String keyword, String accessToken) async {
     print('Searching for keyword: $keyword'); // 검색어 로그 출력
+
     final response = await http.get(
       Uri.parse('$apiServerUrl/news-search?keyword=$keyword'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
     );
 
     if (response.statusCode == 200) {
@@ -367,6 +387,33 @@ class NewsService {
       return data.map((json) => News.fromJson(json)).toList();
     } else {
       throw Exception('뉴스 검색에 실패했습니다.');
+    }
+  }
+
+  // 삭제 메서드 추가
+  Future<void> deleteRecentKeyword(String accessToken, String keyword) async {
+    final url = Uri.parse(
+        '$apiServerUrl/news/recent-word?keyword=${Uri.encodeComponent(keyword)}');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode != 204) {
+        throw Exception(
+            'Failed to delete recent keyword: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Failed to delete recent keyword: $e');
+      throw Exception('Failed to delete recent keyword: $e');
     }
   }
 }

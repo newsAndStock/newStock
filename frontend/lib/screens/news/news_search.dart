@@ -15,9 +15,7 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
   final FlutterSecureStorage storage = FlutterSecureStorage();
   List<String> _trendingKeywords = [];
   List<String> _recentSearches = [];
-  List<String> _searchResults = [];
   bool _isLoadingTrendingKeywords = false;
-  bool _isLoadingSearch = false;
   bool _isLoadingRecentSearches = true;
 
   final TextEditingController _searchController = TextEditingController();
@@ -41,9 +39,7 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
     if (_searchController.text.isNotEmpty) {
       // You can add real-time search suggestion logic here
     } else {
-      setState(() {
-        _searchResults = [];
-      });
+      setState(() {});
     }
   }
 
@@ -52,8 +48,14 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
     setState(() {
       _isLoadingTrendingKeywords = true;
     });
+
     try {
-      final keywords = await _apiService.fetchTrendingKeywords(todayDate);
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+      final keywords =
+          await _apiService.fetchTrendingKeywords(todayDate, accessToken);
       setState(() {
         _trendingKeywords = keywords;
         _isLoadingTrendingKeywords = false;
@@ -68,7 +70,7 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
 
   Future<void> _fetchRecentSearches() async {
     setState(() {
-      _isLoadingRecentSearches = true; // Start loading
+      _isLoadingRecentSearches = true;
     });
 
     try {
@@ -78,13 +80,40 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
       }
       final keywords = await _apiService.fetchRecentKeywords(accessToken);
       setState(() {
-        _recentSearches = keywords; // Update recent searches
-        _isLoadingRecentSearches = false; // End loading
+        _recentSearches = keywords;
+        _isLoadingRecentSearches = false;
       });
     } catch (e) {
       print('Error fetching recent searches: $e');
       setState(() {
-        _isLoadingRecentSearches = false; // End loading on error
+        _isLoadingRecentSearches = false;
+      });
+    }
+  }
+
+  // 삭제 함수 추가
+  Future<void> _deleteRecentKeyword(String keyword) async {
+    setState(() {
+      _isLoadingRecentSearches = true;
+    });
+
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+
+      await _apiService.deleteRecentKeyword(accessToken, keyword);
+
+      // 삭제된 후 목록을 갱신합니다.
+      setState(() {
+        _recentSearches.remove(keyword);
+        _isLoadingRecentSearches = false;
+      });
+    } catch (e) {
+      print('Failed to delete recent keyword: $e');
+      setState(() {
+        _isLoadingRecentSearches = false;
       });
     }
   }
@@ -94,15 +123,25 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
     return '${now.year % 100}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
   }
 
-  void _navigateToSearchResult(String searchTerm) {
-    Navigator.push(
-      context,
-      MaterialPageRoute( 
-        builder: (context) => NewsSearchResultScreen(searchTerm: searchTerm),
-      ),
-    ).then((_) {
-      _fetchRecentSearches(); // 돌아올 때 최근 검색어 갱신
-    });
+  void _navigateToSearchResult(String searchTerm) async {
+    try {
+      String? accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null) {
+        throw Exception('No access token found');
+      }
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NewsSearchResultScreen(searchTerm: searchTerm),
+        ),
+      );
+
+      // 돌아올 때 최근 검색어 갱신
+      _fetchRecentSearches();
+    } catch (e) {
+      print('Error navigating to search result: $e');
+    }
   }
 
   @override
@@ -139,37 +178,21 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
                 children: [
                   TabBar(
                     tabs: const [
-                      Tab(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            '인기 검색어',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ),
-                      Tab(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            '최근 검색어',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ),
+                      Tab(text: '인기 검색어'),
+                      Tab(text: '최근 검색어'),
                     ],
                     labelColor: const Color(0xff3A2E6A),
                     onTap: (index) {
                       if (index == 1) {
-                        _fetchRecentSearches(); // Fetch recent searches on tab change
+                        _fetchRecentSearches();
                       }
                     },
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
-                        _buildTrendingKeywords(), // Trending keywords list
-                        _buildRecentSearches(), // Recent searches list
+                        _buildTrendingKeywords(),
+                        _buildRecentSearches(),
                       ],
                     ),
                   ),
@@ -179,45 +202,6 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTrendingKeywords() {
-    if (_isLoadingTrendingKeywords) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_trendingKeywords.isEmpty) {
-      return const Center(child: Text('인기 검색어가 없습니다.'));
-    }
-
-    return ListView.builder(
-      itemCount: _trendingKeywords.length,
-      itemBuilder: (context, index) {
-        return Column(children: [
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
-              child: ListTile(
-                title: Text('${index + 1}. ${_trendingKeywords[index]}'),
-                onTap: () {
-                  _navigateToSearchResult(_trendingKeywords[index]);
-                },
-              ),
-            ),
-          ),
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.85,
-              child: const Divider(
-                color: Color(0xFFB4B4B4),
-                thickness: 1,
-                height: 1,
-              ),
-            ),
-          ),
-        ]);
-      },
     );
   }
 
@@ -233,36 +217,36 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
     return ListView.builder(
       itemCount: _recentSearches.length,
       itemBuilder: (context, index) {
-        return Column(
-          children: [
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: ListTile(
-                  title: Text(_recentSearches[index]),
-                  trailing: IconButton(
-                      icon: const Icon(Icons.close,
-                          size: 15, color: Color(0xFFB4B4B4)),
-                      onPressed: () {
-                        // Optionally implement delete function here
-                      }
-                      // _deleteRecentKeyword(_recentSearches[index]),
-                      ),
-                  onTap: () => _navigateToSearchResult(_recentSearches[index]),
-                ),
-              ),
-            ),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.85,
-                child: const Divider(
-                  color: Color(0xFFB4B4B4),
-                  thickness: 1,
-                  height: 1,
-                ),
-              ),
-            ),
-          ],
+        final keyword = _recentSearches[index];
+        return ListTile(
+          title: Text(keyword),
+          trailing: IconButton(
+            icon: const Icon(Icons.close, color: Color(0xFFB4B4B4)),
+            onPressed: () async {
+              await _deleteRecentKeyword(keyword);
+            },
+          ),
+          onTap: () => _navigateToSearchResult(keyword),
+        );
+      },
+    );
+  }
+
+  Widget _buildTrendingKeywords() {
+    if (_isLoadingTrendingKeywords) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_trendingKeywords.isEmpty) {
+      return const Center(child: Text('인기 검색어가 없습니다.'));
+    }
+
+    return ListView.builder(
+      itemCount: _trendingKeywords.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text('${index + 1}. ${_trendingKeywords[index]}'),
+          onTap: () => _navigateToSearchResult(_trendingKeywords[index]),
         );
       },
     );
@@ -321,9 +305,9 @@ class _SearchBarState extends State<SearchBar> {
                 child: TextField(
                   controller: widget.controller,
                   focusNode: _focusNode,
-                  style: const TextStyle(color: Colors.black, fontSize: 16),
-                  decoration: const InputDecoration(
-                    hintText: '뉴스 검색',
+                  style: TextStyle(color: Colors.black, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: '키워드를 검색해보세요!',
                     border: InputBorder.none,
                   ),
                   onSubmitted: widget.onSearch,
@@ -332,18 +316,17 @@ class _SearchBarState extends State<SearchBar> {
               ElevatedButton(
                 onPressed: () => widget.onSearch(widget.controller.text),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xffF1F5F9),
+                  backgroundColor: Color(0xffF1F5F9),
                   foregroundColor: Colors.black,
                   elevation: 3,
                   shadowColor: Colors.grey.withOpacity(0.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: const Size(60, 36),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size(60, 36),
                 ),
-                child: const Text('검색', style: TextStyle(fontSize: 14)),
+                child: Text('검색', style: TextStyle(fontSize: 14)),
               ),
             ],
           ),
