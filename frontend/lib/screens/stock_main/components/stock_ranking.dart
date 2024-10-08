@@ -232,11 +232,11 @@ class StockComponent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                stockItem.price,
+                stockItem.price + '원',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                '${stockItem.change} (${stockItem.changePercentage})',
+                '${stockItem.changeSign == '2' ? '+' : ''}${stockItem.changePercentage}원 (${stockItem.change}%)',
                 style: TextStyle(
                   color: stockItem.changeSign == '2' ? Colors.red : Colors.blue,
                 ),

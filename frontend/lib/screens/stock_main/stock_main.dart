@@ -46,6 +46,15 @@ class _StockMainPageState extends State<StockMainPage> {
     });
   }
 
+  void _refreshPage() {
+    setState(() {
+      _isLoadingFavStock = true;
+      _isLoadingMarketIndex = true;
+    });
+    _fetchFavoriteStocks();
+    _fetchMarketIndices();
+  }
+
   Future<void> _fetchMarketIndices() async {
     try {
       String? accessToken = await storage.read(key: 'accessToken');
@@ -105,117 +114,109 @@ class _StockMainPageState extends State<StockMainPage> {
     super.dispose();
   }
 
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoadingFavStock = true;
+      _isLoadingMarketIndex = true;
+    });
+    await Future.wait([
+      _fetchFavoriteStocks(),
+      _fetchMarketIndices(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MainScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 20,
+                  child: Image.asset(
+                    'assets/images/NEWstock.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 30,
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        size: 30,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          // 추가: 전체 내용에 패딩 적용
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MainScreen(), // 검색 페이지로 이동
-                      ),
-                    );
-                  },
-                  child: Container(
-                    height: 20, // Adjust this size for the logo
-                    child: Image.asset(
-                      'assets/images/NEWstock.png', // Ensure this is the correct path to your image
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            NotificationScreen(), // 알림 페이지로 이동
-                      ),
-                    );
-                  },
-                  child: Container(
-                    height: 30, // Adjust the size for the notification icon
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      size: 30, // You can adjust the size of the icon
-                      color: Colors.black, // Change color if necessary
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 20),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SearchPage()),
-                    );
-                  },
-                  child: AbsorbPointer(
-                    child: SearchBarStock(),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MyPage()),
-                    );
-                  },
-                  child: AccountSummary(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 25),
-            _isLoadingMarketIndex
-                ? Center(child: CircularProgressIndicator())
-                : _marketIndices.isEmpty
-                    ? Center(child: Text('No market data available'))
-                    : MarketIndex(
-                        indexData: _marketIndices[_currentIndex],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MarketIndexPage(indices: _marketIndices),
-                            ),
-                          );
-                        },
-                      ),
-            const SizedBox(height: 25),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: SizedBox(
+                SizedBox(height: 20),
+                // 변경: FractionallySizedBox 제거 및 직접 SearchBarStock 사용
+                SearchBarStock(),
+                const SizedBox(height: 25),
+                // 변경: FractionallySizedBox 및 GestureDetector 제거
+                AccountSummary(),
+                const SizedBox(height: 25),
+                _isLoadingMarketIndex
+                    ? Center(child: CircularProgressIndicator())
+                    : _marketIndices.isEmpty
+                        ? Center(child: Text('No market data available'))
+                        : MarketIndex(
+                            indexData: _marketIndices[_currentIndex],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MarketIndexPage(indices: _marketIndices),
+                                ),
+                              );
+                            },
+                          ),
+                const SizedBox(height: 25),
+                // 변경: FractionallySizedBox 제거
+                SizedBox(
                   height: 150,
                   child: _isLoadingFavStock
                       ? Center(child: CircularProgressIndicator())
@@ -224,41 +225,35 @@ class _StockMainPageState extends State<StockMainPage> {
                           onStockTap: _navigateToStockDetail,
                         ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 33),
-              child: Text('관련 뉴스',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: SizedBox(
-                  height: 400, // 원하는 높이로 조정
+                const SizedBox(height: 12),
+                // 변경: Container 제거 및 직접 Text 위젯 사용
+                Text('관련 뉴스',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                // 추가: 뉴스 제목과 컴포넌트 사이 간격
+                const SizedBox(height: 8),
+                // 변경: FractionallySizedBox 제거
+                SizedBox(
+                  height: 400,
                   child: NewsPageComponent(),
                 ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 33),
-              child: Text('국내 실시간 랭킹',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.9,
-                child: SizedBox(
-                  height: 400, // 원하는 높이로 조정
+                const SizedBox(height: 12),
+                // 변경: Container 제거 및 직접 Text 위젯 사용
+                Text('국내 실시간 랭킹',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                // 추가: 랭킹 제목과 컴포넌트 사이 간격
+                const SizedBox(height: 8),
+                // 변경: FractionallySizedBox 제거
+                SizedBox(
+                  height: 470,
                   child: StockPageComponent(),
                 ),
-              ),
+                // 추가: 하단 여백
+                const SizedBox(height: 20),
+              ],
             ),
-
-            // RecommendedNews(),
-            // DomesticStocks(),
-          ],
+          ),
         ),
       ),
     );
