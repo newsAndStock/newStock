@@ -21,9 +21,11 @@ import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,13 +63,13 @@ public class KisServiceSocket {
             this.session = session;
 
             // 서버로부터 메시지를 받음
+
             Mono<Void> input = session.receive()
                     .map(WebSocketMessage::getPayloadAsText)
                     .doOnNext(
                             message->{
                                 CompletableFuture.runAsync(()->{
                                     String type =getType(message);
-                                    System.out.println("type: "+type);
                                     if(type.equals("H0STCNT0")){
                                         realTimePrice(message);
                                     }
@@ -85,32 +87,46 @@ public class KisServiceSocket {
     public void disconnectWebsocket() {
         if (this.session != null && this.session.isOpen()) {
             this.session.close()
-                    .doOnSuccess(aVoid -> System.out.println("WebSocket connection closed"))
-                    .doOnError(e -> System.err.println("Error while closing WebSocket: " + e.getMessage()))
+                    .doOnSuccess(aVoid -> log.info("WebSocket connection closed"))
+                    .doOnError(e -> log.info("Error while closing WebSocket: {} " , e.getMessage()))
                     .subscribe();
         } else {
-            System.out.println("No active WebSocket connection to close.");
+            log.info("No active WebSocket connection to close.");
         }
     }
 
 
     public void sendMessage(String stockCode, String trType) {
         if(session ==null || !session.isOpen()) {
-            System.out.println("웹소켓 연결");
+            log.info("웹소켓 연결");
             connectWebsocket(() -> {
                 String approvalKey = "9c3c1a5b-54ef-44df-a1fa-e59dab398053";
                 String payload = createMessage(approvalKey, stockCode, trType);
-                session.send(Mono.just(session.textMessage(payload))).subscribe();
+                session.send(Mono.just(session.textMessage(payload)))
+                        .timeout(Duration.ofSeconds(1)) // 타임아웃 설정
+                        .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(200))) // 최대 10회 재시도, 각 재시도 간 5초 대기
+                        .doOnSuccess(aVoid -> log.info("Message sent successfully"))
+                        .doOnError(e -> log.error("Failed to send message: " + e.getMessage()))
+                        .subscribe();
+
             });
+
         }
         if (session != null && session.isOpen()) {
             String approvalKey = "9c3c1a5b-54ef-44df-a1fa-e59dab398053";
             String payload = createMessage(approvalKey, stockCode, trType);
-            session.send(Mono.just(session.textMessage(payload))).subscribe();
+            session.send(Mono.just(session.textMessage(payload)))
+                    .timeout(Duration.ofSeconds(1)) // 타임아웃 설정
+                    .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(200))) // 최대 10회 재시도, 각 재시도 간 5초 대기
+                    .doOnSuccess(aVoid -> log.info("Message sent successfully"))
+                    .doOnError(e -> log.error("Failed to send message: " + e.getMessage()))
+                    .subscribe();
         } else {
             log.warn("WebSocket session is not open or has not been initialized.");
+
         }
     }
+
 
     private void realTimePrice(String message){
 
@@ -121,11 +137,11 @@ public class KisServiceSocket {
                 Queue<TradeItem> sellItems=tradeQueue.getSellQueue().get(stockCode);
                 Queue<TradeItem> buyItems=tradeQueue.getBuyQueue().get(stockCode);
                 synchronized (sellItems) {
-                    log.info("<{}> 매수 대기인원: {}", stockCode, sellItems.size());
+                    log.info("<{}> 매도 대기인원: {}", stockCode, sellItems.size());
                 }
 
                 synchronized (buyItems) {
-                    log.info("<{}> 매도 대기인원: {}", stockCode, buyItems.size());
+                    log.info("<{}> 매수 대기인원: {}", stockCode, buyItems.size());
                 }
 
                 // 종료 조건 확인
@@ -187,6 +203,7 @@ public class KisServiceSocket {
 
 
     private void sellTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> sellItems){
+        if(sellItems.isEmpty())return;
         while(tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())){
             TradeItem removed=sellItems.poll();
             tradingHandleService.cancelComplete(removed.getTrading().getId());
@@ -208,6 +225,7 @@ public class KisServiceSocket {
     }
 
     private void buyTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> buyItems){
+        if(buyItems.isEmpty())return;
         while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
             TradeItem removed=buyItems.poll();
             tradingHandleService.cancelComplete(removed.getTrading().getId());
@@ -239,7 +257,7 @@ public class KisServiceSocket {
 
     private void buyComplete(String stockCode, TradeItem complete){
         memberStocksService.buyComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
-        memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.BUY);
+        //memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.BUY);
         Trading trading=tradingService.findById(complete.getTrading().getId());
         trading.tradeComplete(LocalDateTime.now());
         tradingService.save(trading);

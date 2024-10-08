@@ -6,6 +6,7 @@ import com.ssafy.newstock.kis.domain.TradeItem;
 import com.ssafy.newstock.kis.service.KisServiceSocket;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
+import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.service.MemberStocksService;
 import com.ssafy.newstock.notification.service.NotificationService;
 import com.ssafy.newstock.trading.controller.request.TradeRequest;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,7 +47,7 @@ public class TradingService {
     @Transactional
     public TradeResponse sellByMarket(Member member, TradeRequest sellRequest) {
 
-        checkHoldings(member, sellRequest);
+        sellPossible(member, sellRequest);
         Trading trading = sellRequest.toEntity(member, OrderType.SELL, TradeType.MARKET);
         trading.confirmBid(getStockPrPr(sellRequest.getStockCode()));
         trading.tradeComplete(LocalDateTime.now());
@@ -74,10 +77,10 @@ public class TradingService {
         }
     }
 
-
+    @Transactional
     public boolean sellByLimit(Member member, TradeRequest sellRequest) throws JsonProcessingException {
 
-        checkHoldings(member, sellRequest);
+        sellPossible(member, sellRequest);
         Trading trading = sellRequest.toEntity(member, OrderType.SELL, TradeType.LIMIT);
         tradingRepository.save(trading);
         int marketPrice=getStockPrPr(sellRequest.getStockCode());
@@ -123,6 +126,7 @@ public class TradingService {
         return new TradeResponse(OrderType.BUY, trading.getBid(), trading.getOrderCompleteTime(), trading.getQuantity(), trading.getBid() * trading.getQuantity());
     }
 
+    @Transactional
     public void buyByLimit(Member member, TradeRequest buyRequest) throws JsonProcessingException {
         if(!buyPossible(member,buyRequest)){
             throw new IllegalArgumentException("Buy not possible(Insufficient account balance)");
@@ -135,7 +139,7 @@ public class TradingService {
         if(marketPrice<trading.getBid()){
             trading.confirmBid(marketPrice);
         }
-
+        memberService.updateDeposit(member.getId(), (long) trading.getBid(), OrderType.BUY);
         log.info("<{}> trading price:{}",buyRequest.getStockCode(),trading.getBid());
 
 
@@ -163,6 +167,25 @@ public class TradingService {
     @Transactional
     public void save(Trading trading){
         tradingRepository.save(trading);
+    }
+
+    private void sellPossible(Member member, TradeRequest sellRequest) {
+        List<Trading> sellTradings=tradingRepository.findByMemberIdAndStockCodeAndOrderCompleteTimeIsNull(member.getId(), sellRequest.getStockCode());
+        int sellQuantity=sellRequest.getQuantity();
+        Optional<MemberStock> memberStock=memberStocksService.findByMemberStockByMember_IdAndStockCode(member.getId(), sellRequest.getStockCode());
+        if(memberStock.isEmpty()){
+            throw new IllegalArgumentException("Sell not possible(해당 보유 주식이 없습니다.)");
+        }
+        int memberHavingQuantity= (int) memberStock.get().getHoldings();
+        int sellTradingsQuantity=0;
+        for(Trading trading:sellTradings){
+            sellTradingsQuantity+=trading.getQuantity();
+        }
+        if(sellQuantity>memberHavingQuantity-sellTradingsQuantity){
+            throw new IllegalArgumentException("거래할 수 있는 보유주식이 없습니다.(또는 이미 거래중인 주식입니다)");
+        }
+
+
     }
 
 
