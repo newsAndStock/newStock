@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
+import 'package:flutter_client_sse/flutter_client_sse.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/member_api_service.dart';
 import 'package:frontend/api/sse_api_service.dart';
@@ -13,6 +16,7 @@ import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
 import 'package:frontend/widgets/common/image_button.dart';
 import 'package:frontend/widgets/notification/notification_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -24,23 +28,90 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final storage = const FlutterSecureStorage();
   late Future<Member> memberInfoFuture;
-  final SseApiService _sseApiService = SseApiService();
+  static String apiServerUrl = dotenv.get("API_SERVER_URL");
   final NotificationService _notificationService = NotificationService();
+  String sseData = "데이터가 없습니다";
 
   @override
   void initState() {
     super.initState();
     memberInfoFuture = _loadMemberInfo();
+    requestNotificationPermission();
+    startSseConnection();
     _notificationService.initialize();
-    listenToSse();
   }
 
-  // SSE 구독 및 메시지 수신 처리
-  void listenToSse() async {
-    String? token = await storage.read(key: 'accessToken');
-    _sseApiService.subscribe(token!).listen((data) {
-      _notificationService.showNotification('New SSE Event', data);
+  void startSseConnection() async {
+    // 액세스 토큰 가져오기
+    String? accessToken = await storage.read(key: 'accessToken');
+    final url = Uri.parse('$apiServerUrl/subscribe');
+    // SSE 구독 설정
+    SSEClient.subscribeToSSE(
+      method: SSERequestType.GET,
+      url: '$apiServerUrl/subscribe',
+      header: {
+        "Cookie": 'jwt=$accessToken',
+        "Accept": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Authorization": "Bearer $accessToken",
+      },
+    ).listen((event) {
+      // 서버에서 받은 이벤트 데이터 처리
+      setState(() {
+        sseData = event.data ?? "수신된 데이터가 없습니다";
+      });
+
+      // 데이터가 JSON 형식인 경우 파싱
+      try {
+        print("event data $event.data");
+        if (_isJson(event.data)) {
+          print("ssseeee $sseData");
+          print(event.data);
+          final parsedData = jsonDecode(event.data ?? '{}');
+          // final id = parsedData['id'];
+          final stockName = parsedData['stockName'];
+          final orderType = parsedData['orderType'];
+          final price = parsedData['price'];
+          String message =
+              "$stockName 주식이 ${orderType == 'BUY' ? '구매' : '판매'}되었습니다. 가격: $price 원";
+          // 수신된 데이터 출력 또는 알림 표시
+          print(
+              "$stockName 주식이 ${orderType == 'BUY' ? '구매' : '판매'}되었습니다. 가격: $price 원");
+
+          _notificationService.showNotification('0', '주식 알림', message);
+        }
+      } catch (e) {
+        print("JSON 파싱 오류: $e");
+      }
+    }, onDone: () {
+      print("SSE 연결이 종료되었습니다.");
+    }, onError: (error) {
+      print("SSE 오류 발생: $error");
+      // 오류 발생 시 재연결 로직을 추가할 수 있습니다.
     });
+  }
+
+  bool _isJson(String? data) {
+    if (data == null) return false;
+    try {
+      jsonDecode(data);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  void dispose() {
+    // SSE 연결 종료
+    SSEClient.unsubscribeFromSSE();
+    super.dispose();
+  }
+
+  Future<void> requestNotificationPermission() async {
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
   }
 
   Future<Member> _loadMemberInfo() async {
