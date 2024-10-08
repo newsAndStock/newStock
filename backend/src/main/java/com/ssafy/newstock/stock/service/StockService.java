@@ -91,7 +91,12 @@ public class StockService {
         var balanceSheetFuture = CompletableFuture.runAsync(() -> getBalanceSheet(stockCode));
 
         var dividendInfoFuture = stockPriceInfoFuture.thenCompose(
-                stockPriceInfo -> CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode)));
+                stockPriceInfo -> CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode))
+                        .exceptionally(ex -> {
+                            log.error("예탁원 정보 API 호출 중 오류 발생: {}", ex.getMessage());
+                            return Map.of("dividendAmount", "-", "dividendYield", "-");
+                        })
+        );
 
         var financialRatioFuture = CompletableFuture
                 .allOf(stockBasicInfoFuture, incomeStatementFuture, stockPriceInfoFuture, balanceSheetFuture)
