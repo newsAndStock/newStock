@@ -1,6 +1,7 @@
 package com.ssafy.newstock.trading.service;
 
 import com.ssafy.newstock.member.domain.Member;
+import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.stock.service.StockService;
 import com.ssafy.newstock.trading.controller.response.TradingResponse;
 import com.ssafy.newstock.trading.domain.OrderType;
@@ -10,10 +11,7 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class TradingHandleService {
@@ -21,11 +19,13 @@ public class TradingHandleService {
 
     private final TradingRepository tradingRepository;
     private final StockService stockService;
-    private Set<Long> canceledTrading= new HashSet<>();
+    private final Set<Long> canceledTrading= Collections.synchronizedSet(new HashSet<>());
+    private final MemberService memberService;
 
-    public TradingHandleService(TradingRepository tradingRepository, StockService stockService) {
+    public TradingHandleService(TradingRepository tradingRepository, StockService stockService, MemberService memberService) {
         this.tradingRepository = tradingRepository;
         this.stockService = stockService;
+        this.memberService = memberService;
     }
 
     public List<TradingResponse> getActiveTradings(Long memberId) {
@@ -67,6 +67,9 @@ public class TradingHandleService {
         Trading trading=tradingRepository.findById(tradingId).get();
         if(!trading.getMember().getId().equals(memberId)){
             throw new AuthenticationCredentialsNotFoundException("권한이 없습니다.");
+        }
+        if(trading.getOrderType().equals(OrderType.BUY)){
+            memberService.updateDeposit(memberId, (long) trading.getBid(),OrderType.SELL);
         }
         trading.cancelTrading();
         tradingRepository.save(trading);

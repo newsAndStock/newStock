@@ -7,7 +7,6 @@ import com.ssafy.newstock.memberstocks.controller.response.AssetInfoResponse;
 import com.ssafy.newstock.memberstocks.controller.response.MemberStockResponse;
 import com.ssafy.newstock.memberstocks.domain.MemberStock;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
-import com.ssafy.newstock.rank.service.RankService;
 import com.ssafy.newstock.rank.service.RedisService;
 import com.ssafy.newstock.stock.service.StockService;
 import org.springframework.stereotype.Service;
@@ -16,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MemberStocksService {
@@ -139,5 +139,9 @@ public class MemberStocksService {
 
     private Long calculateProfitAndLoss(Long currentPrice, Long userPrice, Long quantity){
         return (currentPrice-userPrice)*quantity;
+    }
+
+    public Optional<MemberStock> findByMemberStockByMember_IdAndStockCode(Long memberId, String stockCode){
+        return memberStocksRepository.getMemberStockByMember_IdAndStockCode(memberId,stockCode);
     }
 }
