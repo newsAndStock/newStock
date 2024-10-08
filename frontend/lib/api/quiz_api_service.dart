@@ -6,7 +6,7 @@ class QuizApiService {
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
 
   // 퀴즈 데이터를 불러오는 함수
-  Future<List<Map<String, dynamic>>> getQuizData(String accessToken) async {
+  Future<Map<String, dynamic>> getQuizData(String accessToken) async {
     try {
       final response = await http.get(
         Uri.parse('$apiServerUrl/questions'),
@@ -20,13 +20,11 @@ class QuizApiService {
         String decodedBody = utf8.decode(response.bodyBytes);
         var data = jsonDecode(decodedBody);
 
-        if (data is List) {
-          return data.map((e) => e as Map<String, dynamic>).toList();
-        } else if (data is Map) {
-          return [data as Map<String, dynamic>];
+        if (data is Map<String, dynamic>) {
+          return data; // 단일 객체를 그대로 반환
         } else {
           throw Exception('Unexpected response format: ${data.runtimeType}');
-        } 
+        }
       } else {
         throw Exception(
             'Failed to load quiz data: ${response.statusCode} - ${response.reasonPhrase}');
