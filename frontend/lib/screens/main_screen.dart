@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
 import 'package:flutter_client_sse/flutter_client_sse.dart';
@@ -129,6 +128,54 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  // 퀴즈 완료 여부 확인 및 퀴즈 페이지로 이동
+  Future<void> _checkQuizCompletion() async {
+    String? quizCompleted = await storage.read(key: 'quizCompleted');
+    if (quizCompleted == 'true') {
+      _showQuizCompletedDialog(); // 이미 완료한 경우 알림창 띄움
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const QuizScreen()),
+      );
+    }
+  }
+
+  // 퀴즈 완료 알림창
+  void _showQuizCompletedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          title: const Text(
+            '오늘의 퀴즈를 모두 풀었습니다!',
+            style: TextStyle(
+              color: Color(0xFF3A2E6A),
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 알림창 닫기
+              },
+              child: const Text(
+                '확인',
+                style: TextStyle(color: Color(0xFF3A2E6A)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,14 +281,7 @@ class _MainScreenState extends State<MainScreen> {
                   title: '퀴즈 챌린지',
                   subscription: '퀴즈 풀고 포인트 받자!',
                   imagePath: 'assets/images/quiz.png',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const QuizScreen(),
-                      ),
-                    );
-                  },
+                  onPressed: _checkQuizCompletion, // 퀴즈 완료 여부 확인 후 이동
                 ),
               ],
             ),
@@ -341,14 +381,7 @@ class _MainScreenState extends State<MainScreen> {
                         title: '퀴즈 챌린지',
                         subscription: '퀴즈 풀고 포인트 받자!',
                         imagePath: 'assets/images/quiz.png',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QuizScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: _checkQuizCompletion, // 퀴즈 완료 여부 확인 후 이동
                       ),
                       const SizedBox(height: 20),
 
