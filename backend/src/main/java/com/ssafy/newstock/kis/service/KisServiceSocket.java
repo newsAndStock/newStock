@@ -14,6 +14,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.socket.WebSocketMessage;
@@ -78,6 +79,18 @@ public class KisServiceSocket {
 
             return input;
         }).subscribe(); // 블로킹 호출로 WebSocket 연결 유지
+    }
+
+    @Scheduled(cron = "0 30 16 * * ? ")
+    public void disconnectWebsocket() {
+        if (this.session != null && this.session.isOpen()) {
+            this.session.close()
+                    .doOnSuccess(aVoid -> System.out.println("WebSocket connection closed"))
+                    .doOnError(e -> System.err.println("Error while closing WebSocket: " + e.getMessage()))
+                    .subscribe();
+        } else {
+            System.out.println("No active WebSocket connection to close.");
+        }
     }
 
 
