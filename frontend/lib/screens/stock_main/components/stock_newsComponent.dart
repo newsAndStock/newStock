@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/api/stock_api/favorite_stock_api.dart';
+import 'package:frontend/api/stock_api/stock_detail_api.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/screens/news/news_detail.dart';
 
 class NewsItem {
   final String title;
   final String source;
   final String timeAgo;
   final String imageUrl;
+  final String newsId;
 
   NewsItem({
     required this.title,
     required this.source,
     required this.timeAgo,
     required this.imageUrl,
+    required this.newsId,
   });
+}
+
+class Category {
+  final String title;
+  final String stockCode;
+
+  Category({required this.title, required this.stockCode});
 }
 
 class NewsComponent extends StatelessWidget {
@@ -74,52 +87,102 @@ class NewsPageComponent extends StatefulWidget {
 class _NewsPageComponentState extends State<NewsPageComponent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _categories = ['삼성전자', 'SK하이닉스', '유한양행', '한미약품', 'LG에너지솔'];
-  String selectedCategory = '삼성전자';
+  List<Category> _categories = [];
+  Category? selectedCategory;
+  final FlutterSecureStorage storage = FlutterSecureStorage();
+  bool _isLoading = true;
+  List<NewsItem> _newsItems = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _categories.length, vsync: this);
+    _fetchFavoriteStocks();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _fetchFavoriteStocks() async {
+    try {
+      String? token = await storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      print('Fetching favorite stocks with token: $token'); // 디버그 로그
+
+      final favoriteStocks = await FavoriteStockApi.getFavoriteStocks(token);
+      print('Received favorite stocks: $favoriteStocks'); // 디버그 로그
+
+      if (favoriteStocks['stocks'] == null ||
+          !(favoriteStocks['stocks'] is List)) {
+        throw Exception('Invalid favorite stocks data format');
+      }
+
+      setState(() {
+        _categories = (favoriteStocks['stocks'] as List)
+            .map((stock) => Category(
+                title: stock['name'] as String? ?? 'Unknown Stock',
+                stockCode: stock['stockCode'] as String? ?? ''))
+            .toList();
+
+        print(
+            'Categories after mapping: ${_categories.map((c) => '${c.title}: ${c.stockCode}').join(', ')}'); // 디버그 로그
+
+        if (_categories.isNotEmpty) {
+          selectedCategory = _categories[0];
+          _tabController =
+              TabController(length: _categories.length, vsync: this);
+          _fetchNewsForStock(_categories[0]);
+        } else {
+          print('No favorite stocks found'); // 디버그 로그
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching favorite stocks: $e');
+      setState(() {
+        _isLoading = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('관심종목을 불러오는데 실패했습니다: $e')),
+        );
+      });
+    }
   }
 
-  List<NewsItem> _getNewsForCategory(String category) {
-    // 테스트 데이터
-    return [
-      NewsItem(
-        title: 'LG엔솔, 40만 원선 돌파... 2차 전지株 일제히 강세',
-        source: '서울경제',
-        timeAgo: '4시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
-      ),
-      NewsItem(
-        title: '삼성전자, 신제품 출시 예정... 스마트폰 시장 주도권 노려',
-        source: '한국경제',
-        timeAgo: '2시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
-      ),
-      NewsItem(
-        title: '일론머스크, 화성 진짜 갈까? 다시 한 번 X 업로드',
-        source: '가짜뉴스',
-        timeAgo: '2시간 전',
-        imageUrl: 'https://via.placeholder.com/60',
-      ),
-      // 더 많은 테스트 아이템 추가...
-    ];
+  Future<void> _fetchNewsForStock(Category category) async {
+    try {
+      String? token = await storage.read(key: 'accessToken');
+      if (token == null) throw Exception('No access token found');
+
+      final news = await StockDetailApi().getStockNews(
+        category.stockCode,
+        page: 1,
+        pageSize: 6,
+      );
+
+      setState(() {
+        _newsItems = news
+            .map((item) => NewsItem(
+                  title: item['title'] ?? 'No Title',
+                  source: item['press'] ?? 'Unknown',
+                  timeAgo: item['date'] ?? 'No Date',
+                  imageUrl:
+                      item['imageUrl'] ?? 'https://via.placeholder.com/60',
+                  newsId: item['newsId'] ?? 'No NewsId',
+                ))
+            .toList();
+      });
+    } catch (e) {
+      print('Error fetching news: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('뉴스를 불러오는데 실패했습니다: $e')),
+      );
+    }
   }
 
-  Widget _buildCategoryItem(String category) {
+  Widget _buildCategoryItem(Category category) {
     bool isSelected = category == selectedCategory;
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedCategory = category;
+          _fetchNewsForStock(category);
         });
       },
       child: Container(
@@ -140,7 +203,7 @@ class _NewsPageComponentState extends State<NewsPageComponent>
           ],
         ),
         child: Text(
-          category,
+          category.title,
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.black,
           ),
@@ -151,6 +214,25 @@ class _NewsPageComponentState extends State<NewsPageComponent>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('관심종목이 없습니다.'),
+            ElevatedButton(
+              child: Text('새로고침'),
+              onPressed: _fetchFavoriteStocks,
+            ),
+          ],
+        ),
+      );
+    }
+
     return SizedBox(
       height: widget.height,
       child: Column(
@@ -188,18 +270,43 @@ class _NewsPageComponentState extends State<NewsPageComponent>
                   ),
                 ],
               ),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16.0),
-                itemCount: _getNewsForCategory(selectedCategory).length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) => NewsComponent(
-                  newsItem: _getNewsForCategory(selectedCategory)[index],
-                ),
+              child: ClipRRect(
+                // 추가된 부분
+                borderRadius: BorderRadius.circular(40),
+                child: _newsItems.isEmpty
+                    ? Center(child: Text('뉴스가 없습니다.'))
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(16.0),
+                        physics: AlwaysScrollableScrollPhysics(), // 추가된 부분
+                        itemCount: _newsItems.length,
+                        separatorBuilder: (context, index) => const Divider(),
+                        itemBuilder: (context, index) => GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NewsDetailScreen(
+                                  newsId: _newsItems[index].newsId,
+                                ),
+                              ),
+                            );
+                          },
+                          child: NewsComponent(
+                            newsItem: _newsItems[index],
+                          ),
+                        ),
+                      ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 }

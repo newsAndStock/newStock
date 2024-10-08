@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/my_page_api.dart';
+import 'package:frontend/screens/stock_main/my_page.dart';
 import 'package:intl/intl.dart';
 
 class AccountSummary extends StatefulWidget {
@@ -81,7 +82,12 @@ class _AccountSummaryState extends State<AccountSummary> {
               TextButton(
                 child: const Text('내 계좌보기 >',
                     style: TextStyle(color: Colors.white)),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MyPage()),
+                  );
+                },
               ),
             ],
           ),
