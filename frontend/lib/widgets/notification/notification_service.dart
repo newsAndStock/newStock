@@ -29,12 +29,16 @@ class NotificationService {
   }
 
   // 알림 표시
-  Future<void> showNotification(String title, String body) async {
+  Future<void> showNotification(String id, String title, String body) async {
+    print("알림 수신 - 제목: $title, 내용: $body");
+    // int notificationId = 0;
+
+    // notificationId = int.parse(id);
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'your_channel_id',
-      'your_channel_name',
-      channelDescription: 'your_channel_description',
+      'newstock',
+      '주식 거래 알림',
+      channelDescription: '주식 거래 이벤트 알림을 위한 채널입니다',
       importance: Importance.max,
       priority: Priority.high,
     );
@@ -43,7 +47,7 @@ class NotificationService {
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
-      0, // 알림 ID
+      0, // notificationId, // 알림 ID
       title,
       body,
       platformChannelSpecifics,
