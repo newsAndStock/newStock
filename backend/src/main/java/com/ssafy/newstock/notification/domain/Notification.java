@@ -21,6 +21,9 @@ public class Notification{
     @Column(name="receiver_id")
     private Long receiverId;
 
+    @Column(name="stock_code")
+    private String stockCode;
+
     @Column(name = "stock_name")
     private String stockName;
 
@@ -42,8 +45,9 @@ public class Notification{
     private boolean isRead;
 
     @Builder
-    public Notification(Long receiverId, String stockName, Long quantity,OrderType orderType,int price) {
+    public Notification(Long receiverId, String stockCode, String stockName, Long quantity,OrderType orderType,int price) {
         this.receiverId = receiverId;
+        this.stockCode=stockCode;
         this.stockName=stockName;
         this.quantity=quantity;
         this.createdAt=LocalDateTime.now();
