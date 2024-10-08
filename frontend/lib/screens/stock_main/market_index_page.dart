@@ -21,28 +21,19 @@ class MarketIndexPage extends StatelessWidget {
           final item = indices[index];
           return _buildIndexCard(
             item['name'] as String? ?? 'Unknown',
-            _getCloseToday(item),
-            item['price_difference'] as double? ?? 0.0,
-            item['fluctuation_rate'] as double? ?? 0.0,
+            item['price'] as String? ?? '0',
+            item['difference'] as String? ?? '0',
+            item['state'] as String? ?? 'Unknown',
           );
         },
       ),
     );
   }
 
-  double _getCloseToday(Map<String, dynamic> item) {
-    return (item['ndxCloseToday'] as double?) ??
-        (item['usdkrwCloseToday'] as double?) ??
-        (item['kosdaqCloseToday'] as double?) ??
-        (item['kospiCloseToday'] as double?) ??
-        0.0;
-  }
-
-  Widget _buildIndexCard(String name, double value, double priceDifference,
-      double fluctuationRate) {
-    Color backgroundColor = priceDifference > 0
-        ? Colors.red[50]!
-        : (priceDifference < 0 ? Colors.blue[50]! : Colors.white);
+  Widget _buildIndexCard(
+      String name, String price, String difference, String state) {
+    bool isUp = state == '상승';
+    Color backgroundColor = isUp ? Colors.red[50]! : Colors.blue[50]!;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -53,7 +44,7 @@ class MarketIndexPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              name,
+              name == '환율' ? '원/달러 환율' : name,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -61,7 +52,7 @@ class MarketIndexPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  value.toStringAsFixed(2),
+                  price,
                   style: const TextStyle(
                       fontSize: 24, fontWeight: FontWeight.bold),
                 ),
@@ -69,18 +60,11 @@ class MarketIndexPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${priceDifference > 0 ? '+' : ''}${priceDifference.toStringAsFixed(2)}',
+                      difference,
                       style: TextStyle(
                         fontSize: 18,
-                        color: priceDifference > 0 ? Colors.red : Colors.blue,
+                        color: isUp ? Colors.red : Colors.blue,
                         fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '(${fluctuationRate > 0 ? '+' : ''}${fluctuationRate.toStringAsFixed(2)}%)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: priceDifference > 0 ? Colors.red : Colors.blue,
                       ),
                     ),
                   ],

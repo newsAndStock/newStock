@@ -10,11 +10,17 @@ class MarketIndex extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String name = indexData['name'] as String? ?? 'Unknown';
-    final double value = _getCloseToday(indexData);
-    final double priceDifference =
-        indexData['price_difference'] as double? ?? 0.0;
-    final double fluctuationRate =
-        indexData['fluctuation_rate'] as double? ?? 0.0;
+    final String price = indexData['price'] as String? ?? '0';
+    final String difference = indexData['difference'] as String? ?? '0';
+    final String state = indexData['state'] as String? ?? 'Unknown';
+
+    // 상승/하락 여부 확인
+    bool isUp = state == '상승';
+
+    // difference에서 숫자와 퍼센트 추출
+    List<String> parts = difference.split(' ');
+    String numericDifference = parts.isNotEmpty ? parts[0] : '0';
+    String percentChange = parts.length > 1 ? parts[1] : '0%';
 
     return GestureDetector(
       onTap: onTap,
@@ -40,17 +46,17 @@ class MarketIndex extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '   $name',
+                  '   ${name == '환율' ? '원/달러 환율' : name}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  '${value.toStringAsFixed(2)} (${fluctuationRate.toStringAsFixed(2)}%)   ',
+                  '$price ($percentChange)   ',
                   style: TextStyle(
                     fontSize: 16,
-                    color: priceDifference > 0 ? Colors.red : Colors.blue,
+                    color: isUp ? Colors.red : Colors.blue,
                   ),
                 ),
               ],
@@ -59,13 +65,5 @@ class MarketIndex extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  double _getCloseToday(Map<String, dynamic> item) {
-    return (item['ndxCloseToday'] as double?) ??
-        (item['usdkrwCloseToday'] as double?) ??
-        (item['kosdaqCloseToday'] as double?) ??
-        (item['kospiCloseToday'] as double?) ??
-        0.0;
   }
 }

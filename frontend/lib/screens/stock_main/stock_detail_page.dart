@@ -776,65 +776,87 @@ class _StockDetailPageState extends State<StockDetailPage>
       return safeToString(value);
     }
 
+    final TextStyle tileTextStyle = TextStyle(fontSize: 16);
     return ListView(
       children: [
         ListTile(
-            title: Text('${widget.stockCode}'),
-            trailing: Text(safeToString(details['marketIdCode']))),
+            title: Text('시장 구분', style: tileTextStyle),
+            trailing: Text(safeToString(details['marketIdCode']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('시장 구분'),
-            trailing: Text(safeToString(details['marketIdCode']))),
+            title: Text('업종', style: tileTextStyle),
+            trailing: Text(safeToString(details['industryCodeName']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('업종'),
-            trailing: Text(safeToString(details['industryCodeName']))),
+            title: Text('상장일', style: tileTextStyle),
+            trailing: Text(safeToString(details['listingDate']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('상장일'),
-            trailing: Text(safeToString(details['listingDate']))),
+            title: Text('자본금', style: tileTextStyle),
+            trailing:
+                Text(safeToString(details['capital']), style: tileTextStyle)),
         ListTile(
-            title: Text('결산월'),
-            trailing: Text(safeToString(details['settlementMonth']))),
+            title: Text('상장주식수', style: tileTextStyle),
+            trailing: Text(safeToString(details['listedStockCount']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('자본금'),
-            trailing: Text(safeToString(details['capital']))),
+            title: Text('매출액', style: tileTextStyle),
+            trailing: Text(safeToString(details['salesRevenue']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('상장주식수'),
-            trailing: Text(safeToString(details['listedStockCount']))),
+            title: Text('당기순이익', style: tileTextStyle),
+            trailing:
+                Text(safeToString(details['netIncome']), style: tileTextStyle)),
         ListTile(
-            title: Text('매출액'),
-            trailing: Text(safeToString(details['salesRevenue']))),
+            title: Text('시가총액', style: tileTextStyle),
+            trailing:
+                Text(safeToString(details['marketCap']), style: tileTextStyle)),
         ListTile(
-            title: Text('당기순이익'),
-            trailing: Text(safeToString(details['netIncome']))),
+            title: Text('전일종가', style: tileTextStyle),
+            trailing: Text(safeToString(details['previousClosePrice']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('시가총액'),
-            trailing: Text(safeToString(details['marketCap']))),
+            title: Text('250일 고가', style: tileTextStyle),
+            trailing: Text(safeToString(details['high250Price']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('전일종가'),
-            trailing: Text(safeToString(details['previousClosePrice']))),
+            title: Text('250일 저가', style: tileTextStyle),
+            trailing: Text(safeToString(details['low250Price']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('250일 고가'),
-            trailing: Text(safeToString(details['high250Price']))),
+            title: Text('연중 고가', style: tileTextStyle),
+            trailing: Text(safeToString(details['yearlyHighPrice']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('250일 저가'),
-            trailing: Text(safeToString(details['low250Price']))),
+            title: Text('연중 저가', style: tileTextStyle),
+            trailing: Text(safeToString(details['yearlyLowPrice']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('연중 고가'),
-            trailing: Text(safeToString(details['yearlyHighPrice']))),
+            title: Text('배당금', style: tileTextStyle),
+            trailing: Text(safeToString(details['dividendAmount']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('연중 저가'),
-            trailing: Text(safeToString(details['yearlyLowPrice']))),
+            title: Text('배당수익률', style: tileTextStyle),
+            trailing: Text(safeToString(details['dividendYield']),
+                style: tileTextStyle)),
         ListTile(
-            title: Text('배당금'),
-            trailing: Text(safeToString(details['dividendAmount']))),
+            title: Text('PER', style: tileTextStyle),
+            trailing: Text(getFinancialData('per'), style: tileTextStyle)),
         ListTile(
-            title: Text('배당수익률'),
-            trailing: Text(safeToString(details['dividendYield']))),
-        ListTile(title: Text('PER'), trailing: Text(getFinancialData('per'))),
-        ListTile(title: Text('EPS'), trailing: Text(getFinancialData('eps'))),
-        ListTile(title: Text('PBR'), trailing: Text(getFinancialData('pbr'))),
-        ListTile(title: Text('BPS'), trailing: Text(getFinancialData('bps'))),
-        ListTile(title: Text('ROE'), trailing: Text(getFinancialData('roe'))),
-        ListTile(title: Text('ROA'), trailing: Text(getFinancialData('roa'))),
+            title: Text('EPS', style: tileTextStyle),
+            trailing: Text(getFinancialData('eps'), style: tileTextStyle)),
+        ListTile(
+            title: Text('PBR', style: tileTextStyle),
+            trailing: Text(getFinancialData('pbr'), style: tileTextStyle)),
+        ListTile(
+            title: Text('BPS', style: tileTextStyle),
+            trailing: Text(getFinancialData('bps'), style: tileTextStyle)),
+        ListTile(
+            title: Text('ROE', style: tileTextStyle),
+            trailing: Text(getFinancialData('roe'), style: tileTextStyle)),
+        ListTile(
+            title: Text('ROA', style: tileTextStyle),
+            trailing: Text(getFinancialData('roa'), style: tileTextStyle)),
       ],
     );
   }

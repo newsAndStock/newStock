@@ -30,18 +30,16 @@ class _StockMainPageState extends State<StockMainPage> {
   bool _isLoadingFavStock = true;
   List<Map<String, dynamic>> _marketIndices = [];
   bool _isLoadingMarketIndex = true;
-  final FlutterSecureStorage storage =
-      FlutterSecureStorage(); // Secure storage instance
+  final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _fetchFavoriteStocks();
     _fetchMarketIndices();
-    // 5초마다 MarketIndex 위젯의 애니메이션을 트리거
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       setState(() {
-        _currentIndex = (_currentIndex + 1) % 4; // 4개의 지수가 있다고 가정
+        _currentIndex = (_currentIndex + 1) % _marketIndices.length;
       });
     });
   }
@@ -94,7 +92,6 @@ class _StockMainPageState extends State<StockMainPage> {
   }
 
   void _navigateToStockDetail(String stockName, String stockCode) {
-    // 빌드 프로세스 이후에 실행되도록 WidgetsBinding.instance.addPostFrameCallback 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.push(
         context,
@@ -155,27 +152,23 @@ class _StockMainPageState extends State<StockMainPage> {
                   ),
                 ),
               ),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotificationScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 30,
-                      child: Icon(
-                        Icons.notifications_outlined,
-                        size: 30,
-                        color: Colors.black,
-                      ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationScreen(),
                     ),
+                  );
+                },
+                child: Container(
+                  height: 30,
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    size: 30,
+                    color: Colors.black,
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -185,37 +178,36 @@ class _StockMainPageState extends State<StockMainPage> {
         onRefresh: _refreshData,
         child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
-          // 추가: 전체 내용에 패딩 적용
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                // 변경: FractionallySizedBox 제거 및 직접 SearchBarStock 사용
                 SearchBarStock(),
                 const SizedBox(height: 25),
-                // 변경: FractionallySizedBox 및 GestureDetector 제거
                 AccountSummary(),
                 const SizedBox(height: 25),
                 _isLoadingMarketIndex
                     ? Center(child: CircularProgressIndicator())
                     : _marketIndices.isEmpty
                         ? Center(child: Text('No market data available'))
-                        : MarketIndex(
-                            indexData: _marketIndices[_currentIndex],
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MarketIndexPage(indices: _marketIndices),
-                                ),
-                              );
-                            },
+                        : FractionallySizedBox(
+                            widthFactor: 1.14, //여기 하드코딩
+                            child: MarketIndex(
+                              indexData: _marketIndices[_currentIndex],
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MarketIndexPage(
+                                        indices: _marketIndices),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                 const SizedBox(height: 25),
-                // 변경: FractionallySizedBox 제거
                 SizedBox(
                   height: 150,
                   child: _isLoadingFavStock
@@ -226,30 +218,23 @@ class _StockMainPageState extends State<StockMainPage> {
                         ),
                 ),
                 const SizedBox(height: 12),
-                // 변경: Container 제거 및 직접 Text 위젯 사용
                 Text('관련 뉴스',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                // 추가: 뉴스 제목과 컴포넌트 사이 간격
                 const SizedBox(height: 8),
-                // 변경: FractionallySizedBox 제거
                 SizedBox(
                   height: 400,
                   child: NewsPageComponent(),
                 ),
                 const SizedBox(height: 12),
-                // 변경: Container 제거 및 직접 Text 위젯 사용
                 Text('국내 실시간 랭킹',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                // 추가: 랭킹 제목과 컴포넌트 사이 간격
                 const SizedBox(height: 8),
-                // 변경: FractionallySizedBox 제거
                 SizedBox(
                   height: 470,
                   child: StockPageComponent(),
                 ),
-                // 추가: 하단 여백
                 const SizedBox(height: 20),
               ],
             ),
