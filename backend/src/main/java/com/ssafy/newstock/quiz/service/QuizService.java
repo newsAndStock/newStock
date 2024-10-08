@@ -5,6 +5,7 @@ import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.quiz.controller.response.QuizResponse;
 import com.ssafy.newstock.quiz.domain.Quiz;
 import com.ssafy.newstock.quiz.domain.QuizHistory;
+import com.ssafy.newstock.quiz.exception.QuizAlreadyCompletedException;
 import com.ssafy.newstock.quiz.repository.QuizHistoryRepository;
 import com.ssafy.newstock.quiz.repository.QuizRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,7 +31,7 @@ public class QuizService {
         int todayIndex = calculateIndexForToday();
         int currentIndex = quizHistory.getQuizIndex();
 
-        if (currentIndex >= todayIndex + 3) throw new IllegalArgumentException("오늘 퀴즈 완료!");
+        if (currentIndex >= todayIndex + 3) throw new QuizAlreadyCompletedException("오늘 퀴즈 완료!");
 
         if (currentIndex < todayIndex) {
             currentIndex = todayIndex;
