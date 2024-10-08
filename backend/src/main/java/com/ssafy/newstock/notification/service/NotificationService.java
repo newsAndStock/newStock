@@ -6,6 +6,7 @@ import com.ssafy.newstock.notification.domain.Notification;
 import com.ssafy.newstock.notification.repository.EmitterRepository;
 import com.ssafy.newstock.notification.repository.EmitterRepositoryImpl;
 import com.ssafy.newstock.notification.repository.NotificationRepository;
+import com.ssafy.newstock.stock.service.StockService;
 import com.ssafy.newstock.trading.domain.OrderType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class NotificationService {
 
 
     private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
+    private final StockService stockService;
 
     public SseEmitter subscribe(Long memberId, String lastEventId) {
         String emitterId = memberId + "_" + System.currentTimeMillis();
@@ -57,7 +59,8 @@ public class NotificationService {
 
     @Transactional
     public void send(Long receiverId, String stockCode, Long quantity, OrderType orderType, Integer price) {
-        Notification notification = notificationRepository.save(createNotification(receiverId, stockCode, quantity,orderType,price));
+        String stockName = stockService.findNameByStockCode(stockCode);
+        Notification notification = notificationRepository.save(createNotification(receiverId, stockCode, stockName,quantity,orderType,price));
 
         NotificationResponse notificationResponse=new NotificationResponse(notification);
         Map<String, SseEmitter> sseEmitters = emitterRepository.findAllEmitterStartWithByMemberId(receiverId+"");
@@ -93,9 +96,10 @@ public class NotificationService {
         }
     }
 
-    private Notification createNotification(Long receiverId, String stockName, Long quantity, OrderType orderType, Integer price){
+    private Notification createNotification(Long receiverId, String stockCode, String stockName, Long quantity, OrderType orderType, Integer price){
         return Notification.builder()
                 .receiverId(receiverId)
+                .stockCode(stockCode)
                 .stockName(stockName)
                 .quantity(quantity)
                 .orderType(orderType)

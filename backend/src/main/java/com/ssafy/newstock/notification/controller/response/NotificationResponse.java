@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 public class NotificationResponse {
     private Long id;
+    private String stockCode;
     private String stockName;
     private Long quantity;
     private OrderType orderType;
@@ -22,6 +23,7 @@ public class NotificationResponse {
     @Builder
     public NotificationResponse(Notification notification) {
         this.id = notification.getId();
+        this.stockCode = notification.getStockCode();
         this.stockName=notification.getStockName();
         this.quantity=notification.getQuantity();
         this.orderType=notification.getOrderType();
