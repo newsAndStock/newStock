@@ -1,18 +1,21 @@
 package com.ssafy.newstock.stock.controller.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
+
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class StockDetailResponse {
     // 종목정보 / 주식기본조회
     private String marketIdCode;           // 시장 구분
     private String industryCodeName;       // 업종
     private String listingDate;            // 상장일
-    private String settlementMonth;        // 결산월
     private String capital;                // 자본금
     private String listedStockCount;       // 상장주식수
 
@@ -39,4 +42,48 @@ public class StockDetailResponse {
     private String BPS;
     private String ROE;
     private String ROA;
+
+    public StockDetailResponse(String marketIdCode, String industryCodeName, String listingDate,String capital,
+                               String listedStockCount, String salesRevenue, String netIncome, String marketCap,
+                               String previousClosePrice, String high250Price, String low250Price, String yearlyHighPrice,
+                               String yearlyLowPrice, String dividendAmount, String dividendYield, String PER, String EPS,
+                               String PBR, String BPS, String ROE, String ROA) {
+        this.marketIdCode = marketIdCode;
+        this.industryCodeName = industryCodeName;
+        this.listingDate = formatDate(listingDate, DateTimeFormatter.ofPattern("yyyyMMdd"), DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        this.capital = formatNumber(capital);
+        this.listedStockCount = formatNumber(listedStockCount);
+        this.salesRevenue = formatNumber(salesRevenue);
+        this.netIncome = formatNumber(netIncome);
+        this.marketCap = formatNumber(marketCap);
+        this.previousClosePrice = formatNumber(previousClosePrice);
+        this.high250Price = formatNumber(high250Price);
+        this.low250Price = formatNumber(low250Price);
+        this.yearlyHighPrice = formatNumber(yearlyHighPrice);
+        this.yearlyLowPrice = formatNumber(yearlyLowPrice);
+        this.dividendAmount = formatNumber(dividendAmount);
+        this.dividendYield = formatNumber(dividendYield);
+        this.PER = formatNumber(PER);
+        this.EPS = formatNumber(EPS);
+        this.PBR = formatNumber(PBR);
+        this.BPS = formatNumber(BPS);
+        this.ROE = formatNumber(ROE);
+        this.ROA = formatNumber(ROA);
+    }
+
+    private String formatNumber(String value) {
+        try {
+            return NumberFormat.getInstance(Locale.US).format(Double.parseDouble(value));
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    private String formatDate(String dateString, DateTimeFormatter inputFormatter, DateTimeFormatter outputFormatter) {
+        try {
+            return LocalDate.parse(dateString, inputFormatter).format(outputFormatter);
+        } catch (DateTimeParseException e) {
+            return "-";
+        }
+    }
 }

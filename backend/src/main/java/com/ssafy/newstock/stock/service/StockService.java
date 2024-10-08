@@ -115,7 +115,7 @@ public class StockService {
 
         return new StockDetailResponse(
                 stockBasicInfo.get("marketIdCode"), stockBasicInfo.get("industryCodeName"), stockBasicInfo.get("listingDate"),
-                stockBasicInfo.get("settlementMonth"), stockBasicInfo.get("capital"), stockBasicInfo.get("listedStockCount"),
+                stockBasicInfo.get("capital"), stockBasicInfo.get("listedStockCount"),
                 incomeStatement.get("salesRevenue"), incomeStatement.get("netIncome"), stockPriceInfo.get("marketCap"),
                 stockPriceInfo.get("previousClosePrice"), stockPriceInfo.get("highPrice250Days"), stockPriceInfo.get("lowPrice250Days"),
                 stockPriceInfo.get("yearlyHighPrice"), stockPriceInfo.get("yearlyLowPrice"), dividendInfo.get("dividendAmount"),
@@ -140,7 +140,6 @@ public class StockService {
             resultMap.put("marketIdCode", node.path("mket_id_cd").asText());
             resultMap.put("industryCodeName", node.path("std_idst_clsf_cd_name").asText());
             resultMap.put("listingDate", node.path("scts_mket_lstg_dt").asText());
-            resultMap.put("settlementMonth", node.path("setl_mmdd").asText());
             resultMap.put("capital", node.path("cpta").asText());
             resultMap.put("listedStockCount", String.valueOf(listedStockCount));
 
