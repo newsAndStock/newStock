@@ -10,25 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MarketDataResponse {
-    String kospi;
-    String kospiPrice;
-    String kospiDifference;
-    String kospiState;
-    String kosdaq;
-    String kosdaqPrice;
-    String kosdaqDifference;
-    String kosdaqState;
-    String nasdaq;
-    String nasdaqPrice;
-    String nasdaqDifference;
-    String nasdaqState;
-    String sp500;
-    String sp500Price;
-    String sp500Difference;
-    String sp500State;
-    String rate;
-    String ratePrice;
-    String rateDifference;
-    String rateState;
-    String Date;
+    String name;
+    String price;
+    String difference;
+    String state;
 }

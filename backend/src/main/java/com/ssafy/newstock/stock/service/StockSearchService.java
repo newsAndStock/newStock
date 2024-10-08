@@ -22,8 +22,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -351,7 +349,7 @@ public class StockSearchService {
 
     //주식으로 뉴스 검색
     //관심종목 + 관련 뉴스 조회
-    public List<NewsSearchResponse>  searchNewsForStock(String stockCode) {
+    public List<NewsSearchResponse> searchNewsForStock(String stockCode) {
         Stock stock = stockRepository.findByStockCode(stockCode)
                 .orElseThrow(() -> new IllegalArgumentException("주식이 존재하지 않습니다."));
 
@@ -362,11 +360,12 @@ public class StockSearchService {
     }
 
     //코스피, 코스닥, 나스닥 S&P 500 환율
-    public MarketDataResponse getMarketData() {
+    public List<MarketDataResponse> getMarketData() {
         try {
             String domesticUrl = "https://finance.naver.com/sise/"; //국내 증시
             String worldUrl = "https://finance.naver.com/world/"; // 해외 증시
             String rateUrl = "https://finance.naver.com/marketindex/"; // 환율
+            List<MarketDataResponse> arr = new ArrayList<>();
 
             // 웹 페이지 로드
             Document domesticDocument = Jsoup.connect(domesticUrl).get();
@@ -374,48 +373,42 @@ public class StockSearchService {
             Document rateDocument = Jsoup.connect(rateUrl).get();
 
             // KOSPI
-            String kospi = "코스피";
+            String kospiDate = "KOSPI";
             String kospiPrice = domesticDocument.select("#KOSPI_now").text();
             String kospiDifference = domesticDocument.select("#KOSPI_change").text();
             String kospiState = domesticDocument.select("#KOSPI_change > span.blind").text();
+            arr.add(new MarketDataResponse(kospiDate, kospiPrice, kospiDifference, kospiState));
 
             // KOSDAQ
-            String kosdaq = "코스닥";
+            String kosdaq = "KOSDAQ";
             String kosdaqPrice = domesticDocument.select("#KOSDAQ_now").text();
             String kosdaqDifference = domesticDocument.select("#KOSDAQ_change").text();
             String kosdaqState = domesticDocument.select("#KOSPI_change > span.blind").text();
+            arr.add(new MarketDataResponse(kosdaq, kosdaqPrice, kosdaqDifference, kosdaqState));
 
             // NASDAQ
-            String nasdaq = "나스닥";
+            String nasdaq = "NASDAQ";
             String nasdaqPrice = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > em").text();
             String nasdaqDifference = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span:nth-child(3)").text();
             String nasdaqState = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span.blind").text();
+            arr.add(new MarketDataResponse(nasdaq, nasdaqPrice, nasdaqDifference, nasdaqState));
 
             // S&P 500
             String sp500 = "S&P 500";
             String sp500Price = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > strong").text();
             String sp500Difference = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > em").text();
             String sp500State = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > span.blind").text();
+            arr.add(new MarketDataResponse(sp500, sp500Price, sp500Difference, sp500State));
 
             // 환율
             String rate = "환율";
             String ratePrice = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.value").text();
             String rateDifference = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.change").text();
             String rateState = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.blind").text();
+            arr.add(new MarketDataResponse(rate, ratePrice, rateDifference, rateState));
 
-            // 날짜
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(("yyyy-MM-dd"));
-            String date = now.format(formatter);
+            return arr;
 
-            return new MarketDataResponse(
-                    kospi, kospiPrice, kospiDifference, kospiState,
-                    kosdaq, kosdaqPrice, kosdaqDifference, kosdaqState,
-                    nasdaq, nasdaqPrice, nasdaqDifference, nasdaqState,
-                    sp500, sp500Price, sp500Difference, sp500State,
-                    rate, ratePrice, rateDifference, rateState,
-                    date
-            );
         } catch (Exception e) {
             e.printStackTrace();
             return null;
