@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -81,7 +80,7 @@ public class StockSearchController {
 
     @GetMapping("/market-data")
     public ResponseEntity<?> marketData() {
-        MarketDataResponse marketDataResponse = stockSearchService.getMarketData();
+        List<MarketDataResponse> marketDataResponse = stockSearchService.getMarketData();
         return ResponseEntity.ok(marketDataResponse);
     }
 }
