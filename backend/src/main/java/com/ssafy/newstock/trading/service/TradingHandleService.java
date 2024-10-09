@@ -75,6 +75,7 @@ public class TradingHandleService {
         return tradingResponses;
     }
 
+    @Transactional
     public void removeTrading(Long tradingId, Long memberId) {
         canceledTrading.add(tradingId);
         Trading trading=tradingRepository.findById(tradingId).get();
