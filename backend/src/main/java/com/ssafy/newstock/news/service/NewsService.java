@@ -12,6 +12,8 @@ import com.ssafy.newstock.news.repository.NewsRepository;
 import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
 import com.ssafy.newstock.news.repository.RecentSearchWordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -51,11 +53,9 @@ public class NewsService {
         return responseList;
     }
 
-    public List<NewsDetailResponse> newsList() {
-        List<News> newsList = newsRepository.findAllByOrderByDateDesc();
-        return newsList.stream()
-                .map(NewsDetailResponse::from)
-                .collect(Collectors.toList());
+    public Page<NewsDetailResponse> newsList(String category, Pageable pageable) {
+        Page<News> newsPage = newsRepository.findAllByCategoryOrderByDateDesc(category, pageable);
+        return newsPage.map(NewsDetailResponse::from);
     }
 
     public NewsDetailResponse getNewsDetail(String newsId) {
@@ -87,12 +87,11 @@ public class NewsService {
         }
     }
 
-    public List<NewsSearchResponse> searchNews(String keyword,Long memberId) {
-        Member member=memberService.findById(memberId);
-        if(!keyword.isBlank()){
-            recentSearchWordRepository.save(new RecentSearchWord(keyword,LocalDateTime.now(),member));
+    public List<NewsSearchResponse> searchNews(String keyword, Long memberId) {
+        Member member = memberService.findById(memberId);
+        if (!keyword.isBlank()) {
+            recentSearchWordRepository.save(new RecentSearchWord(keyword, LocalDateTime.now(), member));
         }
-
         return newsRepositoryQuerydsl.searchNewsTitleOrKeyword(keyword);
     }
 }
