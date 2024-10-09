@@ -64,9 +64,10 @@ class _MainScreenState extends State<MainScreen> {
           final parsedData = jsonDecode(event.data ?? '{}');
           final stockName = parsedData['stockName'];
           final orderType = parsedData['orderType'];
+          final quantity = parsedData['quantity'];
           final price = parsedData['price'];
           String message =
-              "$stockName 주식이 ${orderType == 'BUY' ? '구매' : '판매'}되었습니다. 가격: $price 원";
+              "$stockName $quantity주 ${orderType == 'BUY' ? '매수' : '매도'} 거래가 채결되었습니다.";
           _notificationService.showNotification('0', '주식 알림', message);
         }
       } catch (e) {
@@ -185,7 +186,7 @@ class _MainScreenState extends State<MainScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => MyPage(),
+                                  builder: (context) => const MyPage(),
                                 ),
                               );
                             },
