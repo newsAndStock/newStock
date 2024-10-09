@@ -327,7 +327,7 @@ public class StockSearchService {
                 top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice, priceChangeRate, priceChangeAmount, priceChangeSign));
             }
             Collections.sort(top5Stocks);
-            return top5Stocks;
+            return top5Stocks.subList(0, Math.min(5, top5Stocks.size()));
         } catch (Exception e) {
             throw new RuntimeException("등락률 상위 5개 주식 데이터 파싱 실패", e);
         }
