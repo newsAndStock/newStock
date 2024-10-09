@@ -44,7 +44,7 @@ class FavoriteStocks extends StatelessWidget {
                   child: _buildFavoriteStockItem(
                     stock['name'],
                     stock['info']['currentPrice'] + '원',
-                    stock['info']['changedPrice'] + '원',
+                    "${stock['info']['changedPrice']}원 (${stock['info']['changedPriceRate']}%)",
                   ),
                 ),
               );

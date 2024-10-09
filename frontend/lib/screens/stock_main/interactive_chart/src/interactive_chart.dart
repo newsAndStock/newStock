@@ -325,12 +325,12 @@ class _InteractiveChartState extends State<InteractiveChart> {
     final date = intl.DateFormat.yMMMd()
         .format(DateTime.fromMillisecondsSinceEpoch(candle.timestamp));
     return {
-      "Date": date,
-      "Open": candle.open?.toStringAsFixed(2) ?? "-",
-      "High": candle.high?.toStringAsFixed(2) ?? "-",
-      "Low": candle.low?.toStringAsFixed(2) ?? "-",
-      "Close": candle.close?.toStringAsFixed(2) ?? "-",
-      "Volume": candle.volume?.asAbbreviated() ?? "-",
+      "일자": date,
+      "시가": candle.open?.toStringAsFixed(0) ?? "-",
+      "고가": candle.high?.toStringAsFixed(0) ?? "-",
+      "저가": candle.low?.toStringAsFixed(0) ?? "-",
+      "종가": candle.close?.toStringAsFixed(0) ?? "-",
+      "거래량": candle.volume?.asAbbreviated() ?? "-",
     };
   }
 

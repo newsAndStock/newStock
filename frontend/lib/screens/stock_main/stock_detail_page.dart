@@ -245,10 +245,10 @@ class _StockDetailPageState extends State<StockDetailPage>
       final dateTime = DateTime.parse(item['date'] as String);
       return CandleData(
         dateTime: dateTime,
-        open: _parseDouble(item['openingPrice']),
-        high: _parseDouble(item['highestPrice']),
-        low: _parseDouble(item['lowestPrice']),
-        close: _parseDouble(item['closingPrice']),
+        open: _parseDoublee(item['openingPrice']),
+        high: _parseDoublee(item['highestPrice']),
+        low: _parseDoublee(item['lowestPrice']),
+        close: _parseDoublee(item['closingPrice']),
         volume: _parseDouble(item['volume']),
       );
     }).toList();
@@ -263,6 +263,13 @@ class _StockDetailPageState extends State<StockDetailPage>
       return double.parse(value);
     }
     throw FormatException('Cannot parse $value to double');
+  }
+
+  static double? _parseDoublee(String? value) {
+    if (value == null) return null;
+    double? parsed = double.tryParse(value);
+    if (parsed == null) return null;
+    return parsed.floorToDouble(); // 소수점 이하를 버림
   }
 
   Future<void> _checkFavoriteStatus() async {
@@ -592,7 +599,11 @@ class _StockDetailPageState extends State<StockDetailPage>
                     final date =
                         DateTime.parse(selectedData[flSpot.x.toInt()]['date']);
                     return LineTooltipItem(
-                      '${date.day}/${date.month}\n${flSpot.y.toStringAsFixed(2)}',
+                      'Date : ${date.year}/${date.month}/${date.day}\n' +
+                          (selectedData[flSpot.x.toInt()]['time'] != null
+                              ? 'Time : ${selectedData[flSpot.x.toInt()]['time']}\n'
+                              : '') +
+                          'Price: ${flSpot.y.toStringAsFixed(0)}',
                       const TextStyle(color: Colors.white),
                     );
                   }).toList();
@@ -604,7 +615,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                 return spotIndexes.map((spotIndex) {
                   return TouchedSpotIndicatorData(
                     FlLine(
-                      color: Colors.orange,
+                      color: Colors.green,
                       strokeWidth: 2,
                       dashArray: [5, 5],
                     ),
@@ -612,7 +623,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 8,
-                          color: Colors.deepOrange,
+                          color: Colors.lightGreen,
                           strokeWidth: 2,
                           strokeColor: Colors.white,
                         );
