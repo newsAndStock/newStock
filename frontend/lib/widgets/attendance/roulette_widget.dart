@@ -48,9 +48,13 @@ class _RouletteWidgetState extends State<RouletteWidget>
   }
 
   // 룰렛 돌리기
-  void _startRoulette() {
+  void _startRoulette() async {
     final randomTarget = Random().nextInt(rewards.length);
-    _controller.rollTo(randomTarget, clockwise: true, offset: 0.5);
+
+    // 애니메이션이 완료될 때까지 대기
+    await _controller.rollTo(randomTarget, clockwise: true, offset: 0.5);
+
+    // 애니메이션이 끝나면 포인트 적립
     widget.onRewardEarned(rewards[randomTarget]);
   }
 

@@ -79,6 +79,9 @@ flutter:
     - assets/images/AppDesciption.png
     - assets/images/NEWstock.png
     - assets/images/default.png
+    - assets/images/up.png
+    - assets/images/down.png
+
     - assets/images/checkin.png
     - assets/images/quiz.png
     - assets/images/stock.png
