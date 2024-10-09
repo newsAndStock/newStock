@@ -184,7 +184,27 @@ class _StockMainPageState extends State<StockMainPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 20),
-                SearchBarStock(),
+                // SearchBarStock(),
+                GestureDetector(
+                  onTap: () => {},
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SearchPage()),
+                          );
+                        },
+                        child: const AbsorbPointer(
+                          child: SearchBarStock(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 25),
                 AccountSummary(),
                 const SizedBox(height: 25),
