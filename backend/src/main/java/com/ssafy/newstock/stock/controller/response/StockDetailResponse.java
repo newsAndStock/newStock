@@ -49,7 +49,7 @@ public class StockDetailResponse {
                                String yearlyLowPrice, String dividendAmount, String dividendYield, String PER, String EPS,
                                String PBR, String BPS, String ROE, String ROA) {
         this.marketIdCode = marketIdCode;
-        this.industryCodeName = industryCodeName;
+        this.industryCodeName = industryCodeName.isEmpty() ? "-" : industryCodeName;
         this.listingDate = formatDate(listingDate, DateTimeFormatter.ofPattern("yyyyMMdd"), DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         this.capital = formatNumber(capital);
         this.listedStockCount = formatNumber(listedStockCount);

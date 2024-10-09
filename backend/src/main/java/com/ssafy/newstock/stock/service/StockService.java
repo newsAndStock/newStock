@@ -34,6 +34,7 @@ public class StockService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final String NOT_AVAILABLE = "현재 제공하지 않습니다";
 
     private long currentPrice; // 현재가
     private long listedStockCount; // 상장주수
@@ -89,10 +90,6 @@ public class StockService {
 
         var dividendInfoFuture = stockPriceInfoFuture.thenCompose(
                 stockPriceInfo -> CompletableFuture.supplyAsync(() -> getDividendInfo(stockCode))
-                        .exceptionally(ex -> {
-                            log.error("예탁원 정보 API 호출 중 오류 발생: {}", ex.getMessage());
-                            return Map.of("dividendAmount", "-", "dividendYield", "-");
-                        })
         );
 
         var financialRatioFuture = CompletableFuture
@@ -164,7 +161,14 @@ public class StockService {
 
             return resultMap;
         } catch (Exception ex) {
-            throw new RuntimeException("손익계산서 API 호출 실패: " + stockCode, ex);
+            log.error("손익계산서 API 호출 중 오류 발생 (stockCode: {}): {}", stockCode, ex.getMessage());
+
+            netIncome = 0;
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("salesRevenue", NOT_AVAILABLE);
+            resultMap.put("netIncome", NOT_AVAILABLE);
+
+            return resultMap;
         }
     }
 
@@ -216,7 +220,13 @@ public class StockService {
 
             return resultMap;
         } catch (Exception ex) {
-            throw new RuntimeException("예탁원정보 API 호출 실패: " + stockCode, ex);
+            log.error("예탁원정보 API 호출 실패 (stockCode: {}): {}", stockCode, ex.getMessage());
+
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("dividendAmount", NOT_AVAILABLE);
+            resultMap.put("dividendYield", NOT_AVAILABLE);
+
+            return resultMap;
         }
     }
 
@@ -248,7 +258,17 @@ public class StockService {
 
             return resultMap;
         } catch (Exception ex) {
-            throw new RuntimeException("국내주식 재무비율 API 호출 실패: " + stockCode, ex);
+            log.error("국내주식 재무비율 API 호출 실패 (stockCode: {}): {}", stockCode, ex.getMessage());
+
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("PER", NOT_AVAILABLE);
+            resultMap.put("EPS", NOT_AVAILABLE);
+            resultMap.put("PBR", NOT_AVAILABLE);
+            resultMap.put("BPS", NOT_AVAILABLE);
+            resultMap.put("ROE", NOT_AVAILABLE);
+            resultMap.put("ROA", NOT_AVAILABLE);
+
+            return resultMap;
         }
     }
 
@@ -265,7 +285,10 @@ public class StockService {
             totalAssets = node.path("total_aset").asLong();
             totalLiabilities = node.path("total_lblt").asLong();
         } catch (Exception ex) {
-            throw new RuntimeException("국내주식 대차대조표 API 호출 실패: " + stockCode, ex);
+            log.error("국내주식 대차대조표 API 호출 중 오류 발생 (stockCode: {}): {}", stockCode, ex.getMessage());
+
+            totalAssets = 0;
+            totalLiabilities = 0;
         }
     }
 
