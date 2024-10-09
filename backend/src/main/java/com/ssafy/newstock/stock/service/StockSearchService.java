@@ -62,6 +62,14 @@ public class StockSearchService {
         }
     }
 
+    private boolean getStockExist(String stockCode){
+        Optional<Stock> byStockCode = stockRepository.findByStockCode(stockCode);
+        if(byStockCode.isPresent()){
+            return true;
+        }
+        return false;
+    }
+
     //최근 검색어 조회
     public List<StockRecentSearchWord> getRecentSearchKeyword(Long memberId) {
         Member member = memberRepository.findById(memberId)
@@ -108,24 +116,28 @@ public class StockSearchService {
 
     //하락률
     public List<StockRankingResponse> getBottomChangeRate() {
-        String url = "/uapi/domestic-stock/v1/ranking/exp-trans-updown";
+        String url = "/uapi/domestic-stock/v1/ranking/fluctuation";
 
         Map<String, String> queryParams = Map.ofEntries(
-                new AbstractMap.SimpleEntry<>("fid_cond_mrkt_div_code", "J"), // 주식 시장 분류 코드
-                new AbstractMap.SimpleEntry<>("fid_cond_scr_div_code", "20182"), // 화면 분류 코드
-                new AbstractMap.SimpleEntry<>("fid_input_iscd", "0000"), // 종목 코드 전체
-                new AbstractMap.SimpleEntry<>("fid_div_cls_code", "0"), // 상승율 순위 정렬
-                new AbstractMap.SimpleEntry<>("fid_aply_rang_prc_1", "0"), // 전체 입력 수
-                new AbstractMap.SimpleEntry<>("fid_vol_cnt", "0"), // 종가 대비 상승율 순위 정렬
-                new AbstractMap.SimpleEntry<>("fid_pbmn", "0"), // 가격 전체
-                new AbstractMap.SimpleEntry<>("fid_blng_cls_code", "0"), // 가격 전체
-                new AbstractMap.SimpleEntry<>("fid_mkop_cls_code", "0"), // 거래량 전체
-                new AbstractMap.SimpleEntry<>("fid_rank_sort_cls_code", "3") // 대상 전체
+                new AbstractMap.SimpleEntry<>("fid_cond_mrkt_div_code", "J"),      // 시장 분류 코드 (J: 주식)
+                new AbstractMap.SimpleEntry<>("fid_cond_scr_div_code", "20170"),   // 화면 분류 코드
+                new AbstractMap.SimpleEntry<>("fid_input_iscd", "0000"),           // 업종 코드 (0000: 전체)
+                new AbstractMap.SimpleEntry<>("fid_rank_sort_cls_code", "1"),      // 순위 정렬 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_input_cnt_1", "0"),             // 입력 수 (0: 전체 입력)
+                new AbstractMap.SimpleEntry<>("fid_prc_cls_code", "0"),            // 가격 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_input_price_1", "0"),           // 입력 가격 1
+                new AbstractMap.SimpleEntry<>("fid_input_price_2", "0"),           // 입력 가격 2
+                new AbstractMap.SimpleEntry<>("fid_vol_cnt", "0"),                 // 거래량 수
+                new AbstractMap.SimpleEntry<>("fid_trgt_cls_code", "0"),           // 대상 구분 코드 (0: 전체 대상)
+                new AbstractMap.SimpleEntry<>("fid_trgt_exls_cls_code", "0"),      // 대상 제외 구분 코드 (0: 전체 제외)
+                new AbstractMap.SimpleEntry<>("fid_div_cls_code", "0"),            // 분류 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_rsfl_rate1", "0"),              // 등락 비율 1
+                new AbstractMap.SimpleEntry<>("fid_rsfl_rate2", "0")               // 등락 비율 2
         );
 
         // 헤더에 등락률 관련 ID 추가
         Map<String, String> headers = Map.ofEntries(
-                new AbstractMap.SimpleEntry<>("tr_id", "FHPST01820000")  // 등락률 관련 tr_id 값
+                new AbstractMap.SimpleEntry<>("tr_id", "FHPST01700000")  // 등락률 관련 tr_id 값
         );
         try {
             log.info("등락률 하위 5개 주식 데이터 요청");
@@ -139,24 +151,29 @@ public class StockSearchService {
 
     // 등락률 순위 5개 종목
     public List<StockRankingResponse> getTopChangeRate() {
-        String url = "/uapi/domestic-stock/v1/ranking/exp-trans-updown";
+        String url = "/uapi/domestic-stock/v1/ranking/fluctuation";
 
         Map<String, String> queryParams = Map.ofEntries(
-                new AbstractMap.SimpleEntry<>("fid_cond_mrkt_div_code", "J"), // 주식 시장 분류 코드
-                new AbstractMap.SimpleEntry<>("fid_cond_scr_div_code", "20182"), // 화면 분류 코드
-                new AbstractMap.SimpleEntry<>("fid_input_iscd", "0000"), // 종목 코드 전체
-                new AbstractMap.SimpleEntry<>("fid_div_cls_code", "0"), // 상승율 순위 정렬
-                new AbstractMap.SimpleEntry<>("fid_aply_rang_prc_1", "0"), // 전체 입력 수
-                new AbstractMap.SimpleEntry<>("fid_vol_cnt", "0"), // 종가 대비 상승율 순위 정렬
-                new AbstractMap.SimpleEntry<>("fid_pbmn", "0"), // 가격 전체
-                new AbstractMap.SimpleEntry<>("fid_blng_cls_code", "0"), // 가격 전체
-                new AbstractMap.SimpleEntry<>("fid_mkop_cls_code", "0"), // 거래량 전체
-                new AbstractMap.SimpleEntry<>("fid_rank_sort_cls_code", "0") // 대상 전체
+                new AbstractMap.SimpleEntry<>("fid_cond_mrkt_div_code", "J"),      // 시장 분류 코드 (J: 주식)
+                new AbstractMap.SimpleEntry<>("fid_cond_scr_div_code", "20170"),   // 화면 분류 코드
+                new AbstractMap.SimpleEntry<>("fid_input_iscd", "0000"),           // 업종 코드 (0000: 전체)
+                new AbstractMap.SimpleEntry<>("fid_rank_sort_cls_code", "0"),      // 순위 정렬 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_input_cnt_1", "0"),             // 입력 수 (0: 전체 입력)
+                new AbstractMap.SimpleEntry<>("fid_prc_cls_code", "0"),            // 가격 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_input_price_1", "0"),           // 입력 가격 1
+                new AbstractMap.SimpleEntry<>("fid_input_price_2", "0"),           // 입력 가격 2
+                new AbstractMap.SimpleEntry<>("fid_vol_cnt", "0"),                 // 거래량 수
+                new AbstractMap.SimpleEntry<>("fid_trgt_cls_code", "0"),           // 대상 구분 코드 (0: 전체 대상)
+                new AbstractMap.SimpleEntry<>("fid_trgt_exls_cls_code", "0"),      // 대상 제외 구분 코드 (0: 전체 제외)
+                new AbstractMap.SimpleEntry<>("fid_div_cls_code", "0"),            // 분류 구분 코드
+                new AbstractMap.SimpleEntry<>("fid_rsfl_rate1", "0"),              // 등락 비율 1
+                new AbstractMap.SimpleEntry<>("fid_rsfl_rate2", "0")               // 등락 비율 2
         );
+
 
         // 헤더에 등락률 관련 ID 추가
         Map<String, String> headers = Map.ofEntries(
-                new AbstractMap.SimpleEntry<>("tr_id", "FHPST01820000")  // 등락률 관련 tr_id 값
+                new AbstractMap.SimpleEntry<>("tr_id", "FHPST01700000")  // 등락률 관련 tr_id 값
         );
         try {
             log.info("등락률 상위 5개 주식 데이터 요청");
@@ -212,13 +229,17 @@ public class StockSearchService {
             for (int i = 0; i < output.size() && top5Stocks.size() < 5; i++) {
                 JsonNode stockData = output.get(i);
                 String stockName = stockData.get("hts_kor_isnm").asText();
+                String stockCode = stockData.get("mksc_shrn_iscd").asText();
 
                 // "선물" 또는 "인버스"가 포함된 주식명은 제외
                 if (stockName.contains("선물") || stockName.contains("인버스")) {
                     continue;
                 }
 
-                String stockCode = stockData.get("mksc_shrn_iscd").asText();
+                if(!getStockExist(stockCode)) {
+                    continue;
+                }
+
                 String currentPrice = stockData.get("stck_prpr").asText();
                 String priceChangeAmount = stockData.get("prdy_vrss").asText(); // 전일 대비 가격
                 String priceChangeRate = stockData.get("prdy_ctrt").asText(); // 전일 대비 퍼센트
@@ -245,23 +266,26 @@ public class StockSearchService {
             for (int i = 0, validStockCount = 0; i < output.size() && validStockCount < 5; i++) {
                 JsonNode stockData = output.get(i);
                 String stockName = stockData.get("hts_kor_isnm").asText();
+                String stockCode = stockData.get("stck_shrn_iscd").asText();
 
                 // "선물" 또는 "인버스"가 이름에 포함된 종목은 제외
                 if (stockName.contains("선물") || stockName.contains("인버스")) {
+                    continue;
+                }
+                if(!getStockExist(stockCode)) {
                     continue;
                 }
 
                 validStockCount++;
 
                 // 필드 추출 및 변수 이름에 맞게 할당
-                String stockCode = stockData.get("stck_shrn_iscd").asText();
                 String currentPrice = stockData.get("stck_prpr").asText();
                 String priceChangeAmount = stockData.get("prdy_vrss").asText(); // 가격 변화 값
                 String priceChangeRate = stockData.get("prdy_ctrt").asText();  // 가격 변화율
                 String priceChangeSign = stockData.get("prdy_vrss_sign").asText();
 
                 // 객체 추가
-                top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice, priceChangeAmount, priceChangeRate, priceChangeSign));
+                top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice,priceChangeRate, priceChangeAmount, priceChangeSign));
             }
             return top5Stocks;
         } catch (Exception e) {
@@ -279,19 +303,21 @@ public class StockSearchService {
                 throw new RuntimeException("output 필드가 없거나 비어있습니다.");
             }
 
-            for (int i = 0, validStockCount = 0; i < output.size() && validStockCount < 5; i++) {
+            for (int i = 0; i < output.size(); i++) {
                 JsonNode stockData = output.get(i);
                 String stockName = stockData.get("hts_kor_isnm").asText();
+                String stockCode = stockData.get("stck_shrn_iscd").asText();
 
                 // "선물" 또는 "인버스"가 이름에 포함된 종목은 제외
                 if (stockName.contains("선물") || stockName.contains("인버스")) {
                     continue;
                 }
 
-                validStockCount++;
+                if(!getStockExist(stockCode)) {
+                    continue;
+                }
 
                 // 필드 추출 및 변수 이름에 맞게 할당
-                String stockCode = stockData.get("stck_shrn_iscd").asText();
                 String currentPrice = stockData.get("stck_prpr").asText();
                 String priceChangeAmount = stockData.get("prdy_vrss").asText(); // 가격 변화 값
                 String priceChangeRate = stockData.get("prdy_ctrt").asText();  // 가격 변화율
@@ -300,6 +326,7 @@ public class StockSearchService {
                 // 객체 추가
                 top5Stocks.add(new StockRankingResponse(stockName, stockCode, currentPrice, priceChangeRate, priceChangeAmount, priceChangeSign));
             }
+            Collections.sort(top5Stocks);
             return top5Stocks;
         } catch (Exception e) {
             throw new RuntimeException("등락률 상위 5개 주식 데이터 파싱 실패", e);
