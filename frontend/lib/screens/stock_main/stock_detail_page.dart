@@ -95,47 +95,91 @@ class _StockDetailPageState extends State<StockDetailPage>
     }
   }
 
-  Future<void> _fetchStockNews({bool refresh = false}) async {
-    if (refresh) {
-      setState(() {
-        _currentPage = 1;
-        _newsData.clear();
-        _hasMoreNews = true;
-      });
-    }
+  // Future<void> _fetchStockNews({bool refresh = false}) async {
+  //   if (refresh) {
+  //     setState(() {
+  //       _currentPage = 1;
+  //       _newsData.clear();
+  //       _hasMoreNews = true;
+  //     });
+  //   }
 
-    if (!_hasMoreNews || _isLoadingNews) return;
+  //   if (!_hasMoreNews || _isLoadingNews) return;
+
+  //   setState(() => _isLoadingNews = true);
+  //   try {
+  //     print('Fetching news for page: $_currentPage'); // Debug print
+  //     final news = await StockDetailApi().getStockNews(
+  //       widget.stockCode,
+  //       page: _currentPage,
+  //       pageSize: _pageSize,
+  //     );
+  //     print('Fetched ${news.length} news items'); // Debug print
+
+  //     setState(() {
+  //       if (news.isEmpty) {
+  //         _hasMoreNews = false;
+  //       } else {
+  //         _newsData.addAll(news);
+  //         _currentPage++;
+  //       }
+  //       _isLoadingNews = false;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching stock news: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
+  //     );
+  //     setState(() {
+  //       _isLoadingNews = false;
+  //       if (_newsData.isEmpty) {
+  //         _hasMoreNews = false;
+  //       }
+  //     });
+  //   }
+  // }
+
+  Future<void> _fetchStockNews({bool refresh = false}) async {
+    if (_isLoadingNews) return; // 이미 로딩 중이면 중복 호출 방지
 
     setState(() => _isLoadingNews = true);
+
     try {
-      print('Fetching news for page: $_currentPage'); // Debug print
       final news = await StockDetailApi().getStockNews(
         widget.stockCode,
         page: _currentPage,
         pageSize: _pageSize,
       );
-      print('Fetched ${news.length} news items'); // Debug print
 
-      setState(() {
-        if (news.isEmpty) {
-          _hasMoreNews = false;
-        } else {
-          _newsData.addAll(news);
-          _currentPage++;
-        }
-        _isLoadingNews = false;
-      });
+      if (mounted) {
+        // 위젯이 여전히 트리에 있는지 확인
+        setState(() {
+          if (refresh) {
+            _newsData.clear();
+            _currentPage = 1;
+          }
+          if (news.isEmpty || news.length < _pageSize) {
+            _hasMoreNews = false;
+          } else {
+            _newsData.addAll(news);
+            _currentPage++;
+          }
+          _isLoadingNews = false;
+        });
+      }
     } catch (e) {
       print('Error fetching stock news: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
-      );
-      setState(() {
-        _isLoadingNews = false;
-        if (_newsData.isEmpty) {
-          _hasMoreNews = false;
-        }
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
+        );
+        setState(() {
+          _isLoadingNews = false;
+          if (_newsData.isEmpty) {
+            _hasMoreNews = false;
+          }
+        });
+      }
     }
   }
 
@@ -615,7 +659,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                 return spotIndexes.map((spotIndex) {
                   return TouchedSpotIndicatorData(
                     FlLine(
-                      color: Colors.green,
+                      color: Colors.grey,
                       strokeWidth: 2,
                       dashArray: [5, 5],
                     ),
@@ -623,7 +667,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 8,
-                          color: Colors.lightGreen,
+                          color: Colors.grey,
                           strokeWidth: 2,
                           strokeColor: Colors.white,
                         );
@@ -662,30 +706,30 @@ class _StockDetailPageState extends State<StockDetailPage>
       children: [
         Container(
           height: 50,
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              ElevatedButton(
-                child: Text('라인 차트'),
-                onPressed: () {
-                  setState(() {
-                    _showLineChart = true;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _showLineChart ? Colors.blue : Colors.grey,
+              Text(
+                '자세히 보기',
+                style: TextStyle(
+                  fontSize: 16,
+                  // fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
-              ElevatedButton(
-                child: Text('캔들스틱 차트'),
+              IconButton(
+                icon: Icon(
+                  !_showLineChart
+                      ? Icons.check_circle
+                      : Icons.check_circle_outline,
+                  color: !_showLineChart ? Colors.blue : Colors.grey,
+                ),
                 onPressed: () {
                   setState(() {
-                    _showLineChart = false;
+                    _showLineChart = !_showLineChart;
                   });
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: !_showLineChart ? Colors.blue : Colors.grey,
-                ),
               ),
             ],
           ),
@@ -872,6 +916,96 @@ class _StockDetailPageState extends State<StockDetailPage>
     );
   }
 
+  // Widget _buildNewsTab() {
+  //   if (_isLoadingNews && _newsData.isEmpty) {
+  //     return Center(child: CircularProgressIndicator());
+  //   }
+
+  //   if (_newsData.isEmpty && !_hasMoreNews) {
+  //     return Center(child: Text('관련 뉴스가 없습니다.'));
+  //   }
+
+  //   return RefreshIndicator(
+  //     onRefresh: () => _fetchStockNews(refresh: true),
+  //     child: ListView.separated(
+  //       itemCount: _newsData.length + (_hasMoreNews ? 1 : 0),
+  //       separatorBuilder: (context, index) => Center(
+  //         child: FractionallySizedBox(
+  //           widthFactor: 0.9,
+  //           child: Divider(
+  //             color: Colors.grey[300],
+  //             height: 1,
+  //           ),
+  //         ),
+  //       ),
+  //       itemBuilder: (context, index) {
+  //         if (index == _newsData.length && _hasMoreNews) {
+  //           _fetchStockNews();
+  //           return Center(
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(8.0),
+  //               child: CircularProgressIndicator(),
+  //             ),
+  //           );
+  //         }
+
+  //         if (index >= _newsData.length) {
+  //           return SizedBox.shrink();
+  //         }
+
+  //         final news = _newsData[index];
+  //         return FractionallySizedBox(
+  //           widthFactor: 0.9,
+  //           child: Padding(
+  //             padding: const EdgeInsets.symmetric(vertical: 8.0),
+  //             child: ListTile(
+  //               title: Text(
+  //                 news['title'] ?? 'No Title',
+  //                 style: TextStyle(
+  //                   fontWeight: FontWeight.bold,
+  //                   fontSize: 16,
+  //                 ),
+  //               ),
+  //               subtitle: Padding(
+  //                 padding: const EdgeInsets.only(top: 4.0),
+  //                 child: Text(
+  //                   '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
+  //                   style: TextStyle(fontSize: 14),
+  //                 ),
+  //               ),
+  //               leading: ClipRRect(
+  //                 borderRadius: BorderRadius.circular(8.0),
+  //                 child: news['imageUrl'] != null && news['imageUrl'].isNotEmpty
+  //                     ? Image.network(
+  //                         news['imageUrl'],
+  //                         width: 60,
+  //                         height: 60,
+  //                         fit: BoxFit.cover,
+  //                         errorBuilder: (context, error, stackTrace) {
+  //                           print('Error loading image: $error');
+  //                           return Icon(Icons.error, size: 60);
+  //                         },
+  //                       )
+  //                     : Icon(Icons.article, size: 60),
+  //               ),
+  //               onTap: () {
+  //                 Navigator.push(
+  //                   context,
+  //                   MaterialPageRoute(
+  //                     builder: (context) => NewsDetailScreen(
+  //                       newsId: news['newsId'].toString(),
+  //                     ),
+  //                   ),
+  //                 );
+  //               },
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
+
   Widget _buildNewsTab() {
     if (_isLoadingNews && _newsData.isEmpty) {
       return Center(child: CircularProgressIndicator());
@@ -895,18 +1029,19 @@ class _StockDetailPageState extends State<StockDetailPage>
           ),
         ),
         itemBuilder: (context, index) {
-          if (index == _newsData.length && _hasMoreNews) {
-            _fetchStockNews();
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          if (index >= _newsData.length) {
-            return SizedBox.shrink();
+          if (index == _newsData.length) {
+            if (_hasMoreNews && !_isLoadingNews) {
+              // 다음 페이지 로드를 위해 Future.microtask 사용
+              Future.microtask(() => _fetchStockNews());
+            }
+            return _hasMoreNews
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : SizedBox.shrink();
           }
 
           final news = _newsData[index];

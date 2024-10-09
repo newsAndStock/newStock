@@ -23,7 +23,7 @@ class MarketIndexPage extends StatelessWidget {
             item['name'] as String? ?? 'Unknown',
             item['price'] as String? ?? '0',
             item['difference'] as String? ?? '0',
-            item['state'] as String? ?? 'Unknown',
+            item['rate'] as String? ?? '0%',
           );
         },
       ),
@@ -31,8 +31,8 @@ class MarketIndexPage extends StatelessWidget {
   }
 
   Widget _buildIndexCard(
-      String name, String price, String difference, String state) {
-    bool isUp = state == '상승';
+      String name, String price, String difference, String rate) {
+    bool isUp = !difference.startsWith('-');
     Color backgroundColor = isUp ? Colors.red[50]! : Colors.blue[50]!;
 
     return Card(
@@ -44,7 +44,7 @@ class MarketIndexPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              name == '환율' ? '원/달러 환율' : name,
+              name == 'USD' ? '원/달러 환율' : name,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -60,7 +60,7 @@ class MarketIndexPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      difference,
+                      '$difference $rate',
                       style: TextStyle(
                         fontSize: 18,
                         color: isUp ? Colors.red : Colors.blue,

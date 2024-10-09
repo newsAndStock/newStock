@@ -12,15 +12,10 @@ class MarketIndex extends StatelessWidget {
     final String name = indexData['name'] as String? ?? 'Unknown';
     final String price = indexData['price'] as String? ?? '0';
     final String difference = indexData['difference'] as String? ?? '0';
-    final String state = indexData['state'] as String? ?? 'Unknown';
+    final String rate = indexData['rate'] as String? ?? '0%';
 
     // 상승/하락 여부 확인
-    bool isUp = state == '상승';
-
-    // difference에서 숫자와 퍼센트 추출
-    List<String> parts = difference.split(' ');
-    String numericDifference = parts.isNotEmpty ? parts[0] : '0';
-    String percentChange = parts.length > 1 ? parts[1] : '0%';
+    bool isUp = !difference.startsWith('-');
 
     return GestureDetector(
       onTap: onTap,
@@ -46,14 +41,14 @@ class MarketIndex extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '   ${name == '환율' ? '원/달러 환율' : name}',
+                  '   ${name == 'USD' ? '원/달러 환율' : name}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  '$price ($percentChange)   ',
+                  '$price $rate   ',
                   style: TextStyle(
                     fontSize: 16,
                     color: isUp ? Colors.red : Colors.blue,

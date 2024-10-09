@@ -34,10 +34,10 @@ class FixedPriceApi {
         Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         return data;
       } else {
-        throw Exception('Failed to sell stock');
+        throw Exception('');
       }
     } catch (e) {
-      throw Exception('Failed to sell stock: ${e.toString()}');
+      throw Exception('');
     }
   }
 
@@ -69,10 +69,10 @@ class FixedPriceApi {
         Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         return data;
       } else {
-        throw Exception('Failed to buy stock');
+        throw Exception('');
       }
     } catch (e) {
-      throw Exception('Failed to buy stock: ${e.toString()}');
+      throw Exception('');
     }
   }
 }

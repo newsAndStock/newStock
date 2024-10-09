@@ -62,8 +62,8 @@ class _StockTradingPageState extends State<StockTradingPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
-    _limitPrice = widget.currentPrice;
-    _limitPriceController.text = widget.currentPrice.toStringAsFixed(0);
+    // _limitPrice = widget.currentPrice;
+    // _limitPriceController.text = widget.currentPrice.toStringAsFixed(0);
     _quantityFocusNode.addListener(_onQuantityFocusChange);
     _totalHoldingQuantity = widget.totalHoldingQuantity;
     _availableBalance = 0;
@@ -169,6 +169,23 @@ class _StockTradingPageState extends State<StockTradingPage>
           await StockDetailApi().getCurrentStockPrice(widget.stockCode);
       setState(() {
         _currentStockPrice = data;
+
+        // Calculate the middle price of the order book
+        if (_currentStockPrice != null) {
+          List<int> askPrices = _currentStockPrice!.askpMap.keys
+              .map((e) => int.parse(e))
+              .toList();
+          List<int> bidPrices = _currentStockPrice!.bidpMap.keys
+              .map((e) => int.parse(e))
+              .toList();
+
+          if (askPrices.isNotEmpty && bidPrices.isNotEmpty) {
+            int highestBid = bidPrices.reduce((a, b) => a > b ? a : b);
+            int lowestAsk = askPrices.reduce((a, b) => a < b ? a : b);
+            _limitPrice = (highestBid + lowestAsk) / 2;
+            _limitPriceController.text = _limitPrice.toStringAsFixed(0);
+          }
+        }
       });
     } catch (e) {
       print('Error fetching current stock price: $e');
@@ -596,81 +613,82 @@ class _StockTradingPageState extends State<StockTradingPage>
 
   Widget _buildMarketOrderPrice() {
     return Container(
+      height: 70, // _buildLimitOrderPrice와 동일한 높이
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(40)),
-          color: Color(0xffF1F5F9)),
-      child: ListTile(
-        title: Text('시장가로 즉시 체결됩니다.'),
-        subtitle: Text('※ 현재 보이는 가격과 다를 수 있어요!'),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        color: Color(0xffF1F5F9),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '시장가로 즉시 체결됩니다.',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '※ 현재 보이는 가격과 다를 수 있어요!',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLimitOrderPrice() {
-    return Column(
-      children: [
-        Container(
-          height: 80, // 시장가 탭의 높이와 일치하도록 조정
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(40),
-            ),
-            color: Color(0xffF1F5F9),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        color: Color(0xffF1F5F9),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _limitPriceController,
-                            style: TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              setState(() =>
-                                  _limitPrice = double.tryParse(value) ?? 0);
-                            },
-                          ),
-                        ),
-                        // Text(
-                        //   '원',
-                        //   style: TextStyle(
-                        //       fontSize: 24, fontWeight: FontWeight.bold),
-                        // ),
-                      ],
+              Expanded(
+                child: TextField(
+                  controller: _limitPriceController,
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    suffixText: '원',
+                    suffixStyle: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.black,
                     ),
                   ),
-                ],
-              ),
-              Text(
-                '나의 평균 구매가 72,800원',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    setState(() => _limitPrice = double.tryParse(value) ?? 0);
+                  },
+                ),
               ),
             ],
           ),
-        ),
-        SizedBox(height: 16),
-      ],
+          Text(
+            '나의 평균 구매가 74,500원',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 
