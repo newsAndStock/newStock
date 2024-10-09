@@ -7,6 +7,7 @@ import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.news.repository.NewsRepositoryQuerydsl;
+import com.ssafy.newstock.stock.controller.response.CacheEntry;
 import com.ssafy.newstock.stock.controller.response.MarketDataResponse;
 import com.ssafy.newstock.stock.controller.response.StockRankingResponse;
 import com.ssafy.newstock.stock.domain.Stock;
@@ -22,7 +23,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +39,8 @@ public class StockSearchService {
     private final StockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
+    private final Map<String, CacheEntry> cache = new HashMap<>();
+    private final long cacheDuration = 10 * 60 * 1000; // 캐시 유지 시간 10분
 
     //최근 검색어 추가
     @Transactional
@@ -301,8 +306,6 @@ public class StockSearchService {
         }
     }
 
-
-
     //Redis 저장
     @Scheduled(fixedRate = 3600000)
     public void saveRanking() {
@@ -386,59 +389,77 @@ public class StockSearchService {
         return newsResponses;
     }
 
-    //코스피, 코스닥, 나스닥 S&P 500 환율
     public List<MarketDataResponse> getMarketData() {
-        try {
-            String domesticUrl = "https://finance.naver.com/sise/"; //국내 증시
-            String worldUrl = "https://finance.naver.com/world/"; // 해외 증시
-            String rateUrl = "https://finance.naver.com/marketindex/"; // 환율
-            List<MarketDataResponse> arr = new ArrayList<>();
+        String[] marketNames = {
+                "KOSPI", "KOSDAQ", "NASDAQ", "S&P 500", "항생지수", "닛케이지수", "다우존스", "유로스톡스50", "USD", "JPY(yen)"
+        };
 
-            // 웹 페이지 로드
-            Document domesticDocument = Jsoup.connect(domesticUrl).get();
-            Document worldDocument = Jsoup.connect(worldUrl).get();
-            Document rateDocument = Jsoup.connect(rateUrl).get();
+        String[] marketUrls = {
+                "https://finance.yahoo.com/quote/%5EKS11/",
+                "https://finance.yahoo.com/quote/%5EKQ11/",
+                "https://finance.yahoo.com/quote/NQ=F/",
+                "https://finance.yahoo.com/quote/%5EGSPC/",
+                "https://finance.yahoo.com/quote/%5EHSI/",
+                "https://finance.yahoo.com/quote/%5EN225/",
+                "https://finance.yahoo.com/quote/%5EDJI/",
+                "https://finance.yahoo.com/quote/%5ESTOXX50E/",
+                "https://finance.yahoo.com/quote/KRW%3DX/",
+                "https://finance.yahoo.com/quote/JPY=X/"
+        };
 
-            // KOSPI
-            String kospiDate = "KOSPI";
-            String kospiPrice = domesticDocument.select("#KOSPI_now").text();
-            String kospiDifference = domesticDocument.select("#KOSPI_change").text();
-            String kospiState = domesticDocument.select("#KOSPI_change > span.blind").text();
-            arr.add(new MarketDataResponse(kospiDate, kospiPrice, kospiDifference, kospiState));
+        String priceSelector = "#nimbus-app > section > section > section > article > section.container.yf-1s1umie > div.bottom.yf-1s1umie > div.price.yf-1s1umie > section > div > section > div.container.yf-1tejb6 > fin-streamer.livePrice.yf-1tejb6 > span";
+        String diffSelector = "#nimbus-app > section > section > section > article > section.container.yf-1s1umie > div.bottom.yf-1s1umie > div.price.yf-1s1umie > section > div > section > div.container.yf-1tejb6 > fin-streamer:nth-child(2) > span";
+        String rateSelector = "#nimbus-app > section > section > section > article > section.container.yf-1s1umie > div.bottom.yf-1s1umie > div.price.yf-1s1umie > section > div > section > div.container.yf-1tejb6 > fin-streamer:nth-child(3) > span";
 
-            // KOSDAQ
-            String kosdaq = "KOSDAQ";
-            String kosdaqPrice = domesticDocument.select("#KOSDAQ_now").text();
-            String kosdaqDifference = domesticDocument.select("#KOSDAQ_change").text();
-            String kosdaqState = domesticDocument.select("#KOSPI_change > span.blind").text();
-            arr.add(new MarketDataResponse(kosdaq, kosdaqPrice, kosdaqDifference, kosdaqState));
+        List<CompletableFuture<MarketDataResponse>> futures = new ArrayList<>();
 
-            // NASDAQ
-            String nasdaq = "NASDAQ";
-            String nasdaqPrice = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > em").text();
-            String nasdaqDifference = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span:nth-child(3)").text();
-            String nasdaqState = worldDocument.select("#worldIndexColumn2 > li.on > dl > dd.point_status > span.blind").text();
-            arr.add(new MarketDataResponse(nasdaq, nasdaqPrice, nasdaqDifference, nasdaqState));
-
-            // S&P 500
-            String sp500 = "S&P 500";
-            String sp500Price = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > strong").text();
-            String sp500Difference = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > em").text();
-            String sp500State = worldDocument.select("#worldIndexColumn3 > li.on > dl > dd.point_status > span.blind").text();
-            arr.add(new MarketDataResponse(sp500, sp500Price, sp500Difference, sp500State));
-
-            // 환율
-            String rate = "환율";
-            String ratePrice = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.value").text();
-            String rateDifference = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.change").text();
-            String rateState = rateDocument.select("#exchangeList > li.on > a.head.usd > div > span.blind").text();
-            arr.add(new MarketDataResponse(rate, ratePrice, rateDifference, rateState));
-
-            return arr;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        for (int i = 0; i < marketUrls.length; i++) {
+            String marketName = marketNames[i];
+            String url = marketUrls[i];
+            CompletableFuture<MarketDataResponse> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    // 먼저 캐시에서 가져오기
+                    return getFromCacheOrFetch(marketName, url, priceSelector, diffSelector, rateSelector);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            });
+            futures.add(future);
         }
+
+        // 비동기
+        List<MarketDataResponse> marketDataList = futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return marketDataList;
+    }
+
+    // 캐시에서 데이터 확인
+    private MarketDataResponse getFromCacheOrFetch(String marketName, String url, String priceSelector, String diffSelector, String rateSelector) throws Exception {
+        CacheEntry cachedEntry = cache.get(marketName);
+        if (cachedEntry != null && isCacheValid(cachedEntry.getTimestamp())) {
+            return cachedEntry.getData();
+        }
+        MarketDataResponse freshData = fetchMarketData(marketName, url, priceSelector, diffSelector, rateSelector);
+        cache.put(marketName, new CacheEntry(freshData, Instant.now().toEpochMilli()));
+
+        return freshData;
+    }
+
+    private boolean isCacheValid(long cacheTimestamp) {
+        long currentTime = Instant.now().toEpochMilli();
+        return (currentTime - cacheTimestamp) < cacheDuration;
+    }
+
+    // 데이터 크롤링
+    private MarketDataResponse fetchMarketData(String marketName, String url, String priceSelector, String diffSelector, String rateSelector) throws Exception {
+        Document document = Jsoup.connect(url).get();
+        String price = document.select(priceSelector).text();
+        String difference = document.select(diffSelector).text();
+        String rate = document.select(rateSelector).text();
+        return new MarketDataResponse(marketName, price, difference, rate);
     }
 }
