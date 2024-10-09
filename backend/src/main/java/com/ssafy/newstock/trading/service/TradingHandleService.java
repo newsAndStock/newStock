@@ -1,14 +1,20 @@
 package com.ssafy.newstock.trading.service;
 
+import com.ssafy.newstock.kis.domain.TradeItem;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.stock.service.StockService;
 import com.ssafy.newstock.trading.controller.response.TradingResponse;
 import com.ssafy.newstock.trading.domain.OrderType;
+import com.ssafy.newstock.trading.domain.TradeQueue;
 import com.ssafy.newstock.trading.domain.Trading;
 import com.ssafy.newstock.trading.repository.TradingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -17,10 +23,12 @@ import java.util.*;
 public class TradingHandleService {
 
 
+    private static final Logger log = LoggerFactory.getLogger(TradingHandleService.class);
     private final TradingRepository tradingRepository;
     private final StockService stockService;
     private final Set<Long> canceledTrading= Collections.synchronizedSet(new HashSet<>());
     private final MemberService memberService;
+    private final TradeQueue tradeQueue=TradeQueue.getInstance();
 
     public TradingHandleService(TradingRepository tradingRepository, StockService stockService, MemberService memberService) {
         this.tradingRepository = tradingRepository;
@@ -82,6 +90,27 @@ public class TradingHandleService {
 
     public void cancelComplete(Long tradingId) {
         canceledTrading.remove(tradingId);
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 16 * * *")
+    public void clearAllTrading() {
+        log.info("<장 마감, 모든 거래 취소>");
+        for(Queue<TradeItem> queue:tradeQueue.getBuyQueue().values()) {
+            while(!queue.isEmpty()) {
+                TradeItem tradeItem = queue.poll();
+                removeTrading(tradeItem.getTrading().getId(), tradeItem.getMember().getId());
+                log.info("tradingId:{} 거래삭제",tradeItem.getTrading().getId());
+            }
+        }
+
+        for(Queue<TradeItem> queue:tradeQueue.getSellQueue().values()) {
+            while(!queue.isEmpty()) {
+                TradeItem tradeItem = queue.poll();
+                removeTrading(tradeItem.getTrading().getId(), tradeItem.getMember().getId());
+                log.info("tradingId:{} 거래삭제",tradeItem.getTrading().getId());
+            }
+        }
     }
 
 }

@@ -118,6 +118,12 @@ public class TradingController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @DeleteMapping("/admin/clear-tradings")
+    public ResponseEntity<Void> clearTrading() {
+        tradingHandleService.clearAllTrading();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 
 
 
