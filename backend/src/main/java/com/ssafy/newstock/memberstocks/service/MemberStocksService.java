@@ -144,4 +144,11 @@ public class MemberStocksService {
     public Optional<MemberStock> findByMemberStockByMember_IdAndStockCode(Long memberId, String stockCode){
         return memberStocksRepository.getMemberStockByMember_IdAndStockCode(memberId,stockCode);
     }
+
+    public Long findAveragePriceByStockCodeMemberId(Long memberId, String stockCode){
+        if(memberStocksRepository.findByMember_IdAndStockCode(memberId,stockCode).isPresent()){
+            return memberStocksRepository.findByMember_IdAndStockCode(memberId,stockCode).get().getAveragePrice();
+        }
+        return null;
+    }
 }
