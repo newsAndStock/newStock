@@ -1,7 +1,9 @@
 package com.ssafy.newstock.trading.domain;
 
 import com.ssafy.newstock.kis.domain.TradeItem;
+import com.ssafy.newstock.trading.service.TradingHandleService;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,10 +17,8 @@ public class TradeQueue {
 
     private final Map<String, Queue<TradeItem>> buyQueue=new ConcurrentHashMap<>();
     private final Map<String, Queue<TradeItem>> sellQueue=new ConcurrentHashMap<>();
-
     private static TradeQueue instance=new TradeQueue();
 
-    private TradeQueue() {}
 
     public static TradeQueue getInstance() {
         return instance;

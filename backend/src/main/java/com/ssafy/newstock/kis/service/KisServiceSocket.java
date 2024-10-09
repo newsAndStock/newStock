@@ -56,6 +56,11 @@ public class KisServiceSocket {
         this.notificationService = notificationService;
     }
 
+    @Scheduled(cron = "0 0 9 * * ?")
+    public void connectWebsocketAtNine() {
+        connectWebsocket(() -> log.info("WebSocket connected at 9 AM"));
+    }
+
     public void connectWebsocket(Runnable onConnected) {
         URI url = URI.create("ws://ops.koreainvestment.com:21000");
 
@@ -83,7 +88,7 @@ public class KisServiceSocket {
         }).subscribe(); // 블로킹 호출로 WebSocket 연결 유지
     }
 
-    @Scheduled(cron = "0 30 16 * * ? ")
+    @Scheduled(cron = "0 35 15 * * ? ")
     public void disconnectWebsocket() {
         if (this.session != null && this.session.isOpen()) {
             this.session.close()

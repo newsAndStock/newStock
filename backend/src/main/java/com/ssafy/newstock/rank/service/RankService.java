@@ -29,7 +29,7 @@ public class RankService {
     private final RedisService redisService;
     private final RedisTemplate<String, Object> redisTemplateRank;
 
-    @Scheduled(cron = "0 0 17 * * ?") // 매일 17:00에 실행
+    @Scheduled(cron = "0 0 10-16 * * ?")
     public void makeRankSchedule(){
         makeRank();
         dealSameScore();
