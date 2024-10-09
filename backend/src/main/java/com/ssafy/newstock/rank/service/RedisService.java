@@ -65,10 +65,11 @@ public class RedisService {
 
     public void setRankTime(){
         // 현재 시간을 "yyyy-MM-dd" 형식으로 가져오기
-        String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+
+        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
         // 랭킹 저장 시간 기록
-        redisTemplateRank.opsForValue().set("rankSaveTime", currentDate);
+        redisTemplateRank.opsForValue().set("rankSaveTime", currentDateTime);
     }
 
     public String getRankTime() {
