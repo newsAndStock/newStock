@@ -300,7 +300,7 @@ class _MainScreenState extends State<MainScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 50), // 힌트와 로고 아래 공간 확보
+                            const SizedBox(height: 70), // 힌트와 로고 아래 공간 확보
                             // 주식 모의투자 카드
                             CardButton(
                               description: '뉴스톡에서 쉽고 안전하게',
@@ -315,7 +315,7 @@ class _MainScreenState extends State<MainScreen> {
                                 );
                               },
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 30),
                             // 경제신문 읽기 카드
                             CardButton(
                               description: '뉴스톡과 함께하는',
@@ -331,36 +331,7 @@ class _MainScreenState extends State<MainScreen> {
                                 );
                               },
                             ),
-                            const SizedBox(height: 20),
-                            ImageButton(
-                              title: '출석 챌린지',
-                              subscription: '룰렛 돌리고 랜덤포인트 받자!',
-                              imagePath: 'assets/images/checkin.png',
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AttendanceScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 20),
-                            // 퀴즈 챌린지 카드 (드래그 가능 영역 내)
-                            ImageButton(
-                              title: '퀴즈 챌린지',
-                              subscription: '퀴즈 풀고 포인트 받자!',
-                              imagePath: 'assets/images/quiz.png',
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const QuizScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 150),
                             // 로그아웃 버튼
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),

@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/models/news_model.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
+import 'package:frontend/screens/news/news_scrap.dart';
 
 class NewsScrapDetailScreen extends StatefulWidget {
   final String scrapId; // 스크랩 ID
@@ -56,7 +57,7 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
 
       // 삭제 후 피드백을 주고 이전 화면으로 돌아감
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('스크랩이 성공적으로 삭제되었습니다.')),
+        const SnackBar(content: Text('삭제되었습니다.')),
       );
       Navigator.push(
         context,
@@ -104,11 +105,26 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                 Positioned(
                   top: 40,
                   left: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9), // 배경색에 투명도 추가
+                      shape: BoxShape.circle, // 원형 설정
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              Colors.black.withOpacity(0.2), // 그림자 색상 및 투명도 설정
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: const Offset(0, 2), // 그림자 위치
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   ),
                 ),
                 DraggableScrollableSheet(
@@ -188,10 +204,11 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 5.0),
                           child: ElevatedButton(
                             onPressed: () {
-                              // 편집 기능 구현 (구체적인 기능 추가 필요)
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('편집 기능은 아직 구현되지 않았습니다.'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NewsScrapScreen(
+                                      scrapId: widget.scrapId), // scrapId 전달
                                 ),
                               );
                             },
@@ -211,6 +228,7 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                           ),
                         ),
                       ),
+
                       // 삭제 버튼
                       Expanded(
                         child: Padding(

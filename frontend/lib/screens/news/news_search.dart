@@ -14,7 +14,8 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
   final NewsService _apiService = NewsService();
   final FlutterSecureStorage storage = FlutterSecureStorage();
   List<String> _trendingKeywords = [];
-  List<String> _recentSearches = [];
+  List<Map<String, dynamic>> _recentSearches =
+      []; // id와 keyword를 함께 저장하기 위해 Map 사용
   bool _isLoadingTrendingKeywords = false;
   bool _isLoadingRecentSearches = true;
 
@@ -80,7 +81,7 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
       }
       final keywords = await _apiService.fetchRecentKeywords(accessToken);
       setState(() {
-        _recentSearches = keywords;
+        _recentSearches = keywords; // Map 형태로 저장
         _isLoadingRecentSearches = false;
       });
     } catch (e) {
@@ -91,8 +92,8 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
     }
   }
 
-  // 삭제 함수 추가
-  Future<void> _deleteRecentKeyword(String keyword) async {
+  // 삭제 함수 수정 (id로 삭제)
+  Future<void> _deleteRecentKeyword(int id) async {
     setState(() {
       _isLoadingRecentSearches = true;
     });
@@ -103,11 +104,12 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
         throw Exception('No access token found');
       }
 
-      await _apiService.deleteRecentKeyword(accessToken, keyword);
+      await _apiService.deleteRecentKeyword(accessToken, id);
 
       // 삭제된 후 목록을 갱신합니다.
       setState(() {
-        _recentSearches.remove(keyword);
+        _recentSearches
+            .removeWhere((keyword) => keyword['id'] == id); // id로 비교하여 삭제
         _isLoadingRecentSearches = false;
       });
     } catch (e) {
@@ -219,14 +221,14 @@ class _NewsSearchScreenState extends State<NewsSearchScreen> {
       itemBuilder: (context, index) {
         final keyword = _recentSearches[index];
         return ListTile(
-          title: Text(keyword),
+          title: Text(keyword['word']), // word 출력
           trailing: IconButton(
             icon: const Icon(Icons.close, color: Color(0xFFB4B4B4)),
             onPressed: () async {
-              await _deleteRecentKeyword(keyword);
+              await _deleteRecentKeyword(keyword['id']); // id로 삭제 요청
             },
           ),
-          onTap: () => _navigateToSearchResult(keyword),
+          onTap: () => _navigateToSearchResult(keyword['word']),
         );
       },
     );
@@ -305,8 +307,8 @@ class _SearchBarState extends State<SearchBar> {
                 child: TextField(
                   controller: widget.controller,
                   focusNode: _focusNode,
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                  decoration: InputDecoration(
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                  decoration: const InputDecoration(
                     hintText: '키워드를 검색해보세요!',
                     border: InputBorder.none,
                   ),
@@ -316,17 +318,18 @@ class _SearchBarState extends State<SearchBar> {
               ElevatedButton(
                 onPressed: () => widget.onSearch(widget.controller.text),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xffF1F5F9),
+                  backgroundColor: const Color(0xffF1F5F9),
                   foregroundColor: Colors.black,
                   elevation: 3,
                   shadowColor: Colors.grey.withOpacity(0.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: Size(60, 36),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: const Size(60, 36),
                 ),
-                child: Text('검색', style: TextStyle(fontSize: 14)),
+                child: const Text('검색', style: TextStyle(fontSize: 14)),
               ),
             ],
           ),
