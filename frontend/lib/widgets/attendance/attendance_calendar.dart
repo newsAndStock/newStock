@@ -18,6 +18,10 @@ class AttendanceCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 오늘의 달의 첫날과 마지막 날 계산
+    final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
+
     return Container(
       width: screenWidth * 0.8,
       decoration: BoxDecoration(
@@ -28,8 +32,8 @@ class AttendanceCalendar extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
       ),
       child: TableCalendar(
-        firstDay: DateTime.utc(2024, 1, 1),
-        lastDay: DateTime.utc(2024, 12, 31),
+        firstDay: firstDayOfMonth, // 오늘의 달의 첫날로 고정
+        lastDay: lastDayOfMonth, // 오늘의 달의 마지막 날로 고정
         focusedDay: focusedDay,
         selectedDayPredicate: (day) {
           return checkedDates.any((d) =>
@@ -63,21 +67,15 @@ class AttendanceCalendar extends StatelessWidget {
           ),
         ),
         headerStyle: HeaderStyle(
-          formatButtonVisible: false,
+          formatButtonVisible: false, // 형식 버튼 숨김
           titleCentered: true,
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Color(0xFF3A2E6A),
           ),
-          leftChevronIcon: Icon(
-            Icons.chevron_left,
-            color: Colors.black,
-          ),
-          rightChevronIcon: Icon(
-            Icons.chevron_right,
-            color: Colors.black,
-          ),
+          leftChevronVisible: false, // 왼쪽 화살표 숨김
+          rightChevronVisible: false, // 오른쪽 화살표 숨김
         ),
         onDaySelected: onDaySelected,
       ),

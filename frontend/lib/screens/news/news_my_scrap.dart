@@ -153,7 +153,8 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
                       ),
                     ),
                     // 스크랩된 뉴스 리스트
-                    Expanded(
+                    Container(
+                      height: 400, // 원하는 높이로 설정
                       child: FutureBuilder<List<News>>(
                         future: scrapedNewsFuture,
                         builder: (context, snapshot) {
@@ -219,7 +220,7 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
                                                     .size
                                                     .width *
                                                 0.4,
-                                            height: 150,
+                                            height: 130,
                                             decoration: BoxDecoration(
                                               borderRadius:
                                                   const BorderRadius.only(
