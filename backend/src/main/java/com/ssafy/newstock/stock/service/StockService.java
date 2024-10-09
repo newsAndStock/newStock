@@ -58,10 +58,7 @@ public class StockService {
     }
 
     public List<MinuteStockInfoResponse> getDailyStockInfo(String stockCode) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(2);
-
-        return minuteStockInfoRepository.findByStockCodeAndDateBetween(stockCode, startDate, endDate)
+        return minuteStockInfoRepository.findByStockCode(stockCode)
                 .stream()
                 .map(MinuteStockInfoResponse::from)
                 .collect(Collectors.toList());
