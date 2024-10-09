@@ -623,14 +623,14 @@ class _StockTradingPageState extends State<StockTradingPage>
       ),
       padding: EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '시장가로 즉시 체결됩니다.',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 4),
+          // SizedBox(height: 4),
           Text(
             '※ 현재 보이는 가격과 다를 수 있어요!',
             style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -656,29 +656,19 @@ class _StockTradingPageState extends State<StockTradingPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
             children: [
               Expanded(
-                child: TextField(
-                  controller: _limitPriceController,
+                child: Text(
+                  '${NumberFormat('#,###').format(_limitPrice.toInt())}',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    suffixText: '원',
-                    suffixStyle: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black,
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    setState(() => _limitPrice = double.tryParse(value) ?? 0);
-                  },
+                ),
+              ),
+              Text(
+                '원',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -710,6 +700,7 @@ class _StockTradingPageState extends State<StockTradingPage>
         .reduce((a, b) => a > b ? a : b);
 
     return Container(
+      height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -927,12 +918,25 @@ class _StockTradingPageState extends State<StockTradingPage>
   }
 
   void _setMaxQuantity() {
-    double currentPrice = _isMarketOrder ? widget.currentPrice : _limitPrice;
-    int maxQuantity = (_availableBalance / currentPrice).floor();
-    setState(() {
-      _quantity = maxQuantity;
-      _quantityController.text = _quantity.toString();
-    });
+    if (_tabController.index == 0) {
+      // 매수 탭
+      double currentPrice = _isMarketOrder
+          ? (_currentStockPrice?.stckPrpr != null
+              ? double.parse(_currentStockPrice!.stckPrpr)
+              : widget.currentPrice)
+          : _limitPrice;
+      int maxQuantity = (_availableBalance / currentPrice).floor();
+      setState(() {
+        _quantity = maxQuantity;
+        _quantityController.text = '$_quantity 주';
+      });
+    } else {
+      // 매도 탭
+      setState(() {
+        _quantity = _holdingCounts;
+        _quantityController.text = '$_quantity 주';
+      });
+    }
   }
 
   void _deleteLastDigit() {
@@ -959,23 +963,141 @@ class _StockTradingPageState extends State<StockTradingPage>
     });
   }
 
-  Widget _buildBottomButton() {
-    if (_tabController.index == 0) {
-      // 매수 탭
-      if (_isMarketOrder) {
-        return _buildMarketBuyButton();
-      } else {
-        return _buildLimitBuyButton();
-      }
-    } else {
-      // 매도 탭
-      if (_isMarketOrder) {
-        return _buildMarketSellButton();
-      } else {
-        return _buildLimitSellButton();
-      }
-    }
+  Widget _buildBuyButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () {
+          double currentPrice = _isMarketOrder
+              ? (_currentStockPrice?.stckPrpr != null
+                  ? double.parse(_currentStockPrice!.stckPrpr)
+                  : widget.currentPrice)
+              : _limitPrice;
+          double totalCost = currentPrice * _quantity;
+          if (_quantity <= 0 || totalCost > _availableBalance) {
+            _showErrorDialog('입력 오류', '주문 수량이 올바르지 않거나 가용 자산을 초과합니다.');
+          } else {
+            _showConfirmationBottomSheet(
+              isBuy: true,
+              isMarketOrder: _isMarketOrder,
+              onConfirm: () async {
+                String? accessToken = await storage.read(key: 'accessToken');
+                if (accessToken == null) {
+                  throw Exception('No access token found');
+                }
+                try {
+                  String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
+                      .format(DateTime.now());
+                  Map<String, dynamic> result;
+                  if (_isMarketOrder) {
+                    result = await MarketPriceApi.buyMarket(
+                      token: accessToken,
+                      stockCode: widget.stockCode,
+                      quantity: _quantity,
+                      orderTime: orderTime,
+                    );
+                  } else {
+                    result = await FixedPriceApi.buyMarket(
+                      token: accessToken,
+                      stockCode: widget.stockCode,
+                      bid: _limitPrice,
+                      quantity: _quantity,
+                      orderTime: orderTime,
+                    );
+                  }
+                  _showResultBottomSheet(result, true, _isMarketOrder);
+                } catch (e) {
+                  _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
+                }
+              },
+            );
+          }
+        },
+        child:
+            Text('매수하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+      ),
+    );
   }
+
+  Widget _buildSellButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3A2E6A),
+          minimumSize: Size(double.infinity, 50),
+        ),
+        onPressed: () {
+          if (_quantity <= 0 || _quantity > _holdingCounts) {
+            _showErrorDialog('입력 오류', '주문 수량이 올바르지 않거나 보유 주식 수를 초과합니다.');
+          } else {
+            _showConfirmationBottomSheet(
+              isBuy: false,
+              isMarketOrder: _isMarketOrder,
+              onConfirm: () async {
+                String? accessToken = await storage.read(key: 'accessToken');
+                if (accessToken == null) {
+                  throw Exception('No access token found');
+                }
+                try {
+                  String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
+                      .format(DateTime.now());
+                  Map<String, dynamic> result;
+                  if (_isMarketOrder) {
+                    result = await MarketPriceApi.sellMarket(
+                      token: accessToken,
+                      stockCode: widget.stockCode,
+                      quantity: _quantity,
+                      orderTime: orderTime,
+                    );
+                  } else {
+                    result = await FixedPriceApi.sellMarket(
+                      token: accessToken,
+                      stockCode: widget.stockCode,
+                      bid: _limitPrice,
+                      quantity: _quantity,
+                      orderTime: orderTime,
+                    );
+                  }
+                  _showResultBottomSheet(result, false, _isMarketOrder);
+                } catch (e) {
+                  _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
+                }
+              },
+            );
+          }
+        },
+        child:
+            Text('매도하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildBottomButton() {
+    return _tabController.index == 0 ? _buildBuyButton() : _buildSellButton();
+  }
+
+  // Widget _buildBottomButton() {
+  //   if (_tabController.index == 0) {
+  //     // 매수 탭
+  //     if (_isMarketOrder) {
+  //       return _buildMarketBuyButton();
+  //     } else {
+  //       return _buildLimitBuyButton();
+  //     }
+  //   } else {
+  //     // 매도 탭
+  //     if (_isMarketOrder) {
+  //       return _buildMarketSellButton();
+  //     } else {
+  //       return _buildLimitSellButton();
+  //     }
+  //   }
+  // }
 
   void _showConfirmationBottomSheet({
     required bool isBuy,

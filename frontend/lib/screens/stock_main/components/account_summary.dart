@@ -102,7 +102,7 @@ class _AccountSummaryState extends State<AccountSummary> {
                   valueColor: double.parse(userData['roi']) >= 0
                       ? Colors.red
                       : Colors.blue),
-              _buildSummaryItem(context, '랭킹', '${userData['rank']}위',
+              _buildSummaryItem(context, '랭킹', '${userData['rank']}',
                   valueColor: Color(0xFF3A2E6A)),
             ],
           ),
@@ -136,7 +136,7 @@ class _AccountSummaryState extends State<AccountSummary> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              value,
+              value == '0' ? '-' : (title == '랭킹' ? value + '위' : value),
               style: TextStyle(
                 color: valueColor ?? const Color(0xFF1A1A1A),
                 fontSize: 16,

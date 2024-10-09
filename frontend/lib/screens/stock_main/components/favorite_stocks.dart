@@ -17,23 +17,39 @@ class FavoriteStocks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (stocksData == null || stocksData!['stocks'].isEmpty) {
-      return Container(
-        height: 105,
-        alignment: Alignment.center,
-        child: Text('관심종목이 없습니다.', style: TextStyle(fontSize: 16)),
+      return Column(
+        children: [
+          Container(
+            height: 40,
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('관심종목',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          Container(
+            height: 60,
+            alignment: Alignment.center,
+            child: Text('관심종목을 추가해주세요.', style: TextStyle(fontSize: 16)),
+          ),
+        ],
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('관심종목',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('관심종목',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ),
         SizedBox(height: 12),
         SizedBox(
           height: 105, // 높이 조정
           child: ListView(
-            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 16),
             scrollDirection: Axis.horizontal,
             children: stocksData!['stocks'].map<Widget>((stock) {
               return GestureDetector(

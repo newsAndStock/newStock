@@ -96,25 +96,24 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   // Future<void> _fetchStockNews({bool refresh = false}) async {
+  //   if (_isLoadingNews) return;
+
+  //   setState(() => _isLoadingNews = true);
+
   //   if (refresh) {
   //     setState(() {
   //       _currentPage = 1;
-  //       _newsData.clear();
+  //       _newsData = [];
   //       _hasMoreNews = true;
   //     });
   //   }
 
-  //   if (!_hasMoreNews || _isLoadingNews) return;
-
-  //   setState(() => _isLoadingNews = true);
   //   try {
-  //     print('Fetching news for page: $_currentPage'); // Debug print
   //     final news = await StockDetailApi().getStockNews(
   //       widget.stockCode,
   //       page: _currentPage,
   //       pageSize: _pageSize,
   //     );
-  //     print('Fetched ${news.length} news items'); // Debug print
 
   //     setState(() {
   //       if (news.isEmpty) {
@@ -127,22 +126,30 @@ class _StockDetailPageState extends State<StockDetailPage>
   //     });
   //   } catch (e) {
   //     print('Error fetching stock news: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
-  //     );
   //     setState(() {
   //       _isLoadingNews = false;
   //       if (_newsData.isEmpty) {
   //         _hasMoreNews = false;
   //       }
   //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
+  //     );
   //   }
   // }
 
   Future<void> _fetchStockNews({bool refresh = false}) async {
-    if (_isLoadingNews) return; // 이미 로딩 중이면 중복 호출 방지
+    if (_isLoadingNews) return;
 
     setState(() => _isLoadingNews = true);
+
+    if (refresh) {
+      setState(() {
+        _currentPage = 1;
+        _newsData = [];
+        _hasMoreNews = true;
+      });
+    }
 
     try {
       final news = await StockDetailApi().getStockNews(
@@ -151,35 +158,35 @@ class _StockDetailPageState extends State<StockDetailPage>
         pageSize: _pageSize,
       );
 
-      if (mounted) {
-        // 위젯이 여전히 트리에 있는지 확인
-        setState(() {
-          if (refresh) {
-            _newsData.clear();
-            _currentPage = 1;
-          }
-          if (news.isEmpty || news.length < _pageSize) {
+      setState(() {
+        if (news.isEmpty) {
+          _hasMoreNews = false;
+        } else {
+          // 중복 제거 로직 추가
+          final newNewsItems = news
+              .where((newItem) => !_newsData.any((existingItem) =>
+                  existingItem['newsId'] == newItem['newsId']))
+              .toList();
+          _newsData.addAll(newNewsItems);
+          if (newNewsItems.length < _pageSize) {
             _hasMoreNews = false;
           } else {
-            _newsData.addAll(news);
             _currentPage++;
           }
-          _isLoadingNews = false;
-        });
-      }
+        }
+        _isLoadingNews = false;
+      });
     } catch (e) {
       print('Error fetching stock news: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
-        );
-        setState(() {
-          _isLoadingNews = false;
-          if (_newsData.isEmpty) {
-            _hasMoreNews = false;
-          }
-        });
-      }
+      setState(() {
+        _isLoadingNews = false;
+        if (_newsData.isEmpty) {
+          _hasMoreNews = false;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load stock news: ${e.toString()}')),
+      );
     }
   }
 
@@ -916,6 +923,99 @@ class _StockDetailPageState extends State<StockDetailPage>
     );
   }
 
+  Widget _buildNewsTab() {
+    if (_isLoadingNews && _newsData.isEmpty) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_newsData.isEmpty && !_hasMoreNews) {
+      return Center(child: Text('관련 뉴스가 없습니다.'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _fetchStockNews(refresh: true),
+      child: ListView.separated(
+        itemCount: _newsData.length + (_hasMoreNews ? 1 : 0),
+        separatorBuilder: (context, index) => Divider(color: Colors.grey[300]),
+        itemBuilder: (context, index) {
+          if (index == _newsData.length) {
+            if (_hasMoreNews && !_isLoadingNews) {
+              Future.microtask(() => _fetchStockNews());
+            }
+            return _hasMoreNews
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : SizedBox.shrink();
+          }
+
+          final news = _newsData[index];
+          return Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NewsDetailScreen(
+                      newsId: news['newsId'].toString(),
+                    ),
+                  ),
+                );
+              },
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          news['title'] ?? 'No Title',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
+                          style:
+                              TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child:
+                        news['imageUrl'] != null && news['imageUrl'].isNotEmpty
+                            ? Image.network(
+                                news['imageUrl'],
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error loading image: $error');
+                                  return Icon(Icons.error, size: 60);
+                                },
+                              )
+                            : Icon(Icons.article, size: 60),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   // Widget _buildNewsTab() {
   //   if (_isLoadingNews && _newsData.isEmpty) {
   //     return Center(child: CircularProgressIndicator());
@@ -1006,96 +1106,96 @@ class _StockDetailPageState extends State<StockDetailPage>
   //   );
   // }
 
-  Widget _buildNewsTab() {
-    if (_isLoadingNews && _newsData.isEmpty) {
-      return Center(child: CircularProgressIndicator());
-    }
+  // Widget _buildNewsTab() {
+  //   if (_isLoadingNews && _newsData.isEmpty) {
+  //     return Center(child: CircularProgressIndicator());
+  //   }
 
-    if (_newsData.isEmpty && !_hasMoreNews) {
-      return Center(child: Text('관련 뉴스가 없습니다.'));
-    }
+  //   if (_newsData.isEmpty && !_hasMoreNews) {
+  //     return Center(child: Text('관련 뉴스가 없습니다.'));
+  //   }
 
-    return RefreshIndicator(
-      onRefresh: () => _fetchStockNews(refresh: true),
-      child: ListView.separated(
-        itemCount: _newsData.length + (_hasMoreNews ? 1 : 0),
-        separatorBuilder: (context, index) => Center(
-          child: FractionallySizedBox(
-            widthFactor: 0.9,
-            child: Divider(
-              color: Colors.grey[300],
-              height: 1,
-            ),
-          ),
-        ),
-        itemBuilder: (context, index) {
-          if (index == _newsData.length) {
-            if (_hasMoreNews && !_isLoadingNews) {
-              // 다음 페이지 로드를 위해 Future.microtask 사용
-              Future.microtask(() => _fetchStockNews());
-            }
-            return _hasMoreNews
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : SizedBox.shrink();
-          }
+  //   return RefreshIndicator(
+  //     onRefresh: () => _fetchStockNews(refresh: true),
+  //     child: ListView.separated(
+  //       itemCount: _newsData.length + (_hasMoreNews ? 1 : 0),
+  //       separatorBuilder: (context, index) => Center(
+  //         child: FractionallySizedBox(
+  //           widthFactor: 0.9,
+  //           child: Divider(
+  //             color: Colors.grey[300],
+  //             height: 1,
+  //           ),
+  //         ),
+  //       ),
+  //       itemBuilder: (context, index) {
+  //         if (index == _newsData.length) {
+  //           if (_hasMoreNews && !_isLoadingNews) {
+  //             // 다음 페이지 로드를 위해 Future.microtask 사용
+  //             Future.microtask(() => _fetchStockNews());
+  //           }
+  //           return _hasMoreNews
+  //               ? Center(
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.all(8.0),
+  //                     child: CircularProgressIndicator(),
+  //                   ),
+  //                 )
+  //               : SizedBox.shrink();
+  //         }
 
-          final news = _newsData[index];
-          return FractionallySizedBox(
-            widthFactor: 0.9,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ListTile(
-                title: Text(
-                  news['title'] ?? 'No Title',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: news['imageUrl'] != null && news['imageUrl'].isNotEmpty
-                      ? Image.network(
-                          news['imageUrl'],
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            print('Error loading image: $error');
-                            return Icon(Icons.error, size: 60);
-                          },
-                        )
-                      : Icon(Icons.article, size: 60),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NewsDetailScreen(
-                        newsId: news['newsId'].toString(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  //         final news = _newsData[index];
+  //         return FractionallySizedBox(
+  //           widthFactor: 0.9,
+  //           child: Padding(
+  //             padding: const EdgeInsets.symmetric(vertical: 8.0),
+  //             child: ListTile(
+  //               title: Text(
+  //                 news['title'] ?? 'No Title',
+  //                 style: TextStyle(
+  //                   fontWeight: FontWeight.bold,
+  //                   fontSize: 16,
+  //                 ),
+  //               ),
+  //               subtitle: Padding(
+  //                 padding: const EdgeInsets.only(top: 4.0),
+  //                 child: Text(
+  //                   '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
+  //                   style: TextStyle(fontSize: 14),
+  //                 ),
+  //               ),
+  //               leading: ClipRRect(
+  //                 borderRadius: BorderRadius.circular(8.0),
+  //                 child: news['imageUrl'] != null && news['imageUrl'].isNotEmpty
+  //                     ? Image.network(
+  //                         news['imageUrl'],
+  //                         width: 60,
+  //                         height: 60,
+  //                         fit: BoxFit.cover,
+  //                         errorBuilder: (context, error, stackTrace) {
+  //                           print('Error loading image: $error');
+  //                           return Icon(Icons.error, size: 60);
+  //                         },
+  //                       )
+  //                     : Icon(Icons.article, size: 60),
+  //               ),
+  //               onTap: () {
+  //                 Navigator.push(
+  //                   context,
+  //                   MaterialPageRoute(
+  //                     builder: (context) => NewsDetailScreen(
+  //                       newsId: news['newsId'].toString(),
+  //                     ),
+  //                   ),
+  //                 );
+  //               },
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 
   Widget _buildBottomButton() {
     return Padding(
