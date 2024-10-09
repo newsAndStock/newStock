@@ -108,7 +108,7 @@ public class NotificationService {
     }
 
     public List<NotificationResponse> getAllNotification(Long receiverId){
-        List<Notification> notifications=notificationRepository.findAllByReceiverId(receiverId);
+        List<Notification> notifications=notificationRepository.findAllByReceiverIdOrderByCreatedAtDesc(receiverId);
         List<NotificationResponse> notificationResponses=new ArrayList<>();
         for(Notification notification:notifications){
             NotificationResponse notificationResponse=new NotificationResponse(notification);
