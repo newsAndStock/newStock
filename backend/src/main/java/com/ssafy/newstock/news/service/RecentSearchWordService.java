@@ -1,5 +1,6 @@
 package com.ssafy.newstock.news.service;
 
+import com.ssafy.newstock.news.controller.response.RecentSearchWordResponse;
 import com.ssafy.newstock.news.domain.RecentSearchWord;
 import com.ssafy.newstock.news.repository.RecentSearchWordRepository;
 import org.springframework.stereotype.Service;
@@ -17,19 +18,19 @@ public class RecentSearchWordService {
         this.recentSearchWordRepository = recentSearchWordRepository;
     }
 
-    public List<String> getRecentSearchWord(Long memberId){
+    public List<RecentSearchWordResponse> getRecentSearchWord(Long memberId){
         List<RecentSearchWord> recentSearchWords=recentSearchWordRepository.findTop10ByMember_IdOrderByDateDesc(memberId);
-        List<String> result = new ArrayList<>();
+        List<RecentSearchWordResponse> result = new ArrayList<>();
         for(RecentSearchWord recentSearchWord:recentSearchWords){
-            result.add(recentSearchWord.getKeyword());
+            result.add(new RecentSearchWordResponse(recentSearchWord.getId(),recentSearchWord.getKeyword()));
         }
         return result;
     }
 
     @Transactional
-    public boolean deleteRecentSearchWord(Long memberId, String keyword){
-        if(recentSearchWordRepository.existsByMemberIdAndKeyword(memberId, keyword)){
-            recentSearchWordRepository.deleteByMemberIdAndKeyword(memberId, keyword);
+    public boolean deleteRecentSearchWord(Long id){
+        if(recentSearchWordRepository.existsById(id)){
+            recentSearchWordRepository.deleteById(id);
             return true;
         }else {
             return false;
