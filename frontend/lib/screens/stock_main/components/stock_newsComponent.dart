@@ -79,8 +79,14 @@ class NewsComponent extends StatelessWidget {
 class NewsPageComponent extends StatefulWidget {
   final double? height;
   final VoidCallback onRefresh;
-  const NewsPageComponent({Key? key, this.height, required this.onRefresh})
-      : super(key: key);
+  final Function(bool) onHasFavoriteStocksChanged;
+
+  const NewsPageComponent({
+    Key? key,
+    this.height,
+    required this.onRefresh,
+    required this.onHasFavoriteStocksChanged,
+  }) : super(key: key);
 
   @override
   NewsPageComponentState createState() => NewsPageComponentState();
@@ -111,10 +117,7 @@ class NewsPageComponentState extends State<NewsPageComponent>
       String? token = await storage.read(key: 'accessToken');
       if (token == null) throw Exception('No access token found');
 
-      print('Fetching favorite stocks with token: $token'); // 디버그 로그
-
       final favoriteStocks = await FavoriteStockApi.getFavoriteStocks(token);
-      print('Received favorite stocks: $favoriteStocks'); // 디버그 로그
 
       if (favoriteStocks['stocks'] == null ||
           !(favoriteStocks['stocks'] is List)) {
@@ -137,11 +140,15 @@ class NewsPageComponentState extends State<NewsPageComponent>
           print('No favorite stocks found');
         }
         _isLoading = false;
+        // 여기서 관심종목 상태 변경을 부모 위젯에 알립니다.
+        widget.onHasFavoriteStocksChanged(_categories.isNotEmpty);
       });
     } catch (e) {
       print('Error fetching favorite stocks: $e');
       setState(() {
         _isLoading = false;
+        // 에러 발생 시에도 관심종목 상태를 업데이트합니다.
+        widget.onHasFavoriteStocksChanged(false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('관심종목을 불러오는데 실패했습니다: $e')),
         );
@@ -222,43 +229,28 @@ class NewsPageComponentState extends State<NewsPageComponent>
       return Center(child: CircularProgressIndicator());
     }
 
-    if (_categories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('관심종목이 없습니다.'),
-            ElevatedButton(
-              child: Text('새로고침'),
-              onPressed: _fetchFavoriteStocks,
-            ),
-          ],
-        ),
-      );
-    }
+    double componentHeight = _categories.isEmpty ? 150 : (widget.height ?? 400);
 
     return SizedBox(
-      height: widget.height,
+      height: componentHeight,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Row(
-                children: _categories.map((category) {
-                  final index = _categories.indexOf(category);
-                  return Row(
-                    children: [
-                      _buildCategoryItem(category),
-                      if (index < _categories.length - 1)
-                        const SizedBox(width: 10),
-                    ],
-                  );
-                }).toList(),
+          if (_categories.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  children: _categories.map((category) {
+                    return Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: _buildCategoryItem(category),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
           Expanded(
             child: Container(
               margin: const EdgeInsets.all(16.0),
@@ -275,31 +267,44 @@ class NewsPageComponentState extends State<NewsPageComponent>
                 ],
               ),
               child: ClipRRect(
-                // 추가된 부분
                 borderRadius: BorderRadius.circular(40),
-                child: _newsItems.isEmpty
-                    ? Center(child: Text('뉴스가 없습니다.'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16.0),
-                        physics: AlwaysScrollableScrollPhysics(), // 추가된 부분
-                        itemCount: _newsItems.length,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) => GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NewsDetailScreen(
-                                  newsId: _newsItems[index].newsId,
-                                ),
-                              ),
-                            );
-                          },
-                          child: NewsComponent(
-                            newsItem: _newsItems[index],
-                          ),
+                child: _categories.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('관심종목이 없습니다.'),
+                            ElevatedButton(
+                              child: Text('새로고침'),
+                              onPressed: _fetchFavoriteStocks,
+                            ),
+                          ],
                         ),
-                      ),
+                      )
+                    : (_newsItems.isEmpty
+                        ? Center(child: Text('뉴스가 없습니다.'))
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(16.0),
+                            physics: AlwaysScrollableScrollPhysics(),
+                            itemCount: _newsItems.length,
+                            separatorBuilder: (context, index) =>
+                                const Divider(),
+                            itemBuilder: (context, index) => GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => NewsDetailScreen(
+                                      newsId: _newsItems[index].newsId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: NewsComponent(
+                                newsItem: _newsItems[index],
+                              ),
+                            ),
+                          )),
               ),
             ),
           ),

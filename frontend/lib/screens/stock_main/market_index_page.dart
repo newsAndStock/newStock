@@ -37,6 +37,9 @@ class MarketIndexPage extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(40),
+      ),
       color: backgroundColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
