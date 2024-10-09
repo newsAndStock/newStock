@@ -278,141 +278,155 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
 
-          // 드래그 가능한 스크롤 시트
           DraggableScrollableSheet(
             initialChildSize: 0.08,
             minChildSize: 0.08,
             maxChildSize: 0.95,
             builder: (context, scrollController) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-                ),
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 30,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 120,
-                          height: 5,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
+              return Stack(
+                children: [
+                  // 스크롤 가능한 컨텐츠
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(40)),
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Image.asset(
-                          'assets/images/NEWstock.png',
-                          height: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 주식 모의투자 카드
-                      CardButton(
-                        description: '뉴스톡에서 쉽고 안전하게',
-                        title: '주식 모의투자',
-                        imagePath: 'assets/images/stock.png',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const StockMainPage(),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 50), // 힌트와 로고 아래 공간 확보
+                            // 주식 모의투자 카드
+                            CardButton(
+                              description: '뉴스톡에서 쉽고 안전하게',
+                              title: '주식 모의투자',
+                              imagePath: 'assets/images/stock.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const StockMainPage(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 경제신문 읽기 카드
-                      CardButton(
-                        description: '뉴스톡과 함께하는',
-                        title: '경제신문 읽기',
-                        imagePath: 'assets/images/news.png',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NewsMainScreen(),
+                            const SizedBox(height: 20),
+                            // 경제신문 읽기 카드
+                            CardButton(
+                              description: '뉴스톡과 함께하는',
+                              title: '경제신문 읽기',
+                              imagePath: 'assets/images/news.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NewsMainScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 출석 챌린지 카드 (드래그 가능 영역 내)
-                      ImageButton(
-                        title: '출석 챌린지',
-                        subscription: '룰렛 돌리고 랜덤포인트 받자!',
-                        imagePath: 'assets/images/checkin.png',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AttendanceScreen(),
+                            const SizedBox(height: 20),
+                            ImageButton(
+                              title: '출석 챌린지',
+                              subscription: '룰렛 돌리고 랜덤포인트 받자!',
+                              imagePath: 'assets/images/checkin.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AttendanceScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 퀴즈 챌린지 카드 (드래그 가능 영역 내)
-                      ImageButton(
-                        title: '퀴즈 챌린지',
-                        subscription: '퀴즈 풀고 포인트 받자!',
-                        imagePath: 'assets/images/quiz.png',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QuizScreen(),
+                            const SizedBox(height: 20),
+                            // 퀴즈 챌린지 카드 (드래그 가능 영역 내)
+                            ImageButton(
+                              title: '퀴즈 챌린지',
+                              subscription: '퀴즈 풀고 포인트 받자!',
+                              imagePath: 'assets/images/quiz.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const QuizScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 로그아웃 버튼
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await storage.delete(key: "accessToken");
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const SigninScreen()),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                            const SizedBox(height: 10),
+                            // 로그아웃 버튼
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    await storage.delete(key: "accessToken");
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SigninScreen()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    backgroundColor: const Color(0xFF3A2E6A),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 15),
+                                  ),
+                                  child: const Text("로그아웃",
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 16)),
+                                ),
                               ),
-                              backgroundColor: const Color(0xFF3A2E6A),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
                             ),
-                            child: const Text("로그아웃",
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 16)),
-                          ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  // 드래그 힌트 (회색 바)와 뉴스톡 로고는 상단에 고정
+                  Positioned(
+                    top: 10,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 120,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30),
+                            child: Image.asset(
+                              'assets/images/NEWstock.png',
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
           ),

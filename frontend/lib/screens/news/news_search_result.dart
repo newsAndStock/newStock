@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/models/news_model.dart';
 import 'package:frontend/api/news_api_service.dart';
+import 'package:frontend/screens/news/news_detail.dart';
 
 class NewsSearchResultScreen extends StatefulWidget {
   final String searchTerm;
@@ -82,52 +83,65 @@ class _NewsSearchResultScreenState extends State<NewsSearchResultScreen> {
 
   // 뉴스 타일 위젯
   Widget buildNewsListTile(News news) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-        ),
-        child: Row(
-          children: [
-            // 뉴스 제목 및 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    news.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    news.press,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
+    return GestureDetector(
+      onTap: () {
+        // 뉴스 상세 페이지로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewsDetailScreen(
+              newsId: news.newsId.toString(),
             ),
-            Container(
-              width: 100,
-              height: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: news.imageUrl.isNotEmpty
-                      ? NetworkImage(news.imageUrl)
-                      : const AssetImage('assets/placeholder.png')
-                          as ImageProvider,
-                  fit: BoxFit.cover,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+          ),
+          child: Row(
+            children: [
+              // 뉴스 제목 및 정보
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      news.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      news.press,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-          ],
+              Container(
+                width: 100,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: news.imageUrl.isNotEmpty
+                        ? NetworkImage(news.imageUrl)
+                        : const AssetImage('assets/placeholder.png')
+                            as ImageProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+          ),
         ),
       ),
     );
