@@ -86,13 +86,29 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 Positioned(
                   top: 40,
                   left: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9), // 배경색에 투명도 추가
+                      shape: BoxShape.circle, // 원형 설정
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              Colors.black.withOpacity(0.2), // 그림자 색상 및 투명도 설정
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: const Offset(0, 2), // 그림자 위치
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   ),
                 ),
+
                 // DraggableScrollableSheet로 제목, 작성일시, 내용 표시
                 DraggableScrollableSheet(
                   initialChildSize: 0.75, // 초기 크기
@@ -105,73 +121,82 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(40)),
                       ),
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 30, // 기존보다 넉넉한 패딩 추가
-                          vertical: 10, // 상하 패딩도 넉넉하게 추가
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 드래그 힌트
-                            Center(
+                      child: Stack(
+                        children: [
+                          SingleChildScrollView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30, // 기존보다 넉넉한 패딩 추가
+                              vertical: 10, // 상하 패딩도 넉넉하게 추가
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(
+                                    height: 30), // 드래그 힌트가 차지하는 공간만큼 확보
+                                // 뉴스 제목
+                                Text(
+                                  news.title,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                // 뉴스 출처 (press)
+                                Text(
+                                  news.press,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                // 뉴스 작성일시 (createDate)
+                                Text(
+                                  news.createDate,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                // 구분선 추가
+                                const Divider(
+                                  thickness: 1, // 두께 설정
+                                  color: Color.fromARGB(
+                                      255, 201, 201, 201), // 구분선 색상
+                                ),
+                                const SizedBox(height: 20),
+                                // 뉴스 내용
+                                Text(
+                                  news.content,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 90),
+                              ],
+                            ),
+                          ),
+                          // 드래그 힌트 고정
+                          Positioned(
+                            top: 10,
+                            left: 0,
+                            right: 0,
+                            child: Center(
                               child: Container(
                                 width: 120,
                                 height: 5,
-                                margin: const EdgeInsets.only(bottom: 20),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[300],
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            // 뉴스 제목
-                            Text(
-                              news.title,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            // 뉴스 출처 (press)
-                            Text(
-                              news.press,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            // 뉴스 작성일시 (createDate)
-                            Text(
-                              news.createDate,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            // 구분선 추가
-                            const Divider(
-                              thickness: 1, // 두께 설정
-                              color:
-                                  Color.fromARGB(255, 201, 201, 201), // 구분선 색상
-                            ),
-                            const SizedBox(height: 20),
-                            // 뉴스 내용
-                            Text(
-                              news.content,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 90),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },

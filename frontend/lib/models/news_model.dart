@@ -4,6 +4,7 @@ class News {
   final String title;
   final String createDate;
   final String date;
+
   final String content;
   final String press;
   final String imageUrl;

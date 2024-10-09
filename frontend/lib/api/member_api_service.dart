@@ -102,8 +102,7 @@ class MemberApiService {
 
   //회원 정보
   Future<http.Response> memberInfo() async {
-    String? token =
-        await storage.read(key: 'accessToken');
+    String? token = await storage.read(key: 'accessToken');
     final url = Uri.parse('$apiServerUrl/member-summary');
     final response = await http.get(
       url,
@@ -113,6 +112,19 @@ class MemberApiService {
       },
     );
     return response;
+  }
+
+  // 닉네임을 가져오는 함수
+  Future<String> fetchNickname() async {
+    final response = await memberInfo();
+
+    if (response.statusCode == 200) {
+      // UTF-8로 강제로 디코딩
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return data['nickname'];
+    } else {
+      throw Exception('Failed to load nickname');
+    }
   }
 
   //비밀번호 재발급

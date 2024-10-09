@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/models/news_model.dart';
+import 'package:frontend/screens/news/news_my_scrap.dart';
 
 class NewsScrapDetailScreen extends StatefulWidget {
   final String scrapId; // 스크랩 ID
@@ -57,7 +58,12 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('스크랩이 성공적으로 삭제되었습니다.')),
       );
-      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NewsMyScrapScreen(),
+        ),
+      );
     } catch (e) {
       print('Failed to delete scrap: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +105,7 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                   top: 40,
                   left: 10,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
                     onPressed: () {
                       Navigator.pop(context);
                     },
