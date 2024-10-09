@@ -343,8 +343,9 @@ class NewsService {
     }
   }
 
-  // 최근 검색어 API 함수 추가
-  Future<List<String>> fetchRecentKeywords(String accessToken) async {
+  // 최근 검색어 API 함수 수정
+  Future<List<Map<String, dynamic>>> fetchRecentKeywords(
+      String accessToken) async {
     final url = Uri.parse('$apiServerUrl/news/recent-word');
 
     try {
@@ -357,10 +358,13 @@ class NewsService {
       );
 
       if (response.statusCode == 200) {
-        // UTF-8로 응답을 디코딩하여 한글 깨짐 방지
         String decodedResponse = utf8.decode(response.bodyBytes);
         List<dynamic> data = jsonDecode(decodedResponse);
-        return List<String>.from(data);
+
+        // Map 형태로 반환 (id와 word를 포함)
+        return data
+            .map((item) => {'id': item['id'], 'word': item['word']})
+            .toList();
       } else {
         throw Exception('Failed to load recent keywords');
       }
@@ -390,10 +394,9 @@ class NewsService {
     }
   }
 
-  // 삭제 메서드 추가
-  Future<void> deleteRecentKeyword(String accessToken, String keyword) async {
-    final url = Uri.parse(
-        '$apiServerUrl/news/recent-word?keyword=${Uri.encodeComponent(keyword)}');
+  // 최근검색어 삭제 메서드
+  Future<void> deleteRecentKeyword(String accessToken, int id) async {
+    final url = Uri.parse('$apiServerUrl/news/recent-word?id=$id');
 
     try {
       final response = await http.delete(

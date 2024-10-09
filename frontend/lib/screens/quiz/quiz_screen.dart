@@ -351,10 +351,14 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Text(
-                  question,
-                  style: const TextStyle(fontSize: 18),
-                  textAlign: TextAlign.center,
+                Container(
+                  width: MediaQuery.of(context).size.width *
+                      0.85, // 너비를 화면의 80%로 설정
+                  child: Text(
+                    question,
+                    style: const TextStyle(fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 _buildAnswerBoxes(answer),
@@ -364,18 +368,19 @@ class _QuizScreenState extends State<QuizScreen> {
                   focusNode: _focusNode,
                   maxLength: answer.length,
                   textAlign: TextAlign.center,
-                  showCursor: false, // 커서를 숨김
+                  showCursor: false,
                   style: const TextStyle(
-                    color: Colors.transparent, // 입력된 텍스트도 투명하게 설정
-                    height: 0.01, // 줄 간격 최소화
+                    color: Colors.white,
+                    decorationColor: Colors.white,
+                    decoration: TextDecoration.underline,
+                    height: 1.5,
                   ),
                   decoration: const InputDecoration(
-                    counterText: '', // 글자 수 표시 없애기
-                    border: InputBorder.none, // 기본 테두리 제거
-                    enabledBorder: InputBorder.none, // 비활성화 시 테두리 제거
-                    focusedBorder: InputBorder.none, // 포커스 상태 테두리 제거
-                    disabledBorder: InputBorder.none, // 비활성화 상태 테두리 제거
-                    errorBorder: InputBorder.none, // 에러 상태 테두리 제거
+                    counterText: '',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
                   ),
                   onChanged: (value) {
                     setState(() {});
