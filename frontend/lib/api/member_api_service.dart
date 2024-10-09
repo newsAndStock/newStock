@@ -138,4 +138,18 @@ class MemberApiService {
     );
     return response;
   }
+
+  // 알림 리스트
+  Future<http.Response> fetchNotification() async {
+    String? token = await storage.read(key: 'accessToken');
+    final url = Uri.parse('$apiServerUrl/notifications');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return response;
+  }
 }

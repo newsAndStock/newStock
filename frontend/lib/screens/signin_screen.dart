@@ -200,7 +200,7 @@ class _SigninScreenState extends State<SigninScreen> {
                           ),
                         ),
                       const SizedBox(
-                        height: 10,
+                        height: 20,
                       ),
                       // 비밀번호 찾기 링크
                       Row(

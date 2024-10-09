@@ -1,7 +1,50 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class NotificationScreen extends StatelessWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+import 'package:flutter/material.dart';
+import 'package:frontend/api/member_api_service.dart';
+
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  List<Map<String, dynamic>> notifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final response = await MemberApiService().fetchNotification();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          notifications = data.map((notification) {
+            final orderType = notification['orderType'] == 'BUY' ? '매수' : '매도';
+            final message =
+                '${notification['stockName']} ${notification['quantity']}주 $orderType';
+            final createdTime =
+                notification['createdAt'].replaceAll('T', ' ').substring(5, 19);
+            print("message: $message");
+            return {
+              'message': message,
+              'createdTime': createdTime,
+            };
+          }).toList();
+        });
+      } else {
+        throw Exception('Failed to load notifications');
+      }
+    } catch (e) {
+      print('Error loading notifications: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,45 +56,48 @@ class NotificationScreen extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: ListView(
-        children: [
-          _buildIndexCard('삼성전자 1,000주 매수', '2024-09.03 14:11:06'),
-          _buildIndexCard('삼성전자(우) 100주 매도', '2024-09.19 13:00:00'),
-          _buildIndexCard('하이닉스 200주 매도', '2024-09.19 13:10:00'),
-          _buildIndexCard('유한양행 1,000주 매수', '2024-09.19 13:20:00'),
-        ],
+      body: ListView.builder(
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final notification = notifications[index];
+          return _buildIndexCard(
+              notification['message'], notification['createdTime']);
+        },
       ),
     );
   }
 
-  Widget _buildIndexCard(String message, String created_time) {
+  Widget _buildIndexCard(String message, String createdTime) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Color(0xffF4F4F5),
+      color: const Color(0xffF4F4F5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(40),
-        side: BorderSide(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '거래가 체결되었습니다.',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-          Text(created_time)
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$message 거래가 체결되었습니다.',
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold),
+                  maxLines: 2, // 최대 2줄까지만 표시
+                  overflow: TextOverflow.ellipsis, // 넘치는 부분은 생략 부호 처리
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              createdTime,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }
