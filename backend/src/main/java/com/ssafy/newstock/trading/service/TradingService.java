@@ -115,7 +115,7 @@ public class TradingService {
     }
 
 
-
+    @Transactional
     public TradeResponse buyByMarket(Member member, TradeRequest buyRequest) {
 
         if(!buyPossible(member,buyRequest)){
@@ -199,6 +199,7 @@ public class TradingService {
         List<Trading> tradings = tradingRepository.findByIsCompletedFalseAndIsCanceledFalse();
 
         for(Trading trading:tradings) {
+            log.info("{} 사용자의 {}({}) 거래 재가동",trading.getMember().getNickname(),trading.getStockCode(),trading.getOrderType());
             if(trading.getOrderType().equals(OrderType.SELL)){
                 int remain=kisService.getCurrentRemainAboutPrice(trading.getStockCode(),trading.getBid(), OrderType.SELL);
                 TradeItem tradeItem=new TradeItem(trading.getMember(),trading.getBid(),trading.getQuantity(),remain,trading.getOrderTime(),trading);
