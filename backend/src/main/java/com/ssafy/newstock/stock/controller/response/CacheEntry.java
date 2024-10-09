@@ -9,9 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MarketDataResponse {
-    String name;
-    String price;
-    String difference;
-    String rate;
+public class CacheEntry {
+    MarketDataResponse data;
+    long timestamp;
 }
