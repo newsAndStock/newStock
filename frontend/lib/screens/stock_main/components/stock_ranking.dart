@@ -236,9 +236,11 @@ class StockComponent extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                '${stockItem.changeSign == '2' ? '+' : ''}${stockItem.changePercentage}원 (${stockItem.change}%)',
+                '${double.parse(stockItem.change) > 0 ? '+' : ''}${stockItem.change}원 (${stockItem.changePercentage}%)',
                 style: TextStyle(
-                  color: stockItem.changeSign == '2' ? Colors.red : Colors.blue,
+                  color: double.parse(stockItem.change) > 0
+                      ? Colors.red
+                      : Colors.blue,
                 ),
               ),
             ],

@@ -16,6 +16,8 @@ import 'market_index_page.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'components/stock_newsComponent.dart';
+
 class StockMainPage extends StatefulWidget {
   const StockMainPage({Key? key}) : super(key: key);
 
@@ -31,6 +33,8 @@ class _StockMainPageState extends State<StockMainPage> {
   List<Map<String, dynamic>> _marketIndices = [];
   bool _isLoadingMarketIndex = true;
   final FlutterSecureStorage storage = FlutterSecureStorage();
+  final GlobalKey<NewsPageComponentState> _newsPageKey =
+      GlobalKey<NewsPageComponentState>();
 
   @override
   void initState() {
@@ -42,6 +46,19 @@ class _StockMainPageState extends State<StockMainPage> {
         _currentIndex = (_currentIndex + 1) % _marketIndices.length;
       });
     });
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoadingFavStock = true;
+      _isLoadingMarketIndex = true;
+    });
+    await Future.wait([
+      _fetchFavoriteStocks(),
+      _fetchMarketIndices(),
+    ]);
+    // NewsPageComponent 새로고침
+    _newsPageKey.currentState?.refresh();
   }
 
   void _refreshPage() {
@@ -111,16 +128,16 @@ class _StockMainPageState extends State<StockMainPage> {
     super.dispose();
   }
 
-  Future<void> _refreshData() async {
-    setState(() {
-      _isLoadingFavStock = true;
-      _isLoadingMarketIndex = true;
-    });
-    await Future.wait([
-      _fetchFavoriteStocks(),
-      _fetchMarketIndices(),
-    ]);
-  }
+  // Future<void> _refreshData() async {
+  //   setState(() {
+  //     _isLoadingFavStock = true;
+  //     _isLoadingMarketIndex = true;
+  //   });
+  //   await Future.wait([
+  //     _fetchFavoriteStocks(),
+  //     _fetchMarketIndices(),
+  //   ]);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +261,12 @@ class _StockMainPageState extends State<StockMainPage> {
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 400,
-                  child: NewsPageComponent(),
+                  child: NewsPageComponent(
+                    key: _newsPageKey,
+                    onRefresh: () {
+                      // 필요한 경우 여기에 추가 로직을 넣을 수 있습니다.
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text('국내 실시간 랭킹',

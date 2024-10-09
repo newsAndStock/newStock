@@ -78,14 +78,16 @@ class NewsComponent extends StatelessWidget {
 
 class NewsPageComponent extends StatefulWidget {
   final double? height;
-  const NewsPageComponent({Key? key, this.height}) : super(key: key);
+  final VoidCallback onRefresh;
+  const NewsPageComponent({Key? key, this.height, required this.onRefresh})
+      : super(key: key);
 
   @override
-  _NewsPageComponentState createState() => _NewsPageComponentState();
+  NewsPageComponentState createState() => NewsPageComponentState();
 }
 
-class _NewsPageComponentState extends State<NewsPageComponent>
-    with SingleTickerProviderStateMixin {
+class NewsPageComponentState extends State<NewsPageComponent>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   List<Category> _categories = [];
   Category? selectedCategory;
@@ -97,6 +99,11 @@ class _NewsPageComponentState extends State<NewsPageComponent>
   void initState() {
     super.initState();
     _fetchFavoriteStocks();
+  }
+
+  Future<void> refresh() async {
+    await _fetchFavoriteStocks();
+    widget.onRefresh(); // 부모 위젯의 onRefresh 콜백 호출
   }
 
   Future<void> _fetchFavoriteStocks() async {
@@ -121,16 +128,13 @@ class _NewsPageComponentState extends State<NewsPageComponent>
                 stockCode: stock['stockCode'] as String? ?? ''))
             .toList();
 
-        print(
-            'Categories after mapping: ${_categories.map((c) => '${c.title}: ${c.stockCode}').join(', ')}'); // 디버그 로그
-
         if (_categories.isNotEmpty) {
           selectedCategory = _categories[0];
           _tabController =
               TabController(length: _categories.length, vsync: this);
           _fetchNewsForStock(_categories[0]);
         } else {
-          print('No favorite stocks found'); // 디버그 로그
+          print('No favorite stocks found');
         }
         _isLoading = false;
       });
