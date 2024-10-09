@@ -1,6 +1,8 @@
 package com.ssafy.newstock.trading.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ssafy.newstock.kis.domain.TradeItem;
+import com.ssafy.newstock.kis.service.KisService;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.service.MemberService;
 import com.ssafy.newstock.stock.service.StockService;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class TradingHandleService {
@@ -29,11 +32,13 @@ public class TradingHandleService {
     private final Set<Long> canceledTrading= Collections.synchronizedSet(new HashSet<>());
     private final MemberService memberService;
     private final TradeQueue tradeQueue=TradeQueue.getInstance();
+    private final KisService kisService;
 
-    public TradingHandleService(TradingRepository tradingRepository, StockService stockService, MemberService memberService) {
+    public TradingHandleService(TradingRepository tradingRepository, StockService stockService, MemberService memberService, KisService kisService) {
         this.tradingRepository = tradingRepository;
         this.stockService = stockService;
         this.memberService = memberService;
+        this.kisService = kisService;
     }
 
     public List<TradingResponse> getActiveTradings(Long memberId) {
@@ -112,5 +117,6 @@ public class TradingHandleService {
             }
         }
     }
+
 
 }

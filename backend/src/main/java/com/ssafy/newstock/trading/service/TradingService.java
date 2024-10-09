@@ -16,6 +16,7 @@ import com.ssafy.newstock.trading.domain.TradeQueue;
 import com.ssafy.newstock.trading.domain.TradeType;
 import com.ssafy.newstock.trading.domain.Trading;
 import com.ssafy.newstock.trading.repository.TradingRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,10 @@ public class TradingService {
     private final KisServiceSocket kisServiceSocket;
     private final NotificationService notificationService;
 
+    @PostConstruct
+    private void init() throws JsonProcessingException {
+        reStartServer();
+    }
 
     //시장가 거래는 거래 즉시 완료됨.
     @Transactional
@@ -82,12 +87,13 @@ public class TradingService {
 
         sellPossible(member, sellRequest);
         Trading trading = sellRequest.toEntity(member, OrderType.SELL, TradeType.LIMIT);
-        tradingRepository.save(trading);
+
         int marketPrice=getStockPrPr(sellRequest.getStockCode());
         //현재 시장가보다 싸게 올릴수는 없다.
         if(marketPrice>trading.getBid()){
             trading.confirmBid(marketPrice);
         }
+        tradingRepository.save(trading);
 
         log.info("<{}> trading price:{}",sellRequest.getStockCode(),trading.getBid());
 
@@ -133,12 +139,13 @@ public class TradingService {
         }
 
         Trading trading = buyRequest.toEntity(member, OrderType.BUY, TradeType.LIMIT);
-        tradingRepository.save(trading);
+
         int marketPrice=getStockPrPr(buyRequest.getStockCode());
         //현재 시장가보다 비싸게 살 수는 없다.
         if(marketPrice<trading.getBid()){
             trading.confirmBid(marketPrice);
         }
+        tradingRepository.save(trading);
         memberService.updateDeposit(member.getId(), (long) trading.getBid(), OrderType.BUY);
         log.info("<{}> trading price:{}",buyRequest.getStockCode(),trading.getBid());
 
@@ -188,7 +195,23 @@ public class TradingService {
 
     }
 
+    private void reStartServer() throws JsonProcessingException {
+        List<Trading> tradings = tradingRepository.findByIsCompletedFalseAndIsCanceledFalse();
 
+        for(Trading trading:tradings) {
+            if(trading.getOrderType().equals(OrderType.SELL)){
+                int remain=kisService.getCurrentRemainAboutPrice(trading.getStockCode(),trading.getBid(), OrderType.SELL);
+                TradeItem tradeItem=new TradeItem(trading.getMember(),trading.getBid(),trading.getQuantity(),remain,trading.getOrderTime(),trading);
+                tradeQueue.addSell(trading.getStockCode(),tradeItem);
+                CompletableFuture<Void> future = processWebSocket(trading.getStockCode());
+            }else{
+                int remain=kisService.getCurrentRemainAboutPrice(trading.getStockCode(),trading.getBid(), OrderType.BUY);
+                TradeItem tradeItem=new TradeItem(trading.getMember(),trading.getBid(),trading.getQuantity(),remain,trading.getOrderTime(),trading);
+                tradeQueue.addBuy(trading.getStockCode(),tradeItem);
+                CompletableFuture<Void> future = processWebSocket(trading.getStockCode());
+            }
+        }
+    }
 
 
 
