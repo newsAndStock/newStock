@@ -15,8 +15,11 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: LoadingScreen(),
+    return MaterialApp(
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white, // 모든 페이지의 배경을 흰색으로 설정
+      ),
+      home: const LoadingScreen(),
     );
   }
 }

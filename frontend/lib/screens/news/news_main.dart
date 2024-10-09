@@ -92,56 +92,60 @@ class _NewsMainScreenState extends State<NewsMainScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MainScreen(), // 검색 페이지로 이동
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    height: 20, // 로고 사이즈 조정
-                    child: Image.asset(
-                      'assets/images/NEWstock.png',
-                      fit: BoxFit.contain,
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white, // AppBar 배경색을 확실히 흰색으로 설정
+        elevation: 0, // 필요시 elevation을 0으로 설정하여 그림자를 제거
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainScreen(), // 검색 페이지로 이동
                     ),
+                  );
+                },
+                child: SizedBox(
+                  height: 20, // 로고 사이즈 조정
+                  child: Image.asset(
+                    'assets/images/NEWstock.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                  child: const SizedBox(
-                    height: 30,
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      size: 30,
-                      color: Colors.black,
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationScreen(),
                     ),
+                  );
+                },
+                child: const SizedBox(
+                  height: 30,
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    size: 30,
+                    color: Colors.black,
                   ),
                 ),
-              ],
-            ),
-          )),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SizedBox(
+              height: 10,
+            ),
             // 검색 창
             GestureDetector(
               onTap: () => {},

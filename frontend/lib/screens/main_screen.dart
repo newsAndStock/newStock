@@ -331,7 +331,7 @@ class _MainScreenState extends State<MainScreen> {
                                 );
                               },
                             ),
-                            const SizedBox(height: 150),
+                            const SizedBox(height: 30),
                             // 로그아웃 버튼
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -383,6 +383,9 @@ class _MainScreenState extends State<MainScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
+                        ),
+                        SizedBox(
+                          height: 10,
                         ),
                         Align(
                           alignment: Alignment.centerLeft,
