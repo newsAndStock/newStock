@@ -17,15 +17,60 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
+
   String? emailCheckMessage;
   String? nickNameCheckMessage;
+  String? passwordMessage;
+  String? passwordConfirmMessage;
   bool isLoading = false;
   String? errorMessage;
-  //이메일, 닉네임 중복 확인
+
   bool isEmailChecked = false;
   bool isNickNameChecked = false;
-  // 이메일 형식 체크를 위한 정규식
+  bool isPasswordValid = false;
+
   final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  final passwordRegex = RegExp(
+      r'^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$'); // 8자 이상, 특수기호, 숫자, 영어 포함
+
+  @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(_validatePassword);
+    passwordConfirmController.addListener(_validatePasswordConfirm);
+  }
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    passwordConfirmController.dispose();
+    super.dispose();
+  }
+
+  void _validatePassword() {
+    final password = passwordController.text;
+    setState(() {
+      if (passwordRegex.hasMatch(password)) {
+        passwordMessage = "사용 가능한 비밀번호입니다.";
+        isPasswordValid = true;
+      } else {
+        passwordMessage = "비밀번호는 8자 이상, 특수기호, 숫자 및 영어를 포함해야 합니다.";
+        isPasswordValid = false;
+      }
+    });
+  }
+
+  void _validatePasswordConfirm() {
+    final password = passwordController.text;
+    final passwordConfirm = passwordConfirmController.text;
+    setState(() {
+      if (password == passwordConfirm) {
+        passwordConfirmMessage = "비밀번호가 일치합니다.";
+      } else {
+        passwordConfirmMessage = "비밀번호가 일치하지 않습니다!";
+      }
+    });
+  }
 
   // 회원가입 로직
   Future<void> _signUp() async {
@@ -222,6 +267,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         isPassword: true,
                         controller: passwordController,
                       ),
+                      if (passwordMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5.0),
+                          child: Text(
+                            passwordMessage!,
+                            style: TextStyle(
+                              color:
+                                  isPasswordValid ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 20),
                       const Text("비밀번호 확인 *", style: TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
@@ -230,6 +286,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         isPassword: true,
                         controller: passwordConfirmController,
                       ),
+                      if (passwordConfirmMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5.0),
+                          child: Text(
+                            passwordConfirmMessage!,
+                            style: TextStyle(
+                              color: passwordConfirmMessage == "비밀번호가 일치합니다."
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 20),
                       if (errorMessage != null)
                         Text(errorMessage!,
