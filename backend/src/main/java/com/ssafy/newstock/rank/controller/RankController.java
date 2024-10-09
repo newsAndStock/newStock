@@ -17,7 +17,7 @@ public class RankController {
     private final RankService rankService;
 
     @GetMapping("/admin/makeRank")
-    public HttpStatus makeRank(){
+    public HttpStatus makeRgitank(){
         rankService.makeRank();
         rankService.dealSameScore();
         return HttpStatus.OK;

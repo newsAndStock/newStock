@@ -16,5 +16,5 @@ public interface TradingRepository extends JpaRepository<Trading,Long> {
 
     List<Trading> findByMemberIdAndStockCodeAndOrderCompleteTimeIsNull(Long memberId, String stockCode);
 
-
+    List<Trading> findByIsCompletedFalseAndIsCanceledFalse();
 }
