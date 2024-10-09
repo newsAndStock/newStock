@@ -33,7 +33,7 @@ class AttendanceApiService {
   }
 
   // 포인트 추가 API 요청 (쿼리 파라미터로 전송)
-  Future<void> addPoints(String token, int points) async {
+  Future<http.Response> addPoints(String token, int points) async {
     final url = Uri.parse('$apiServerUrl/attendance?point=$points');
 
     try {
@@ -52,6 +52,9 @@ class AttendanceApiService {
       if (response.statusCode != 201) {
         throw Exception('Failed to add points: ${response.body}');
       }
+
+      // 응답을 반환하도록 변경
+      return response;
     } catch (e) {
       print('Error adding points: $e');
       throw Exception('Failed to add points');

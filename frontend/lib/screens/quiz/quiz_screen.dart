@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/quiz_api_service.dart';
 import 'package:frontend/screens/main_screen.dart';
+import 'package:frontend/widgets/common/custom_dialog.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -60,7 +61,7 @@ class _QuizScreenState extends State<QuizScreen> {
       }
 
       if (_currentQuizNumber > _quizCount) {
-        _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다.');
+        _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다!');
       } else {
         _fetchNewQuiz();
       }
@@ -84,7 +85,7 @@ class _QuizScreenState extends State<QuizScreen> {
       // 서버로부터 받은 응답에서 "code"가 4008인 경우 처리
       if (quizData.containsKey('code') && quizData['code'] == '4008') {
         print("오늘 퀴즈 완료!");
-        _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다.');
+        _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다!');
 
         Navigator.pushReplacement(
           context,
@@ -100,7 +101,7 @@ class _QuizScreenState extends State<QuizScreen> {
     } catch (e) {
       print('Failed to fetch quiz data: $e');
 
-      _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다.');
+      _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다!');
     }
   }
 
@@ -186,125 +187,44 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  // 정답/오답 결과를 보여주는 다이얼로그 함수
+  // 정답/오답 결과를 보여주는 다이얼로그
   void _showResultDialog(bool isCorrect, int points,
       {bool isLastQuiz = false}) {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          title: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isCorrect)
-                    const Text(
-                      '🎉 정답! 축하합니다',
-                      style: TextStyle(
-                        color: Color(0xFF3A2E6A),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                      textAlign: TextAlign.center,
-                    )
-                  else
-                    const Text(
-                      '😭 오답입니다',
-                      style: TextStyle(
-                        color: Color(0xFF3A2E6A),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Divider(
-                color: Colors.grey,
-                thickness: 1,
-              ),
-            ],
-          ),
-          content: isCorrect
-              ? Text(
-                  '$points 포인트가 적립되었습니다',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                )
-              : const Text(
-                  '오답입니다',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                if (isLastQuiz) {
-                  _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다.');
-                }
-              },
-              child: const Text(
-                '확인',
-                style: TextStyle(color: Color(0xFF3A2E6A)),
-              ),
-            ),
-          ],
+        return CustomDialog(
+          title: isCorrect ? '🎉정답입니다' : '😭오답입니다',
+          message: isCorrect ? '$points 포인트가 적립되었습니다!' : '다음 문제로 넘어갈게요!',
+          buttonText: '확인',
+          onConfirm: () {
+            Navigator.of(context).pop();
+            if (isLastQuiz) {
+              _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다!');
+            }
+          },
         );
       },
     );
   }
 
-  // 오류 및 완료 다이얼로그를 통일해서 사용하는 함수
+  // 오류 및 완료 다이얼로그
   void _showCompletionOrErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          title: const Text(
-            '오늘의 퀴즈 완료',
-            style: TextStyle(
-              color: Color(0xFF3A2E6A),
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.black),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainScreen()),
-                );
-              },
-              child: const Text(
-                '확인',
-                style: TextStyle(color: Color(0xFF3A2E6A)),
+        return CustomDialog(
+          title: '오늘의 퀴즈 완료',
+          message: message,
+          buttonText: '확인',
+          onConfirm: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainScreen(),
               ),
-            ),
-          ],
+            );
+          },
         );
       },
     );

@@ -5,17 +5,18 @@ import 'package:flutter_client_sse/flutter_client_sse.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/member_api_service.dart';
-import 'package:frontend/api/sse_api_service.dart';
 import 'package:frontend/models/member_model.dart';
 import 'package:frontend/screens/attendance/attendance_screen.dart';
 import 'package:frontend/screens/news/news_main.dart';
 import 'package:frontend/screens/quiz/quiz_screen.dart';
 import 'package:frontend/screens/signin_screen.dart';
+import 'package:frontend/screens/stock_main/my_page.dart';
 import 'package:frontend/screens/stock_main/stock_main.dart';
 import 'package:frontend/widgets/common/card_button.dart';
 import 'package:frontend/widgets/common/image_button.dart';
 import 'package:frontend/widgets/notification/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -41,10 +42,9 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void startSseConnection() async {
-    // 액세스 토큰 가져오기
     String? accessToken = await storage.read(key: 'accessToken');
     final url = Uri.parse('$apiServerUrl/subscribe');
-    // SSE 구독 설정
+
     SSEClient.subscribeToSSE(
       method: SSERequestType.GET,
       url: '$apiServerUrl/subscribe',
@@ -55,28 +55,18 @@ class _MainScreenState extends State<MainScreen> {
         "Authorization": "Bearer $accessToken",
       },
     ).listen((event) {
-      // 서버에서 받은 이벤트 데이터 처리
       setState(() {
         sseData = event.data ?? "수신된 데이터가 없습니다";
       });
 
-      // 데이터가 JSON 형식인 경우 파싱
       try {
-        print("event data $event.data");
         if (_isJson(event.data)) {
-          print("ssseeee $sseData");
-          print(event.data);
           final parsedData = jsonDecode(event.data ?? '{}');
-          // final id = parsedData['id'];
           final stockName = parsedData['stockName'];
           final orderType = parsedData['orderType'];
           final price = parsedData['price'];
           String message =
               "$stockName 주식이 ${orderType == 'BUY' ? '구매' : '판매'}되었습니다. 가격: $price 원";
-          // 수신된 데이터 출력 또는 알림 표시
-          print(
-              "$stockName 주식이 ${orderType == 'BUY' ? '구매' : '판매'}되었습니다. 가격: $price 원");
-
           _notificationService.showNotification('0', '주식 알림', message);
         }
       } catch (e) {
@@ -86,7 +76,6 @@ class _MainScreenState extends State<MainScreen> {
       print("SSE 연결이 종료되었습니다.");
     }, onError: (error) {
       print("SSE 오류 발생: $error");
-      // 오류 발생 시 재연결 로직을 추가할 수 있습니다.
     });
   }
 
@@ -102,7 +91,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    // SSE 연결 종료
     SSEClient.unsubscribeFromSSE();
     super.dispose();
   }
@@ -117,7 +105,6 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final response = await MemberApiService().memberInfo();
       if (response.statusCode == 200) {
-        // 응답 본문을 UTF-8로 강제 디코딩
         final decodedResponse = utf8.decode(response.bodyBytes);
         return Member.fromJson(jsonDecode(decodedResponse));
       } else {
@@ -128,61 +115,25 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  // 퀴즈 완료 여부 확인 및 퀴즈 페이지로 이동
-  Future<void> _checkQuizCompletion() async {
-    String? quizCompleted = await storage.read(key: 'quizCompleted');
-    if (quizCompleted == 'true') {
-      _showQuizCompletedDialog(); // 이미 완료한 경우 알림창 띄움
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const QuizScreen()),
-      );
-    }
+  // 날짜 포맷 메서드
+  String _getFormattedDate() {
+    DateTime now = DateTime.now();
+    DateFormat formatter = DateFormat('y년 M월 d일 EEEE', 'ko');
+    return formatter.format(now);
   }
 
-  // 퀴즈 완료 알림창
-  void _showQuizCompletedDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          title: const Text(
-            '오늘의 퀴즈를 모두 풀었습니다!',
-            style: TextStyle(
-              color: Color(0xFF3A2E6A),
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 알림창 닫기
-              },
-              child: const Text(
-                '확인',
-                style: TextStyle(color: Color(0xFF3A2E6A)),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  // 금액 포맷 메서드
+  String _formatCurrency(int amount) {
+    final formatter = NumberFormat('#,###', 'ko');
+    return formatter.format(amount);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF3A2E6A), // 배경색
+      backgroundColor: const Color(0xFF3A2E6A),
       body: Stack(
         children: [
-          // 회원 정보 섹션 (FutureBuilder 사용)
           FutureBuilder<Member>(
             future: memberInfoFuture,
             builder: (context, snapshot) {
@@ -199,61 +150,94 @@ class _MainScreenState extends State<MainScreen> {
                 );
               } else if (snapshot.hasData) {
                 final member = snapshot.data!;
-                return Positioned(
-                  top: 80,
-                  left: 30,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '2024년 9월 13일 금요일',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
+                // 이미지 결정 로직
+                String assetImage;
+                double roiValue =
+                    double.tryParse(member.roi) ?? 0; // 문자열을 숫자로 변환, 실패 시 0
+
+                if (roiValue > 0) {
+                  assetImage = 'assets/images/up.png';
+                } else if (roiValue < 0) {
+                  assetImage = 'assets/images/down.png';
+                } else {
+                  assetImage = 'assets/images/default.png';
+                }
+
+                return Stack(
+                  children: [
+                    Positioned(
+                      top: 80,
+                      left: 30,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getFormattedDate(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          GestureDetector(
+                            onTap: () {
+                              // 페이지 이동
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MyPage(),
+                                ),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${member.nickname}님의 자산',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${_formatCurrency(member.totalPrice)}원',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 35,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  '수익률 ${member.roi}%\n랭킹 ${member.rank}위',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 30),
-                      Text(
-                        '${member.nickname}님의 자산',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+
+                    // 이미지 표시
+                    Positioned(
+                      top: 200,
+                      right: -30,
+                      child: Image.asset(
+                        assetImage,
+                        height: 400,
                       ),
-                      Text(
-                        '${member.totalPrice}원',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 35,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '수익률 ${member.roi}%\n랭킹 ${member.rank}위',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               } else {
                 return const SizedBox();
               }
             },
-          ),
-
-          // 캐릭터 이미지
-          Positioned(
-            top: 200,
-            right: -30,
-            child: Image.asset(
-              'assets/images/default.png',
-              height: 400,
-            ),
           ),
 
           // 출석 챌린지 및 퀴즈 챌린지 버튼 (메인 화면)
@@ -281,7 +265,14 @@ class _MainScreenState extends State<MainScreen> {
                   title: '퀴즈 챌린지',
                   subscription: '퀴즈 풀고 포인트 받자!',
                   imagePath: 'assets/images/quiz.png',
-                  onPressed: _checkQuizCompletion, // 퀴즈 완료 여부 확인 후 이동
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -381,7 +372,14 @@ class _MainScreenState extends State<MainScreen> {
                         title: '퀴즈 챌린지',
                         subscription: '퀴즈 풀고 포인트 받자!',
                         imagePath: 'assets/images/quiz.png',
-                        onPressed: _checkQuizCompletion, // 퀴즈 완료 여부 확인 후 이동
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const QuizScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 
