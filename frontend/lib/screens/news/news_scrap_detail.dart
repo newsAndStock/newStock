@@ -43,12 +43,22 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
 
       // Delta 데이터를 Quill 문서로 변환
       if (decodedContent.isNotEmpty) {
-        final deltaJson = jsonDecode(decodedContent);
-        final doc = quill.Document.fromJson(deltaJson);
-        _controller = quill.QuillController(
-          document: doc,
-          selection: const TextSelection.collapsed(offset: 0),
-        );
+        try {
+          // Delta 형식인지 확인
+          final deltaJson = jsonDecode(decodedContent);
+          final doc = quill.Document.fromJson(deltaJson);
+          _controller = quill.QuillController(
+            document: doc,
+            selection: const TextSelection.collapsed(offset: 0),
+          );
+        } catch (e) {
+          // Delta 형식이 아니면 일반 텍스트로 처리
+          final doc = quill.Document()..insert(0, decodedContent);
+          _controller = quill.QuillController(
+            document: doc,
+            selection: const TextSelection.collapsed(offset: 0),
+          );
+        }
       }
 
       // 디코딩된 제목을 포함한 News 객체 반환
@@ -146,6 +156,23 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                     ),
                   ),
                 ),
+                // 드래그 힌트를 고정된 위치로 이동
+                Positioned(
+                  top: 340,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 120,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                  ),
+                ),
+                // 드래그 가능한 내용
                 DraggableScrollableSheet(
                   initialChildSize: 0.75, // 초기 크기
                   minChildSize: 0.75, // 최소 크기
@@ -166,19 +193,7 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 드래그 힌트
-                            Center(
-                              child: Container(
-                                width: 120,
-                                height: 5,
-                                margin: const EdgeInsets.only(bottom: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 30), // 드래그 힌트와 내용 사이에 공간 추가
                             // 뉴스 제목
                             Text(
                               news.title,

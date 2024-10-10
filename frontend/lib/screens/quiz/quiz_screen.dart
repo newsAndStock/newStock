@@ -190,12 +190,15 @@ class _QuizScreenState extends State<QuizScreen> {
   // 정답/오답 결과를 보여주는 다이얼로그
   void _showResultDialog(bool isCorrect, int points,
       {bool isLastQuiz = false}) {
+    String correctAnswer = _currentQuiz!['answer'] ?? ''; // 현재 퀴즈의 정답
+
     showDialog(
       context: context,
       builder: (context) {
         return CustomDialog(
           title: isCorrect ? '🎉정답입니다' : '😭오답입니다',
-          message: isCorrect ? '$points 포인트가 적립되었습니다!' : '다음 문제로 넘어갈게요!',
+          message:
+              isCorrect ? '$points 포인트가 적립되었습니다!' : '정답은 "$correctAnswer"입니다.',
           buttonText: '확인',
           onConfirm: () {
             Navigator.of(context).pop();
