@@ -102,6 +102,10 @@ public class MemberStocksService {
             ROI= (double)(newPrice-oldPrice)/oldPrice*100;
         }
 
+        if (Math.abs(ROI) < 0.0001) {
+            ROI = 0.0;
+        }
+
         DecimalFormat df = new DecimalFormat("0.0");
         String formattedROI = df.format(ROI);
         totalPrice=deposit+newPrice;
