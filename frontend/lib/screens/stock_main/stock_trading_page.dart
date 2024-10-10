@@ -1362,7 +1362,23 @@ class _StockTradingPageState extends State<StockTradingPage>
               isBuy: true,
               isMarketOrder: true,
               onConfirm: () async {
-                // ... (기존 코드 유지)
+                String? accessToken = await storage.read(key: 'accessToken');
+                if (accessToken == null) {
+                  throw Exception('No access token found');
+                }
+                try {
+                  String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
+                      .format(DateTime.now());
+                  await MarketPriceApi.buyMarket(
+                    token: accessToken,
+                    stockCode: widget.stockCode,
+                    quantity: _quantity,
+                    orderTime: orderTime,
+                  );
+                  _showSuccessMessage('시장가 매수 신청이 완료되었습니다.');
+                } catch (e) {
+                  _showErrorDialog('오류', e.toString());
+                }
               },
             );
           }
