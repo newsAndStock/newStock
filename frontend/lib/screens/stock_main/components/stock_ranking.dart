@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/stock_ranking_api.dart';
 import 'package:frontend/screens/stock_main/stock_detail_page.dart';
+import 'package:intl/intl.dart';
 
 class StockItem {
   final String name;
@@ -47,6 +48,11 @@ class _StockPageComponentState extends State<StockPageComponent> {
   String? _error;
 
   final StockRankingApi _api = StockRankingApi();
+
+  String formatNumber(String numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(double.parse(numStr));
+  }
 
   @override
   void initState() {
@@ -210,6 +216,11 @@ class StockComponent extends StatelessWidget {
 
   const StockComponent({Key? key, required this.stockItem}) : super(key: key);
 
+  String formatNumber(String numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(double.parse(numStr));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -232,11 +243,11 @@ class StockComponent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                stockItem.price + '원',
+                formatNumber(stockItem.price) + '원',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                '${double.parse(stockItem.change) > 0 ? '+' : ''}${stockItem.change}원 (${stockItem.changePercentage}%)',
+                '${double.parse(stockItem.change) > 0 ? '+' : ''}${formatNumber(stockItem.change)}원 (${formatNumber(stockItem.changePercentage)}%)',
                 style: TextStyle(
                   color: double.parse(stockItem.change) > 0
                       ? Colors.red

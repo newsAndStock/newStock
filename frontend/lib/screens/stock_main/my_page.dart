@@ -6,6 +6,7 @@ import 'package:frontend/screens/stock_main/stock_detail_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/intl.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({Key? key}) : super(key: key);
@@ -73,6 +74,11 @@ class _MyPageState extends State<MyPage> {
     );
   }
 
+  String formatNumber(int numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(numStr);
+  }
+
   Widget _buildUserInfoCard(Map<String, dynamic> userData) {
     double roi = double.parse(userData['roi']);
     String imagePath;
@@ -138,9 +144,11 @@ class _MyPageState extends State<MyPage> {
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              _buildAccountItem('총자산', '${userData['totalPrice']}원'),
-              _buildAccountItem('예수금', '${userData['deposit']}원'),
-              _buildAccountItem('손익', '${userData['profitAndLoss']}원',
+              _buildAccountItem(
+                  '총자산', '${formatNumber(userData['totalPrice'])}원'),
+              _buildAccountItem('예수금', '${formatNumber(userData['deposit'])}원'),
+              _buildAccountItem(
+                  '손익', '${formatNumber(userData['profitAndLoss'])}원',
                   isProfit: userData['profitAndLoss'] >= 0),
               _buildAccountItem('수익률', '${userData['roi']}%',
                   isProfit: double.parse(userData['roi']) >= 0),
@@ -171,11 +179,13 @@ class _MyPageState extends State<MyPage> {
               ),
             ],
           ),
-          Divider(
-            color: Color(0xFFB4B4B4),
-            thickness: 0.2,
-            height: 1,
-          ),
+          label != '수익률'
+              ? Divider(
+                  color: Color(0xFFB4B4B4),
+                  thickness: 0.2,
+                  height: 1,
+                )
+              : SizedBox.shrink(),
         ],
       ),
     );
@@ -271,13 +281,13 @@ class _MyPageState extends State<MyPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('${stock['currentPrice']} 원',
+                        Text('${formatNumber(stock['currentPrice'])} 원',
                             style: TextStyle(fontSize: 14)),
-                        Text('${stock['userPrice']} 원',
+                        Text('${formatNumber(stock['userPrice'])} 원',
                             style: TextStyle(fontSize: 14)),
-                        Text('${stock['quantity']}주',
+                        Text('${formatNumber(stock['quantity'])}주',
                             style: TextStyle(fontSize: 14)),
-                        Text('${stock['profitAndLoss']}원',
+                        Text('${formatNumber(stock['profitAndLoss'])}원',
                             style: TextStyle(
                                 fontSize: 14,
                                 color: (stock['profitAndLoss'] as int) >= 0
