@@ -116,13 +116,15 @@ class NewsService {
   }
 
 // 모든 뉴스를 가져오는 메서드 (NewsAllScreen에서 사용)
-  Future<List<News>> fetchAllNews(String accessToken) async {
+  Future<List<News>> fetchAllNewsByCategory(
+      String accessToken, String category) async {
     try {
-      print("Requesting all news with Access Token: $accessToken");
-      print("API URL: $apiServerUrl/news/list");
+      print(
+          "Requesting news with Access Token: $accessToken and Category: $category");
+      print("API URL: $apiServerUrl/news/list?category=$category");
 
       final response = await http.get(
-        Uri.parse('$apiServerUrl/news/list'),
+        Uri.parse('$apiServerUrl/news/list?category=$category'),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -133,11 +135,18 @@ class NewsService {
       print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
+        // 응답 데이터를 UTF-8로 디코딩하여 처리
         String decodedBody = utf8.decode(response.bodyBytes);
         var data = jsonDecode(decodedBody);
 
         if (data is List) {
           return data.map((e) => News.fromJson(e)).toList();
+        } else if (data is Map<String, dynamic> &&
+            data.containsKey('content')) {
+          // 만약 'content' 키가 있는 맵 형식으로 응답이 온다면
+          return (data['content'] as List)
+              .map((e) => News.fromJson(e))
+              .toList();
         } else {
           throw Exception('Unexpected response format: ${data.runtimeType}');
         }

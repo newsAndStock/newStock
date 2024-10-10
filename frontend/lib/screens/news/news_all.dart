@@ -20,20 +20,26 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
   @override
   void initState() {
     super.initState();
-    futureNewsList = _loadAllNews(); // 뉴스 데이터 로드
+    _loadNewsByCategory(); // 카테고리에 맞는 뉴스 데이터 로드
   }
 
-  // 모든 뉴스를 가져오는 메서드
-  Future<List<News>> _loadAllNews() async {
+  // 카테고리별 뉴스를 가져오는 메서드
+  void _loadNewsByCategory() {
+    setState(() {
+      futureNewsList = _fetchAllNewsByCategory(selectedCategory);
+    });
+  }
+
+  // NewsService를 사용하여 카테고리별 뉴스 데이터를 가져오는 함수
+  Future<List<News>> _fetchAllNewsByCategory(String category) async {
     try {
-      // NewsService를 사용하여 모든 뉴스 데이터를 가져오는 함수 호출
       String? accessToken = await storage.read(key: 'accessToken');
       if (accessToken == null || accessToken.isEmpty) {
         throw Exception('No access token found. Please log in.');
       }
-      return await NewsService().fetchAllNews(accessToken);
+      return await NewsService().fetchAllNewsByCategory(accessToken, category);
     } catch (e) {
-      print('Failed to load all news: $e');
+      print('Failed to load news by category: $e');
       return [];
     }
   }
@@ -71,6 +77,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                     onCategorySelected: (category) {
                       setState(() {
                         selectedCategory = category;
+                        _loadNewsByCategory(); // 카테고리 변경 시 뉴스 데이터 로드
                       });
                     },
                   ),
@@ -91,10 +98,7 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('뉴스가 없습니다.'));
                 } else {
-                  // 필터링된 뉴스 리스트
-                  List<News> displayedNews = snapshot.data!
-                      .where((news) => news.category == selectedCategory)
-                      .toList();
+                  List<News> displayedNews = snapshot.data!;
 
                   return ListView.builder(
                     itemCount: displayedNews.length,
@@ -102,7 +106,6 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
                       final news = displayedNews[index];
                       return Column(
                         children: [
-                          // 뉴스 항목에만 패딩 적용
                           Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 30, vertical: 5),
@@ -152,7 +155,6 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // 왼쪽: 제목과 작성일자
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +182,6 @@ class _NewsAllScreenState extends State<NewsAllScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            // 오른쪽: 썸네일
             Container(
               width: 120,
               height: 90,
