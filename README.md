@@ -7,38 +7,49 @@
 
 ###   기획 배경
 - 경제 문맹이라는 신조어도 생길만큼 문제 심각
-- 대한 민국 국민 경제 이해령 평균 56.3점, 금융 문맹률 67%
+- 대한민국 국민 경제 이해령 평균 56.3점, 금융 문맹률 67%
 - 주식 시장과 경제 뉴스의 관계를 쉽게 학습할 수 있는 도구의 필요성 증가
-###  기획 의도
+###  목표
 - 사용자들이 경제 흐름을 파악하고 투자 의사 결정을 연습하며, 금융 지식을 자연스럽게 쌓을 수 있도록 지원
 - 주식 시장과 경제 뉴스의 관계를 쉽게 학습할 수 있는 도구 제공
 - 경제 문맹을 줄이기 위해, 실시간 경제 뉴스를 활용한 모의 주식 투자 학습 플랫폼 제공
 
 ## 🚀 기능 소개
+### 주식 페이지
+<img src="asset/buy.gif"  height="500"/> <img src="asset/sell.gif"  height="500"/> </br> <img src="asset/stock_main.gif"  height="500"/> <img src="asset/mypage.gif"  height="500"/> </br>
+- 주식 시장 데이터를 기반으로 한 모의 투자 기능
+- **우선순위 큐** 및 스케줄링을 통한 투자 관리 기능
+
 ### 뉴스 페이지
+<img src="asset/news_main.gif"  height="500"/> <img src="asset/search_scrap.gif"  height="500"/></br>
 - 최신 경제 뉴스를 실시간으로 제공
 - 자연어 처리 및 분산 처리 기반 뉴스 분석 기능
-
-### 주식 페이지
-- 주식 시장 데이터를 기반으로 한 모의 투자 기능
-- 우선순위 큐 및 스케줄링을 통한 투자 관리 기능
-### 출석 페이지
-- 출석 체크 및 사용자 참여도 향상 기능
+- Querydsl을 사용하여 빠른 검색 지원
 
 ### 퀴즈 페이지
-- 국은행 금융용어 700선과 한국 상장 주식 회사 관련 퀴즈 제공
+<img src="asset/quiz.gif"  height="500"/> </br>
+- 금융용어 700선과 한국 상장 주식 회사 관련 퀴즈 제공
 - 금융 지식과 경제 이해도 향상에 기여
+
+### 출석 페이지
+<img src="asset/roulette.gif"  height="500"/> </br>
+- 출석 체크 및 사용자 참여도 향상 기능
+
+### 회원 가입 및 로그인
+<img src="asset/enroll.gif"  height="500"/>  <img src="asset/login.gif"  height="500"/> 
 ## 💚 기대 효과
 - 경제 교육 강화
 - 투자 스킬 향상
 - 경제 이해도 증진
 - 투자 관심 유도 및 활성화
 
+
 ## 🏗️ 설계
 ###  와이어 프레임
 <img src="asset/figma.PNG" width="800" height="350"/></br>
 
 ###  시스템 아키텍쳐
+<img src="asset/architecture.PNG" width="800" height="350"/></br>
 
 ### ERD
 <img src="asset/erd.PNG" width="800" height="350"/></br>
@@ -50,7 +61,7 @@
 
 **FE Development**
 
-<img src="https://img.shields.io/badge/flutter-1572B6?style=for-the-badge&logo=flutter&logoColor=white"> <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=CSS3&logoColor=white">
+<img src="https://img.shields.io/badge/flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white"> <img src="https://img.shields.io/badge/dart-0175C2?style=for-the-badge&logo=dart&logoColor=white"> <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=CSS3&logoColor=white"> 
 
 **BE Development**
 
@@ -76,7 +87,8 @@
 
 **SUPPORT TOOL**
 
-<img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white"> <img src="https://img.shields.io/badge/jira-0052CC?style=for-the-badge&logo=jira&logoColor=white"> <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white"> <img src="https://img.shields.io/badge/intellij%20idea-000000?style=for-the-badge&logo=intellij-idea&logoColor=white"> <img src="https://img.shields.io/badge/visual%20studio%20code-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white"> <img src="https://img.shields.io/badge/jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white"> <img src="https://img.shields.io/badge/mattermost-0058CC?style=for-the-badge&logo=mattermost&logoColor=white"> <img src="https://img.shields.io/badge/swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=white"> <img src="https://img.shields.io/badge/datagrip-000000?style=for-the-badge&logo=datagrip&logoColor=white">
+<img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white"> <img src="https://img.shields.io/badge/jira-0052CC?style=for-the-badge&logo=jira&logoColor=white"> <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white"> <img src="https://img.shields.io/badge/intellij%20idea-000000?style=for-the-badge&logo=intellij-idea&logoColor=white"> <img src="https://img.shields.io/badge/visual%20studio%20code-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white"> <img src="https://img.shields.io/badge/jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white"> <img src="https://img.shields.io/badge/mattermost-0058CC?style=for-the-badge&logo=mattermost&logoColor=white"> <img src="https://img.shields.io/badge/swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=white"> <img src="https://img.shields.io/badge/datagrip-000000?style=for-the-badge&logo=datagrip&logoColor=white"> <img src="https://img.shields.io/badge/androidstudio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white">
+
 
 
 ## 👥 팀원 소개
