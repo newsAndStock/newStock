@@ -16,7 +16,7 @@
 
 ## 🚀 기능 소개
 ### 주식 페이지
-<img src="asset/buy.gif"  height="500"/> <img src="asset/sell.gif"  height="500"/> </br> <img src="asset/stock_main.gif"  height="500"/> <img src="asset/mypage.gif"  height="500"/> </br>
+<img src="asset/buy.gif"  height="500"/> <img src="asset/sell.gif"  height="500"/> <img src="asset/stock_main.gif"  height="500"/> <img src="asset/mypage.gif"  height="500"/> </br>
 - 주식 시장 데이터를 기반으로 한 모의 투자 기능
 - **우선순위 큐** 및 스케줄링을 통한 투자 관리 기능
 
