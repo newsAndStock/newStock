@@ -32,6 +32,14 @@ class _RankingPageState extends State<RankingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text('랭킹', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+      ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _rankingFuture,
         builder: (context, snapshot) {
@@ -58,41 +66,32 @@ class _RankingPageState extends State<RankingPage> {
                     (item) => item.value['nickname'] == widget.userNickname) +
                 1;
 
-            return CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  leading: IconButton(
-                    icon: Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  title: Text('랭킹', style: TextStyle(color: Colors.black)),
-                  backgroundColor: Colors.white,
-                  floating: true,
-                  pinned: true,
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '랭킹 갱신일: $rankingSaveTime',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          '현재 순위: ${userRank}위',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '랭킹 갱신일: $rankingSaveTime',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '현재 순위: ${userRank}위',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: rankings.length,
+                    itemBuilder: (context, index) {
                       final entry = rankings[index];
                       return _buildRankingItem(
                         entry.value['nickname'],
@@ -101,7 +100,6 @@ class _RankingPageState extends State<RankingPage> {
                         entry.key <= 3,
                       );
                     },
-                    childCount: rankings.length,
                   ),
                 ),
               ],
