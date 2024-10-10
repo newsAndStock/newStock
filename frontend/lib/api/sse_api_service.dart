@@ -20,48 +20,48 @@ class SseApiService {
 
   void _startConnectionCheckTimer() {
     // 30초마다 연결 상태를 체크하는 타이머를 설정
-    _connectionCheckTimer =
-        Timer.periodic(const Duration(seconds: 30), (timer) {
-      final currentTime = DateTime.now();
-      final durationSinceLastData =
-          currentTime.difference(_lastDataReceivedTime).inSeconds;
+    // _connectionCheckTimer =
+    //     Timer.periodic(const Duration(seconds: 30), (timer) {
+    //   final currentTime = DateTime.now();
+    //   final durationSinceLastData =
+    //       currentTime.difference(_lastDataReceivedTime).inSeconds;
 
-      if (durationSinceLastData > 30) {
-        // 30초 동안 데이터가 없으면 재연결
-        print("연결이 끊긴 것으로 감지됨. 재연결 시도 중...");
-        startListening();
-      }
-    });
+    //   if (durationSinceLastData > 30) {
+    //     // 30초 동안 데이터가 없으면 재연결
+    //     print("연결이 끊긴 것으로 감지됨. 재연결 시도 중...");
+    //     startListening();
+    //   }
+    // });
   }
 
   Stream<String> subscribe() async* {
-    while (true) {
-      try {
-        String? accessToken = await storage.read(key: 'accessToken');
-        final url = Uri.parse('$apiServerUrl/subscribe');
-        final request = http.Request('GET', url);
-        request.headers['Authorization'] = 'Bearer $accessToken';
-        final client = http.Client();
-        final response = await client.send(request);
+    // while (true) {
+    //   try {
+    //     String? accessToken = await storage.read(key: 'accessToken');
+    //     final url = Uri.parse('$apiServerUrl/subscribe');
+    //     final request = http.Request('GET', url);
+    //     request.headers['Authorization'] = 'Bearer $accessToken';
+    //     final client = http.Client();
+    //     final response = await client.send(request);
 
-        if (response.statusCode == 200) {
-          final stream = response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter());
+    //     if (response.statusCode == 200) {
+    //       final stream = response.stream
+    //           .transform(utf8.decoder)
+    //           .transform(const LineSplitter());
 
-          await for (var data in stream) {
-            print("데이터 수신: $data");
-            yield data; // 데이터가 수신될 때마다 스트림에 전달
-          }
-        } else {
-          print("연결 실패 - 상태 코드: ${response.statusCode}");
-          await Future.delayed(const Duration(seconds: 5)); // 실패 시 재연결 대기
-        }
-      } catch (e) {
-        print("Error occurred: $e. 재연결 대기 중...");
-        await Future.delayed(const Duration(seconds: 5)); // 재연결 대기 시간
-      }
-    }
+    //       await for (var data in stream) {
+    //         print("데이터 수신: $data");
+    //         yield data; // 데이터가 수신될 때마다 스트림에 전달
+    //       }
+    //     } else {
+    //       print("연결 실패 - 상태 코드: ${response.statusCode}");
+    //       await Future.delayed(const Duration(seconds: 5)); // 실패 시 재연결 대기
+    //     }
+    //   } catch (e) {
+    //     print("Error occurred: $e. 재연결 대기 중...");
+    //     await Future.delayed(const Duration(seconds: 5)); // 재연결 대기 시간
+    //   }
+    // }
   }
 
   void startListening() {

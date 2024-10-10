@@ -8,7 +8,7 @@ class NotificationService {
   Future<void> initialize() async {
     // Android 초기화 설정
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/newstock_logo_icon');
 
     // iOS 초기화 설정 추가
     const DarwinInitializationSettings initializationSettingsIOS =
