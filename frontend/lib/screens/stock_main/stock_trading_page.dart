@@ -57,6 +57,9 @@ class _StockTradingPageState extends State<StockTradingPage>
   CurrentStockPriceResponse? _currentStockPrice;
   Timer? _priceUpdateTimer;
 
+  late Future<int> _averagePriceFuture;
+  bool _isInitialPriceSet = false;
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +75,8 @@ class _StockTradingPageState extends State<StockTradingPage>
     _fetchCurrentStockPrice();
     _startPriceUpdateTimer();
     _checkFavoriteStatus();
+    _averagePriceFuture = _loadAveragePrice();
+    _limitPriceController.addListener(_onLimitPriceChanged);
 
     // 비동기 초기화를 위한 Future 사용
     Future.microtask(() async {
@@ -86,6 +91,17 @@ class _StockTradingPageState extends State<StockTradingPage>
       _loadAvailableBalance();
       _loadHoldingCounts(widget.stockCode);
     });
+  }
+
+  Future<int> _loadAveragePrice() async {
+    try {
+      Map<String, dynamic> response =
+          await InTradingApi().getAveragePrice(widget.stockCode);
+      return response['averagePrice'] as int;
+    } catch (e) {
+      print('Error loading average price: $e');
+      return 0;
+    }
   }
 
   void _handleTabChange() {
@@ -170,8 +186,7 @@ class _StockTradingPageState extends State<StockTradingPage>
       setState(() {
         _currentStockPrice = data;
 
-        // Calculate the middle price of the order book
-        if (_currentStockPrice != null) {
+        if (_currentStockPrice != null && !_isInitialPriceSet) {
           List<int> askPrices = _currentStockPrice!.askpMap.keys
               .map((e) => int.parse(e))
               .toList();
@@ -184,6 +199,7 @@ class _StockTradingPageState extends State<StockTradingPage>
             int lowestAsk = askPrices.reduce((a, b) => a < b ? a : b);
             _limitPrice = (highestBid + lowestAsk) / 2;
             _limitPriceController.text = _limitPrice.toStringAsFixed(0);
+            _isInitialPriceSet = true;
           }
         }
       });
@@ -202,7 +218,17 @@ class _StockTradingPageState extends State<StockTradingPage>
     _limitPriceController.dispose();
     _timer?.cancel();
     _priceUpdateTimer?.cancel();
+    _limitPriceController.removeListener(_onLimitPriceChanged);
     super.dispose();
+  }
+
+  void _onLimitPriceChanged() {
+    if (!_isMarketOrder) {
+      setState(() {
+        _limitPrice =
+            double.tryParse(_limitPriceController.text) ?? _limitPrice;
+      });
+    }
   }
 
   Future<void> _loadAvailableBalance() async {
@@ -658,24 +684,43 @@ class _StockTradingPageState extends State<StockTradingPage>
           Row(
             children: [
               Expanded(
-                child: Text(
-                  '${NumberFormat('#,###').format(_limitPrice.toInt())}',
+                child: TextField(
+                  controller: _limitPriceController,
+                  keyboardType: TextInputType.number,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Text(
-                '원',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.black,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    suffixText: '원',
+                    suffixStyle: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          Text(
-            '나의 평균 구매가 74,500원',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+          FutureBuilder<int>(
+            future: _averagePriceFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Text('평균 구매가 로딩 중...',
+                    style: TextStyle(fontSize: 12, color: Colors.grey));
+              } else if (snapshot.hasError) {
+                return Text('평균 구매가 정보를 불러올 수 없습니다',
+                    style: TextStyle(fontSize: 12, color: Colors.grey));
+              } else if (snapshot.hasData && snapshot.data! > 0) {
+                int averagePrice = snapshot.data!;
+                return Text(
+                  '나의 평균 구매가 ${NumberFormat('#,###').format(averagePrice)}원',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                );
+              } else {
+                return Text('평균 구매가 정보 없음',
+                    style: TextStyle(fontSize: 12, color: Colors.grey));
+              }
+            },
           ),
         ],
       ),
@@ -692,7 +737,9 @@ class _StockTradingPageState extends State<StockTradingPage>
     List<MapEntry<String, String>> bidpEntries =
         _currentStockPrice!.bidpMap.entries.toList();
 
-    askpEntries.sort((a, b) => int.parse(b.key).compareTo(int.parse(a.key)));
+    // 매도 호가는 낮은 가격부터 높은 가격 순으로 정렬
+    askpEntries.sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+    // 매수 호가는 높은 가격부터 낮은 가격 순으로 정렬
     bidpEntries.sort((a, b) => int.parse(b.key).compareTo(int.parse(a.key)));
 
     int maxVolume = [...askpEntries, ...bidpEntries]
@@ -700,7 +747,6 @@ class _StockTradingPageState extends State<StockTradingPage>
         .reduce((a, b) => a > b ? a : b);
 
     return Container(
-      height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -716,7 +762,10 @@ class _StockTradingPageState extends State<StockTradingPage>
       margin: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
         children: [
-          for (var i = 0; i < 5 && i < askpEntries.length; i++)
+          // 매도 호가 (높은 가격부터 낮은 가격 순으로 표시)
+          for (var i = askpEntries.length - 1;
+              i >= 0 && i >= askpEntries.length - 5;
+              i--)
             _buildPriceVolumeRow(
               volume: int.parse(askpEntries[i].value),
               price: int.parse(askpEntries[i].key),
@@ -724,7 +773,8 @@ class _StockTradingPageState extends State<StockTradingPage>
               isAsk: true,
             ),
           _buildCurrentPriceRow(int.parse(_currentStockPrice!.stckPrpr)),
-          for (var i = 0; i < 5 && i < bidpEntries.length; i++)
+          // 매수 호가 (높은 가격부터 낮은 가격 순으로 표시)
+          for (var i = 0; i < bidpEntries.length && i < 5; i++)
             _buildPriceVolumeRow(
               volume: int.parse(bidpEntries[i].value),
               price: int.parse(bidpEntries[i].key),

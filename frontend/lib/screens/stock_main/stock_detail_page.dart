@@ -11,6 +11,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'stock_trading_page.dart';
 import 'interactive_chart/mock_data.dart';
 import 'interactive_chart/src/candle_data.dart';
+import 'package:intl/intl.dart';
+import 'dart:async';
+import 'dart:ui' as ui;
 
 class StockData {
   final DateTime date;
@@ -61,6 +64,8 @@ class _StockDetailPageState extends State<StockDetailPage>
   static const int _pageSize = 10;
 
   CurrentStockPriceResponse? _currentStockPrice;
+  late ValueNotifier<CurrentStockPriceResponse?> _currentStockPriceNotifier;
+  Timer? _priceUpdateTimer;
 
   @override
   void initState() {
@@ -75,24 +80,25 @@ class _StockDetailPageState extends State<StockDetailPage>
     details = {};
     _fetchStockDetail();
     _fetchStockNews();
+    _currentStockPriceNotifier = ValueNotifier(null);
     _fetchCurrentStockPrice();
+    _startPriceUpdateTimer();
   }
 
   Future<void> _fetchCurrentStockPrice() async {
     try {
       final data =
           await StockDetailApi().getCurrentStockPrice(widget.stockCode);
-      setState(() {
-        _currentStockPrice = data;
-      });
+      _currentStockPriceNotifier.value = data;
     } catch (e) {
       print('Error fetching current stock price: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to load current stock price: ${e.toString()}')),
-      );
     }
+  }
+
+  void _startPriceUpdateTimer() {
+    _priceUpdateTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _fetchCurrentStockPrice();
+    });
   }
 
   // Future<void> _fetchStockNews({bool refresh = false}) async {
@@ -388,12 +394,15 @@ class _StockDetailPageState extends State<StockDetailPage>
       ),
       body: Column(
         children: [
-          Row(children: [
-            SizedBox(
-              width: 50,
-            ),
-            _buildStockInfo(),
-          ]),
+          ValueListenableBuilder<CurrentStockPriceResponse?>(
+            valueListenable: _currentStockPriceNotifier,
+            builder: (context, currentStockPrice, child) {
+              if (currentStockPrice == null) {
+                return CircularProgressIndicator();
+              }
+              return _buildStockInfo(currentStockPrice);
+            },
+          ),
           // _buildChartSection(),
           TabBar(
             controller: _tabController,
@@ -473,29 +482,35 @@ class _StockDetailPageState extends State<StockDetailPage>
     return stockData;
   }
 
-  Widget _buildStockInfo() {
-    if (_currentStockPrice == null) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    double priceChange = double.parse(_currentStockPrice!.prdyVrss);
-    double priceChangePercentage = double.parse(_currentStockPrice!.prdyCtrt);
+  Widget _buildStockInfo(CurrentStockPriceResponse currentStockPrice) {
+    double priceChange = double.parse(currentStockPrice.prdyVrss);
+    double priceChangePercentage = double.parse(currentStockPrice.prdyCtrt);
     Color changeColor = priceChange >= 0 ? Colors.red : Colors.blue;
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${_currentStockPrice!.stckPrpr}원',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            '${priceChange >= 0 ? '+' : ''}${_currentStockPrice!.prdyVrss}원 (${_currentStockPrice!.prdyCtrt}%)',
-            style: TextStyle(fontSize: 16, color: changeColor),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 50),
+      child: Container(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(
+                '${currentStockPrice.stckPrpr}원',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(
+                '${priceChange >= 0 ? '+' : ''}${currentStockPrice.prdyVrss}원 (${currentStockPrice.prdyCtrt}%)',
+                style: TextStyle(fontSize: 16, color: changeColor),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1259,7 +1274,7 @@ class PointPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr, // 여기를 수정
       textAlign: TextAlign.center,
     );
 

@@ -74,6 +74,15 @@ class _MyPageState extends State<MyPage> {
   }
 
   Widget _buildUserInfoCard(Map<String, dynamic> userData) {
+    double roi = double.parse(userData['roi']);
+    String imagePath;
+    if (roi > 0) {
+      imagePath = 'assets/images/up.png';
+    } else if (roi < 0) {
+      imagePath = 'assets/images/down.png';
+    } else {
+      imagePath = 'assets/images/default.png';
+    }
     return Container(
       padding: EdgeInsets.all(16),
       margin: EdgeInsets.all(16),
@@ -112,7 +121,8 @@ class _MyPageState extends State<MyPage> {
               ),
             ),
           ),
-          Icon(Icons.celebration, color: Colors.yellow, size: 48),
+          // Icon(Icons.celebration, color: Colors.yellow, size: 48),
+          Image.asset(imagePath, width: 70, height: 70),
         ],
       ),
     );
