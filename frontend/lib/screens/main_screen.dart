@@ -43,7 +43,6 @@ class _MainScreenState extends State<MainScreen> {
 
   void startSseConnection() async {
     String? accessToken = await storage.read(key: 'accessToken');
-    final url = Uri.parse('$apiServerUrl/subscribe');
 
     SSEClient.subscribeToSSE(
       method: SSERequestType.GET,
@@ -65,7 +64,6 @@ class _MainScreenState extends State<MainScreen> {
           final stockName = parsedData['stockName'];
           final orderType = parsedData['orderType'];
           final quantity = parsedData['quantity'];
-          final price = parsedData['price'];
           String message =
               "$stockName $quantity주 ${orderType == 'BUY' ? '매수' : '매도'} 거래가 채결되었습니다.";
           _notificationService.showNotification('0', '주식 알림', message);
