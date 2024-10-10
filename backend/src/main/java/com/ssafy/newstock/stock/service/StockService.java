@@ -2,7 +2,7 @@ package com.ssafy.newstock.stock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.newstock.common.util.WebClientUtil;
+import com.ssafy.newstock.common.util.WebClientUtil2;
 import com.ssafy.newstock.memberstocks.repository.MemberStocksRepository;
 import com.ssafy.newstock.stock.controller.response.*;
 import com.ssafy.newstock.stock.domain.StockInfo;
@@ -30,7 +30,7 @@ public class StockService {
     private final MinuteStockInfoRepository minuteStockInfoRepository;
     private final StockRepository stockRepository;
     private final MemberStocksRepository memberStocksRepository;
-    private final WebClientUtil webClientUtil;
+    private final WebClientUtil2 webClientUtil;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
