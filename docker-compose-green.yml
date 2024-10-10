@@ -13,6 +13,8 @@ services:
       - /home/ubuntu/redis.conf:/etc/redis/redis.conf
       - redisVolume:/data  # redisVolume을 /data에 마운트
     command: ["redis-server", "/etc/redis/redis.conf"]  # 설정 파일 로드
+    logging:
+      driver: "none"  # 로그를 비활성화합니다.
   green:
     image: ${imageTag}
     container_name: green
@@ -36,6 +38,8 @@ services:
             - MARKETINDEX_API_KEY=${MARKETINDEX_API_KEY}
             - REDIS_PASSWORD=${REDIS_PASSWORD}
     network_mode: host  # Host 모드 사용
+    logging:
+      driver: "none"  # 로그를 비활성화합니다.
 
 volumes:
   redisVolume: {}  # Redis 볼륨 정의
