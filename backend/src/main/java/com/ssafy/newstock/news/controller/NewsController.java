@@ -7,9 +7,6 @@ import com.ssafy.newstock.news.controller.response.NewsResponse;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
 import com.ssafy.newstock.news.service.NewsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,8 +29,8 @@ public class NewsController {
     }
 
     @GetMapping("/news/list")
-    public Page<NewsDetailResponse> getNewsList(@RequestParam(required = false) String category, @PageableDefault(size = 30) Pageable pageable) {
-        return newsService.newsList(category, pageable);
+    public List<NewsDetailResponse> getNewsList(@RequestParam String category) {
+        return newsService.newsList(category);
     }
 
     @GetMapping("/news/detail")
