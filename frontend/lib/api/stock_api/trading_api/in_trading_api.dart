@@ -138,4 +138,35 @@ class InTradingApi {
       throw Exception('Failed to load selling stocks: ${e.toString()}');
     }
   }
+
+  Future<Map<String, int>> getAveragePrice(String stockCode) async {
+    final url =
+        Uri.parse('$apiServerUrl/member/averagePrice?stockCode=${stockCode}');
+
+    String? accessToken = await storage.read(key: 'accessToken');
+    if (accessToken == null) {
+      throw Exception('No access token found');
+    }
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse =
+            jsonDecode(utf8.decode(response.bodyBytes));
+        return Map<String, int>.from(jsonResponse);
+      } else {
+        throw Exception(
+            'Failed to load average prices: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load average prices: ${e.toString()}');
+    }
+  }
 }
