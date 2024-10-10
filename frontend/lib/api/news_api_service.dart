@@ -199,48 +199,25 @@ class NewsService {
 
   // 스크랩된 뉴스 불러오기 (GET 요청)
   Future<News> fetchScrap(String accessToken, String scrapId) async {
-    try {
-      // 디버깅용으로 요청 정보 출력
-      print(
-          "Fetching scrap with Access Token: $accessToken for scrapId: $scrapId");
-      print("API URL: $apiServerUrl/scrap/$scrapId");
+    final response = await http.get(
+      Uri.parse('$apiServerUrl/scrap/$scrapId'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+    );
 
-      final response = await http.get(
-        Uri.parse('$apiServerUrl/scrap/$scrapId'),
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      // 응답 상태 코드와 내용을 출력하여 디버깅을 돕습니다.
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
-      if (response.statusCode == 200) {
-        String decodedBody = utf8.decode(response.bodyBytes);
-        var data = jsonDecode(decodedBody);
-
-        // JSON 데이터를 모델로 변환
-        return News.fromJson(data);
-      } else {
-        throw Exception(
-            'Failed to fetch scrap: ${response.statusCode} - ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      throw Exception('Failed to fetch scrap: $e');
+    if (response.statusCode == 200) {
+      return News.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to fetch scrap: ${response.statusCode}');
     }
   }
 
   // 스크랩 업데이트 메서드 추가
   Future<void> updateScrap(
-      String accessToken, String scrapId, String content) async {
+      String accessToken, String scrapId, String contentJson) async {
     try {
-      // 디버깅용으로 요청 정보 출력
-      print(
-          "Updating scrap with Access Token: $accessToken for scrapId: $scrapId");
-      print("API URL: $apiServerUrl/scrap");
-
       final response = await http.put(
         Uri.parse('$apiServerUrl/scrap'),
         headers: {
@@ -249,20 +226,14 @@ class NewsService {
         },
         body: jsonEncode({
           'scrapId': scrapId,
-          'content': content,
+          'content': contentJson, // Delta JSON으로 변환된 데이터를 전송
         }),
       );
 
-      // 응답 상태 코드와 내용을 출력하여 디버깅을 돕습니다.
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
       if (response.statusCode != 200) {
-        throw Exception(
-            'Failed to update scrap: ${response.statusCode} - ${response.reasonPhrase}');
+        throw Exception('Failed to update scrap: ${response.statusCode}');
       }
     } catch (e) {
-      print('Failed to update scrap: $e');
       throw Exception('Failed to update scrap: $e');
     }
   }

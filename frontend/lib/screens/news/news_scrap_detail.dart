@@ -1,9 +1,10 @@
+import 'dart:convert'; // UTF-8 디코딩을 위해 추가
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:frontend/api/news_api_service.dart';
 import 'package:frontend/models/news_model.dart';
 import 'package:frontend/screens/news/news_my_scrap.dart';
-import 'package:frontend/screens/news/news_scrap.dart';
 
 class NewsScrapDetailScreen extends StatefulWidget {
   final String scrapId; // 스크랩 ID
@@ -18,6 +19,7 @@ class NewsScrapDetailScreen extends StatefulWidget {
 class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
   final storage = FlutterSecureStorage();
   late Future<News> newsDetailFuture;
+  late quill.QuillController _controller;
 
   @override
   void initState() {
@@ -33,7 +35,24 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
       }
 
       // 스크랩 상세 정보 가져오기
-      return await NewsService().fetchScrap(accessToken, widget.scrapId);
+      final news = await NewsService().fetchScrap(accessToken, widget.scrapId);
+
+      // UTF-8로 콘텐츠와 제목을 디코딩
+      String decodedContent = utf8.decode(news.content.codeUnits);
+      String decodedTitle = utf8.decode(news.title.codeUnits);
+
+      // Delta 데이터를 Quill 문서로 변환
+      if (decodedContent.isNotEmpty) {
+        final deltaJson = jsonDecode(decodedContent);
+        final doc = quill.Document.fromJson(deltaJson);
+        _controller = quill.QuillController(
+          document: doc,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+      }
+
+      // 디코딩된 제목을 포함한 News 객체 반환
+      return news.copyWith(title: decodedTitle);
     } catch (e) {
       print('Failed to load scrap detail: $e');
       throw e; // 에러 발생 시 다시 던져서 FutureBuilder가 처리하게 함
@@ -175,13 +194,11 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                               color: Color.fromARGB(255, 201, 201, 201),
                             ),
                             const SizedBox(height: 20),
-                            // 뉴스 내용
-                            Text(
-                              news.content,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                height: 1.5,
-                              ),
+                            // Delta 형식의 뉴스 내용 출력
+                            quill.QuillEditor(
+                              controller: _controller,
+                              scrollController: ScrollController(),
+                              focusNode: FocusNode(),
                             ),
                             const SizedBox(height: 90),
                           ],
@@ -198,37 +215,6 @@ class _NewsScrapDetailScreenState extends State<NewsScrapDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 수정 버튼
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NewsScrapScreen(
-                                      scrapId: widget.scrapId), // scrapId 전달
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(
-                                  255, 218, 218, 218), // 회색 배경
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                            ),
-                            child: const Text(
-                              '편집',
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 16),
-                            ),
-                          ),
-                        ),
-                      ),
-
                       // 삭제 버튼
                       Expanded(
                         child: Padding(
