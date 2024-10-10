@@ -17,12 +17,7 @@ public class KeyWordService {
     }
 
     public List<String> getPopularKeywords(String date) {
-        List<PopularWord> popularWords=keyWordRepository.findTop10ByDateOrderByCountDesc(date);
-        List<String> words=new ArrayList<>();
-        for(PopularWord popularWord:popularWords){
-            words.add(popularWord.getWord());
-        }
 
-        return words;
+        return keyWordRepository.findTop10DistinctWordsByDateOrderByCountDesc(date);
     }
 }
