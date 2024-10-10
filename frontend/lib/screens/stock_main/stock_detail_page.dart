@@ -31,8 +31,7 @@ class StockDetailPage extends StatefulWidget {
   final String stockCode;
 
   const StockDetailPage(
-      {Key? key, required this.stockName, required this.stockCode})
-      : super(key: key);
+      {super.key, required this.stockName, required this.stockCode});
 
   @override
   _StockDetailPageState createState() => _StockDetailPageState();
@@ -54,7 +53,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   bool _isLoadingday = false;
   bool _isLoadingweek = false;
   bool _isLoadingmonth = false;
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   late Map<dynamic, dynamic> details;
 
   List<Map<String, dynamic>> _newsData = [];
@@ -85,6 +84,14 @@ class _StockDetailPageState extends State<StockDetailPage>
     _startPriceUpdateTimer();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _priceUpdateTimer?.cancel(); // 타이머 취소
+    _currentStockPriceNotifier.dispose(); // ValueNotifier 해제
+    super.dispose();
+  }
+
   Future<void> _fetchCurrentStockPrice() async {
     try {
       final data =
@@ -96,7 +103,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   void _startPriceUpdateTimer() {
-    _priceUpdateTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _priceUpdateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _fetchCurrentStockPrice();
     });
   }
@@ -371,12 +378,6 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -386,7 +387,7 @@ class _StockDetailPageState extends State<StockDetailPage>
         actions: [
           IconButton(
             icon: _isLoading
-                ? CircularProgressIndicator()
+                ? const CircularProgressIndicator()
                 : Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
             onPressed: _isLoading ? null : _toggleFavorite,
           ),
@@ -398,7 +399,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             valueListenable: _currentStockPriceNotifier,
             builder: (context, currentStockPrice, child) {
               if (currentStockPrice == null) {
-                return CircularProgressIndicator();
+                return const CircularProgressIndicator();
               }
               return _buildStockInfo(currentStockPrice);
             },
@@ -409,8 +410,9 @@ class _StockDetailPageState extends State<StockDetailPage>
             tabs: [
               Tab(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
-                  child: Text(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
+                  child: const Text(
                     '차트',
                     style: TextStyle(fontSize: 16), // 글씨 크기 증가
                   ),
@@ -418,8 +420,9 @@ class _StockDetailPageState extends State<StockDetailPage>
               ),
               Tab(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
-                  child: Text(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
+                  child: const Text(
                     '종목 정보',
                     style: TextStyle(fontSize: 16), // 글씨 크기 증가
                   ),
@@ -427,8 +430,9 @@ class _StockDetailPageState extends State<StockDetailPage>
               ),
               Tab(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
-                  child: Text(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10), // 라벨 좌우 여백 추가
+                  child: const Text(
                     '관련 뉴스',
                     style: TextStyle(fontSize: 16), // 글씨 크기 증가
                   ),
@@ -455,7 +459,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   List<StockData> generateMockStockData() {
     final random = Random();
     final List<StockData> stockData = [];
-    DateTime currentDate = DateTime.now().subtract(Duration(days: 30));
+    DateTime currentDate = DateTime.now().subtract(const Duration(days: 30));
     double lastClose = 100.0;
 
     for (int i = 0; i < 30; i++) {
@@ -476,7 +480,7 @@ class _StockDetailPageState extends State<StockDetailPage>
       ));
 
       lastClose = close;
-      currentDate = currentDate.add(Duration(days: 1));
+      currentDate = currentDate.add(const Duration(days: 1));
     }
 
     return stockData;
@@ -494,7 +498,7 @@ class _StockDetailPageState extends State<StockDetailPage>
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 50),
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,10 +507,11 @@ class _StockDetailPageState extends State<StockDetailPage>
               padding: const EdgeInsets.only(left: 16.0),
               child: Text(
                 '${formatNumber(currentStockPrice.stckPrpr)}원',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: Text(
@@ -521,7 +526,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Widget _buildChartSection() {
-    return Container(
+    return SizedBox(
       height: 300,
       child: Stack(
         children: [
@@ -548,7 +553,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   Widget _buildCandlestickChart() {
     final selectedData = _getSelectedData();
     if (selectedData == null || selectedData.isEmpty) {
-      return Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
+      return const Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
     }
 
     List<Candle> candles = selectedData.map((item) {
@@ -604,7 +609,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   Widget _buildLineChart() {
     final selectedData = _getSelectedData();
     if (selectedData == null || selectedData.isEmpty) {
-      return Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
+      return const Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.'));
     }
 
     List<FlSpot> spots = selectedData.asMap().entries.map((entry) {
@@ -647,11 +652,11 @@ class _StockDetailPageState extends State<StockDetailPage>
                 isCurved: true,
                 color: Colors.blue,
                 barWidth: 2,
-                dotData: FlDotData(show: false),
+                dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(show: false),
               ),
             ],
-            titlesData: FlTitlesData(
+            titlesData: const FlTitlesData(
               bottomTitles:
                   AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -659,7 +664,7 @@ class _StockDetailPageState extends State<StockDetailPage>
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            gridData: FlGridData(show: false),
+            gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             lineTouchData: LineTouchData(
               enabled: true,
@@ -670,11 +675,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                     final date =
                         DateTime.parse(selectedData[flSpot.x.toInt()]['date']);
                     return LineTooltipItem(
-                      'Date : ${date.year}/${date.month}/${date.day}\n' +
-                          (selectedData[flSpot.x.toInt()]['time'] != null
-                              ? 'Time : ${selectedData[flSpot.x.toInt()]['time']}\n'
-                              : '') +
-                          'Price: ${flSpot.y.toStringAsFixed(0)}',
+                      'Date : ${date.year}/${date.month}/${date.day}\n${selectedData[flSpot.x.toInt()]['time'] != null ? 'Time : ${selectedData[flSpot.x.toInt()]['time']}\n' : ''}Price: ${flSpot.y.toStringAsFixed(0)}',
                       const TextStyle(color: Colors.white),
                     );
                   }).toList();
@@ -685,7 +686,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                   (LineChartBarData barData, List<int> spotIndexes) {
                 return spotIndexes.map((spotIndex) {
                   return TouchedSpotIndicatorData(
-                    FlLine(
+                    const FlLine(
                       color: Colors.grey,
                       strokeWidth: 2,
                       dashArray: [5, 5],
@@ -733,11 +734,11 @@ class _StockDetailPageState extends State<StockDetailPage>
       children: [
         Container(
           height: 50,
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
+              const Text(
                 '자세히 보기',
                 style: TextStyle(
                   fontSize: 16,
@@ -766,14 +767,15 @@ class _StockDetailPageState extends State<StockDetailPage>
                   _isLoadingday ||
                   _isLoadingweek ||
                   _isLoadingmonth
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : _showLineChart
                   ? _buildLineChart()
                   : _getSelectedData() != null &&
                           _getSelectedData()!.length >= 3
                       ? InteractiveChart(
                           candles: _convertToCandleData(_getSelectedData()!))
-                      : Center(child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.')),
+                      : const Center(
+                          child: Text('데이터를 불러오는 데 실패했습니다. 다시 시도해 주세요.')),
         ),
         _buildPeriodSelector(),
       ],
@@ -821,7 +823,7 @@ class _StockDetailPageState extends State<StockDetailPage>
               });
             },
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? Colors.blue[50] : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
@@ -842,7 +844,7 @@ class _StockDetailPageState extends State<StockDetailPage>
 
   Widget _buildStockInfoTab() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
     String safeToString(dynamic value) {
       if (value == null) return '정보 없음';
@@ -858,86 +860,86 @@ class _StockDetailPageState extends State<StockDetailPage>
       return safeToString(value);
     }
 
-    final TextStyle tileTextStyle = TextStyle(fontSize: 16);
+    const TextStyle tileTextStyle = TextStyle(fontSize: 16);
     return ListView(
       children: [
         ListTile(
-            title: Text('시장 구분', style: tileTextStyle),
+            title: const Text('시장 구분', style: tileTextStyle),
             trailing: Text(safeToString(details['marketIdCode']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('업종', style: tileTextStyle),
+            title: const Text('업종', style: tileTextStyle),
             trailing: Text(safeToString(details['industryCodeName']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('상장일', style: tileTextStyle),
+            title: const Text('상장일', style: tileTextStyle),
             trailing: Text(safeToString(details['listingDate']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('자본금', style: tileTextStyle),
+            title: const Text('자본금', style: tileTextStyle),
             trailing:
                 Text(safeToString(details['capital']), style: tileTextStyle)),
         ListTile(
-            title: Text('상장주식수', style: tileTextStyle),
+            title: const Text('상장주식수', style: tileTextStyle),
             trailing: Text(safeToString(details['listedStockCount']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('매출액', style: tileTextStyle),
+            title: const Text('매출액', style: tileTextStyle),
             trailing: Text(safeToString(details['salesRevenue']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('당기순이익', style: tileTextStyle),
+            title: const Text('당기순이익', style: tileTextStyle),
             trailing:
                 Text(safeToString(details['netIncome']), style: tileTextStyle)),
         ListTile(
-            title: Text('시가총액', style: tileTextStyle),
+            title: const Text('시가총액', style: tileTextStyle),
             trailing:
                 Text(safeToString(details['marketCap']), style: tileTextStyle)),
         ListTile(
-            title: Text('전일종가', style: tileTextStyle),
+            title: const Text('전일종가', style: tileTextStyle),
             trailing: Text(safeToString(details['previousClosePrice']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('250일 고가', style: tileTextStyle),
+            title: const Text('250일 고가', style: tileTextStyle),
             trailing: Text(safeToString(details['high250Price']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('250일 저가', style: tileTextStyle),
+            title: const Text('250일 저가', style: tileTextStyle),
             trailing: Text(safeToString(details['low250Price']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('연중 고가', style: tileTextStyle),
+            title: const Text('연중 고가', style: tileTextStyle),
             trailing: Text(safeToString(details['yearlyHighPrice']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('연중 저가', style: tileTextStyle),
+            title: const Text('연중 저가', style: tileTextStyle),
             trailing: Text(safeToString(details['yearlyLowPrice']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('배당금', style: tileTextStyle),
+            title: const Text('배당금', style: tileTextStyle),
             trailing: Text(safeToString(details['dividendAmount']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('배당수익률', style: tileTextStyle),
+            title: const Text('배당수익률', style: tileTextStyle),
             trailing: Text(safeToString(details['dividendYield']),
                 style: tileTextStyle)),
         ListTile(
-            title: Text('PER', style: tileTextStyle),
+            title: const Text('PER', style: tileTextStyle),
             trailing: Text(getFinancialData('per'), style: tileTextStyle)),
         ListTile(
-            title: Text('EPS', style: tileTextStyle),
+            title: const Text('EPS', style: tileTextStyle),
             trailing: Text(getFinancialData('eps'), style: tileTextStyle)),
         ListTile(
-            title: Text('PBR', style: tileTextStyle),
+            title: const Text('PBR', style: tileTextStyle),
             trailing: Text(getFinancialData('pbr'), style: tileTextStyle)),
         ListTile(
-            title: Text('BPS', style: tileTextStyle),
+            title: const Text('BPS', style: tileTextStyle),
             trailing: Text(getFinancialData('bps'), style: tileTextStyle)),
         ListTile(
-            title: Text('ROE', style: tileTextStyle),
+            title: const Text('ROE', style: tileTextStyle),
             trailing: Text(getFinancialData('roe'), style: tileTextStyle)),
         ListTile(
-            title: Text('ROA', style: tileTextStyle),
+            title: const Text('ROA', style: tileTextStyle),
             trailing: Text(getFinancialData('roa'), style: tileTextStyle)),
       ],
     );
@@ -945,11 +947,11 @@ class _StockDetailPageState extends State<StockDetailPage>
 
   Widget _buildNewsTab() {
     if (_isLoadingNews && _newsData.isEmpty) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_newsData.isEmpty && !_hasMoreNews) {
-      return Center(child: Text('관련 뉴스가 없습니다.'));
+      return const Center(child: Text('관련 뉴스가 없습니다.'));
     }
 
     return RefreshIndicator(
@@ -963,13 +965,13 @@ class _StockDetailPageState extends State<StockDetailPage>
               Future.microtask(() => _fetchStockNews());
             }
             return _hasMoreNews
-                ? Center(
+                ? const Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(8.0),
                       child: CircularProgressIndicator(),
                     ),
                   )
-                : SizedBox.shrink();
+                : const SizedBox.shrink();
           }
 
           final news = _newsData[index];
@@ -978,7 +980,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.pushReplacement(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => NewsDetailScreen(
@@ -996,12 +998,12 @@ class _StockDetailPageState extends State<StockDetailPage>
                       children: [
                         Text(
                           news['title'] ?? 'No Title',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           '${news['press'] ?? 'Unknown'} | ${news['date'] ?? 'No Date'}',
                           style:
@@ -1010,7 +1012,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                       ],
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child:
@@ -1022,10 +1024,10 @@ class _StockDetailPageState extends State<StockDetailPage>
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   print('Error loading image: $error');
-                                  return Icon(Icons.error, size: 60);
+                                  return const Icon(Icons.error, size: 60);
                                 },
                               )
-                            : Icon(Icons.article, size: 60),
+                            : const Icon(Icons.article, size: 60),
                   ),
                 ],
               ),
@@ -1221,12 +1223,8 @@ class _StockDetailPageState extends State<StockDetailPage>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
-        child: Text(
-          '거래하기',
-          style: TextStyle(color: Colors.white),
-        ),
         onPressed: () {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => StockTradingPage(
@@ -1241,8 +1239,12 @@ class _StockDetailPageState extends State<StockDetailPage>
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF3A2E6A),
-          minimumSize: Size(double.infinity, 50),
+          backgroundColor: const Color(0xFF3A2E6A),
+          minimumSize: const Size(double.infinity, 50),
+        ),
+        child: const Text(
+          '거래하기',
+          style: TextStyle(color: Colors.white),
         ),
       ),
     );
@@ -1291,7 +1293,7 @@ class PointPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: '$label: ${price.toStringAsFixed(0)}',
-        style: TextStyle(color: Colors.blue, fontSize: 10),
+        style: const TextStyle(color: Colors.blue, fontSize: 10),
       );
       textPainter.layout();
       textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 20));
@@ -1305,7 +1307,7 @@ class PointPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: '$label: ${price.toStringAsFixed(0)}',
-        style: TextStyle(color: Colors.blue, fontSize: 10),
+        style: const TextStyle(color: Colors.blue, fontSize: 10),
       );
       textPainter.layout();
 
