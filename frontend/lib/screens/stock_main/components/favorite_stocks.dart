@@ -3,6 +3,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class FavoriteStocks extends StatelessWidget {
   final Map<String, dynamic>? stocksData;
@@ -59,8 +60,8 @@ class FavoriteStocks extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 12),
                   child: _buildFavoriteStockItem(
                     stock['name'],
-                    stock['info']['currentPrice'] + '원',
-                    "${stock['info']['changedPrice']}원 (${stock['info']['changedPriceRate']}%)",
+                    '${formatNumber(stock['info']['currentPrice'])}원',
+                    '${formatNumber(stock['info']['changedPrice'])}원 (${stock['info']['changedPriceRate']}%)',
                   ),
                 ),
               );
@@ -69,6 +70,11 @@ class FavoriteStocks extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String formatNumber(String numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(double.parse(numStr));
   }
 
   Widget _buildFavoriteStockItem(String name, String price, String change) {

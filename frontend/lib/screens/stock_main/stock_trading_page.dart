@@ -123,6 +123,11 @@ class _StockTradingPageState extends State<StockTradingPage>
     });
   }
 
+  String formatNumberr(double numStr) {
+    final formatter = NumberFormat('#,##0.00', 'en_US');
+    return formatter.format(numStr);
+  }
+
   void _showConfirmationDialog(
       bool isBuy, bool isMarketOrder, Function onConfirm) {
     showDialog(
@@ -137,7 +142,7 @@ class _StockTradingPageState extends State<StockTradingPage>
               Text('종목: ${widget.stockName}'),
               Text('수량: $_quantity 주'),
               Text('주문 유형: ${isMarketOrder ? '시장가' : '지정가'}'),
-              if (!isMarketOrder) Text('지정가: $_limitPrice 원'),
+              if (!isMarketOrder) Text('지정가: ${formatNumberr(_limitPrice)} 원'),
               Text(
                   '예상 금액: ${(_isMarketOrder ? widget.currentPrice : _limitPrice) * _quantity} 원'),
             ],
@@ -198,7 +203,8 @@ class _StockTradingPageState extends State<StockTradingPage>
             int highestBid = bidPrices.reduce((a, b) => a > b ? a : b);
             int lowestAsk = askPrices.reduce((a, b) => a < b ? a : b);
             _limitPrice = (highestBid + lowestAsk) / 2;
-            _limitPriceController.text = _limitPrice.toStringAsFixed(0);
+            _limitPriceController.text =
+                formatNumber(_limitPrice.toStringAsFixed(0));
             _isInitialPriceSet = true;
           }
         }
@@ -376,11 +382,11 @@ class _StockTradingPageState extends State<StockTradingPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${_currentStockPrice!.stckPrpr}원',
+            '${formatNumber(_currentStockPrice!.stckPrpr)}원',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Text(
-            '${priceChange >= 0 ? '+' : ''}${_currentStockPrice!.prdyVrss}원 (${_currentStockPrice!.prdyCtrt}%)',
+            '${priceChange >= 0 ? '+' : ''}${formatNumber(_currentStockPrice!.prdyVrss)}원 (${formatNumber(_currentStockPrice!.prdyCtrt)}%)',
             style: TextStyle(fontSize: 16, color: changeColor),
           ),
         ],
@@ -521,7 +527,7 @@ class _StockTradingPageState extends State<StockTradingPage>
             children: [
               Text('$_balanceType님의 가용자산',
                   style: TextStyle(color: Colors.white, fontSize: 13)),
-              Text('${_availableBalance.toStringAsFixed(0)}원',
+              Text('${formatNumber(_availableBalance.toStringAsFixed(0))}원',
                   style: TextStyle(color: Colors.white, fontSize: 23)),
             ],
           )
@@ -1205,7 +1211,8 @@ class _StockTradingPageState extends State<StockTradingPage>
               _buildInfoRow(
                   '주문 유형', isMarketOrder ? '시장가' : '지정가', contentStyle),
               if (!isMarketOrder)
-                _buildInfoRow('지정가', '$_limitPrice 원', contentStyle),
+                _buildInfoRow(
+                    '지정가', '${formatNumberr(_limitPrice)} 원', contentStyle),
               _buildInfoRow(
                   '예상 금액',
                   '${NumberFormat('#,###').format((_isMarketOrder ? widget.currentPrice : _limitPrice) * _quantity)} 원',
@@ -1524,6 +1531,11 @@ class _StockTradingPageState extends State<StockTradingPage>
     );
   }
 
+  String formatNumber(String numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(double.parse(numStr));
+  }
+
   void _showConfirmationSheet(
       Map<String, dynamic> result, bool isBuy, bool isMarketOrder) {
     showModalBottomSheet(
@@ -1568,7 +1580,7 @@ class _StockTradingPageState extends State<StockTradingPage>
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     Text(
-                      '${(result['totalPrice'] / result['quantity']).toStringAsFixed(0)}원',
+                      '${formatNumber((result['totalPrice'] / result['quantity']).toStringAsFixed(0))}원',
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     )
                   ],

@@ -482,6 +482,11 @@ class _StockDetailPageState extends State<StockDetailPage>
     return stockData;
   }
 
+  String formatNumber(String numStr) {
+    final formatter = NumberFormat('#,##0', 'en_US');
+    return formatter.format(double.parse(numStr));
+  }
+
   Widget _buildStockInfo(CurrentStockPriceResponse currentStockPrice) {
     double priceChange = double.parse(currentStockPrice.prdyVrss);
     double priceChangePercentage = double.parse(currentStockPrice.prdyCtrt);
@@ -497,7 +502,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: Text(
-                '${currentStockPrice.stckPrpr}원',
+                '${formatNumber(currentStockPrice.stckPrpr)}원',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
@@ -505,7 +510,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: Text(
-                '${priceChange >= 0 ? '+' : ''}${currentStockPrice.prdyVrss}원 (${currentStockPrice.prdyCtrt}%)',
+                '${priceChange >= 0 ? '+' : ''}${formatNumber(currentStockPrice.prdyVrss)}원 (${currentStockPrice.prdyCtrt}%)',
                 style: TextStyle(fontSize: 16, color: changeColor),
               ),
             ),
@@ -848,7 +853,7 @@ class _StockDetailPageState extends State<StockDetailPage>
       var value = details[key];
       if (value == null) {
         print('$key is null in details map'); // 디버깅을 위한 로그
-        return '정보 없음yoyo';
+        return '정보 없음';
       }
       return safeToString(value);
     }
