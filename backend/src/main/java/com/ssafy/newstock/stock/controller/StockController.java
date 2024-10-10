@@ -41,7 +41,7 @@ public class StockController {
     }
 
     @GetMapping("/stocks/{stockCode}/current")
-    public CurrentStockPriceResponse getCurrentStockInfo(@PathVariable String stockCode) {
-        return stockService.getInquirePrice(stockCode);
+    public CurrentStockPriceResponse getCurrentStockInfo(@PathVariable String stockCode, @LoginMember Long memberId) throws Exception {
+        return stockService.getInquirePrice(stockCode,memberId);
     }
 }

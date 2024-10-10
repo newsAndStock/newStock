@@ -292,12 +292,12 @@ public class StockService {
         }
     }
 
-    public CurrentStockPriceResponse getInquirePrice(String stockCode) {
+    public CurrentStockPriceResponse getInquirePrice(String stockCode,Long memberId) {
         String url = "/uapi/domestic-stock/v1/quotations/inquire-price";
         Map<String, String> queryParams = Map.of("FID_COND_MRKT_DIV_CODE", "J", "FID_INPUT_ISCD", stockCode);
 
         try {
-            log.info("주식현재가시세 API 호출: {}", stockCode);
+            log.info("{} 유저가 주식현재가시세 API 호출: {}", memberId,stockCode);
 
             String response = webClientUtil.sendRequest(url, queryParams, Map.of("tr_id", "FHKST01010100"));
             JsonNode node = objectMapper.readTree(response).path("output");
@@ -306,18 +306,18 @@ public class StockService {
             String prdyVrss = node.path("prdy_vrss").asText();
             String prdyCtrt = node.path("prdy_ctrt").asText();
 
-            return getInquireAskingPrice(stockCode, stckPrpr, prdyVrss, prdyCtrt);
+            return getInquireAskingPrice(stockCode, stckPrpr, prdyVrss, prdyCtrt, memberId);
         } catch (Exception ex) {
             throw new RuntimeException("주식현재가시세 API 호출 실패: " + stockCode, ex);
         }
     }
 
-    public CurrentStockPriceResponse getInquireAskingPrice(String stockCode, String stckPrpr, String prdyVrss, String prdyCtrt) {
+    public CurrentStockPriceResponse getInquireAskingPrice(String stockCode, String stckPrpr, String prdyVrss, String prdyCtrt, Long memberId) {
         String url = "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn";
         Map<String, String> queryParams = Map.of("FID_COND_MRKT_DIV_CODE", "J", "FID_INPUT_ISCD", stockCode);
 
         try {
-            log.info("주식현재가 호가/예상체결 API 호출: {}", stockCode);
+            log.info("{}유저가 주식현재가 호가/예상체결 API 호출: {}", memberId, stockCode);
 
             String response = webClientUtil.sendRequest(url, queryParams, Map.of("tr_id", "FHKST01010200"));
             JsonNode node = objectMapper.readTree(response).path("output1");
