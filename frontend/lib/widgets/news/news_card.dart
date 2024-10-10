@@ -24,7 +24,7 @@ class NewsCard extends StatelessWidget {
         ),
       ),
       child: Container(
-        width: 350, // 가로 고정 값
+        width: 300, // 가로 고정 값
         height: 300, // 세로 고정 값
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(40),

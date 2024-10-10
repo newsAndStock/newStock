@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend/api/news_api_service.dart';
+import 'package:frontend/screens/news/news_my_scrap.dart';
 
 class NewsScrapScreen extends StatefulWidget {
   final String scrapId;
@@ -177,7 +178,12 @@ class _NewsScrapScreenState extends State<NewsScrapScreen> {
                                   content: Text('스크랩이 성공적으로 수정되었습니다.')),
                             );
 
-                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NewsMyScrapScreen(),
+                              ),
+                            );
                           } catch (e) {
                             print('Failed to update scrap: $e');
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +194,7 @@ class _NewsScrapScreenState extends State<NewsScrapScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3A2E6A),
                           padding: const EdgeInsets.symmetric(
-                              vertical: 16.0, horizontal: 50.0),
+                              vertical: 16.0, horizontal: 40.0),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(40.0),
                           ),
