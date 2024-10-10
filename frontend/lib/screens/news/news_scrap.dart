@@ -67,11 +67,32 @@ class _NewsScrapScreenState extends State<NewsScrapScreen> {
 
   // 형광펜 기능을 추가하는 메서드
   void _applyBackgroundColor() {
-    _controller?.formatSelection(quill.Attribute(
-      'background',
-      quill.AttributeScope.inline,
-      '#FFFF00', // 노란색 배경
-    ));
+    var currentSelection = _controller?.getSelectionStyle();
+
+    if (currentSelection != null &&
+        currentSelection.containsKey('background')) {
+      // If the background color is already applied, remove it
+      _controller?.formatSelection(
+          quill.Attribute('background', quill.AttributeScope.inline, null));
+    } else {
+      // Otherwise, apply the yellow background color
+      _controller?.formatSelection(quill.Attribute(
+          'background', quill.AttributeScope.inline, '#FFFF00'));
+    }
+  }
+
+  // 속성 토글 메서드 (적용/해제)
+  void _toggleAttribute(quill.Attribute attribute) {
+    var currentSelection = _controller?.getSelectionStyle();
+
+    if (currentSelection != null &&
+        currentSelection.containsKey(attribute.key)) {
+      // If the attribute is already applied, remove it
+      _controller?.formatSelection(quill.Attribute.clone(attribute, null));
+    } else {
+      // Otherwise, apply the attribute
+      _controller?.formatSelection(attribute);
+    }
   }
 
   @override
@@ -134,20 +155,19 @@ class _NewsScrapScreenState extends State<NewsScrapScreen> {
                       IconButton(
                         icon: const Icon(Icons.format_bold),
                         onPressed: () {
-                          _controller?.formatSelection(quill.Attribute.bold);
+                          _toggleAttribute(quill.Attribute.bold);
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.format_italic),
                         onPressed: () {
-                          _controller?.formatSelection(quill.Attribute.italic);
+                          _toggleAttribute(quill.Attribute.italic);
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.format_underline),
                         onPressed: () {
-                          _controller
-                              ?.formatSelection(quill.Attribute.underline);
+                          _toggleAttribute(quill.Attribute.underline);
                         },
                       ),
                       IconButton(

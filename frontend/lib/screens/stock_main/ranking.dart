@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/stock_api/my_page_api.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 
 class RankingPage extends StatefulWidget {
@@ -14,7 +13,6 @@ class RankingPage extends StatefulWidget {
 
 class _RankingPageState extends State<RankingPage> {
   late Future<Map<String, dynamic>> _rankingFuture;
-  static String apiServerUrl = dotenv.get("API_SERVER_URL");
   int userRank = 0;
 
   String formatNumber(String numStr) {

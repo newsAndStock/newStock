@@ -125,11 +125,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (isCorrect) {
         int points = (_currentQuizNumber == _quizCount) ? 400000 : 300000;
-        _showResultDialog(true, points);
+        _showResultDialog(true, points); // 정답 여부에 따라 다이얼로그 표시
       } else {
-        _showResultDialog(false, 0);
+        _showResultDialog(false, 0); // 오답일 때 다이얼로그 표시
       }
 
+      // **퀴즈 번호는 여기서만 증가시키도록 수정**
       _moveToNextQuiz(isCorrect);
     } catch (e) {
       print('Failed to submit answer: $e');
@@ -150,7 +151,17 @@ class _QuizScreenState extends State<QuizScreen> {
       }
 
       await _apiService.skipQuiz(accessToken);
-      _moveToNextQuiz(false); // 건너뛰기 했으므로 오답 처리
+
+      // 정답을 보여주는 다이얼로그 추가
+      String correctAnswer = _currentQuiz!['answer'] ?? '정답 없음';
+
+      // 정답을 보여주고 마지막 퀴즈인 경우 퀴즈 완료 메시지도 표시
+      _showResultDialog(false, 0,
+          message: '정답은 "$correctAnswer"입니다.',
+          isLastQuiz: _currentQuizNumber == _quizCount);
+
+      // **여기에서 다음 퀴즈로 넘어가는 부분을 추가**
+      _moveToNextQuiz(false);
     } catch (e) {
       print('Failed to skip quiz: $e');
       _showCompletionOrErrorDialog('퀴즈를 건너뛰는 중 오류가 발생했습니다.');
@@ -159,16 +170,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // 퀴즈를 제출하거나 건너뛸 때 다음 퀴즈로 이동
   void _moveToNextQuiz(bool isAnswerCorrect) async {
-    setState(() {
-      if (_currentQuizNumber < _quizCount) {
+    if (_currentQuizNumber < _quizCount) {
+      setState(() {
         _currentQuizNumber++;
-        _saveQuizNumber(); // 현재 퀴즈 번호 저장
-        _fetchNewQuiz();
-      } else {
-        _saveQuizNumber(); // 마지막 퀴즈 번호 저장
-        _showCompletionDialogWithPoints(isAnswerCorrect);
-      }
-    });
+      });
+      _saveQuizNumber(); // 현재 퀴즈 번호 저장
+      _fetchNewQuiz(); // 다음 퀴즈를 가져옴
+    } else {
+      _saveQuizNumber(); // 마지막 퀴즈 번호 저장
+      _showCompletionDialogWithPoints(isAnswerCorrect); // 완료 메시지
+    }
   }
 
   // 현재 퀴즈 번호를 저장
@@ -189,7 +200,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // 정답/오답 결과를 보여주는 다이얼로그
   void _showResultDialog(bool isCorrect, int points,
-      {bool isLastQuiz = false}) {
+      {String? message, bool isLastQuiz = false}) {
     String correctAnswer = _currentQuiz!['answer'] ?? ''; // 현재 퀴즈의 정답
 
     showDialog(
@@ -197,11 +208,14 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (context) {
         return CustomDialog(
           title: isCorrect ? '🎉정답입니다' : '😭오답입니다',
-          message:
-              isCorrect ? '$points 포인트가 적립되었습니다!' : '정답은 "$correctAnswer"입니다.',
+          message: message ??
+              (isCorrect
+                  ? '$points 포인트가 적립되었습니다!'
+                  : '정답은 "$correctAnswer"입니다.'),
           buttonText: '확인',
           onConfirm: () {
             Navigator.of(context).pop();
+            // 여기서는 퀴즈 번호를 증가시키지 않음
             if (isLastQuiz) {
               _showCompletionOrErrorDialog('오늘의 퀴즈를 모두 풀었습니다!');
             }
@@ -211,7 +225,7 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // 오류 및 완료 다이얼로그
+  // 오류 및 완료 다이얼로그 부
   void _showCompletionOrErrorDialog(String message) {
     showDialog(
       context: context,

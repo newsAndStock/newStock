@@ -9,8 +9,6 @@ import 'package:frontend/screens/stock_main/interactive_chart/interactive_chart.
 import 'package:frontend/api/stock_api/favorite_stock_api.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'stock_trading_page.dart';
-import 'interactive_chart/mock_data.dart';
-import 'interactive_chart/src/candle_data.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:ui' as ui;

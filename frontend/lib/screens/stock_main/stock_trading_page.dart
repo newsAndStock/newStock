@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 import 'dart:async';
 import 'package:frontend/api/stock_api/stock_detail_api.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StockTradingPage extends StatefulWidget {
   final String stockName;
@@ -373,7 +372,6 @@ class _StockTradingPageState extends State<StockTradingPage>
     }
 
     double priceChange = double.parse(_currentStockPrice!.prdyVrss);
-    double priceChangePercentage = double.parse(_currentStockPrice!.prdyCtrt);
     Color changeColor = priceChange >= 0 ? Colors.red : Colors.blue;
 
     return Padding(

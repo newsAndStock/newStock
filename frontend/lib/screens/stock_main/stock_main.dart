@@ -10,13 +10,10 @@ import 'components/favorite_stocks.dart';
 import 'components/stock_newsComponent.dart';
 import 'components/stock_ranking.dart';
 import 'stock_search_page.dart';
-import 'my_page.dart';
 import 'stock_detail_page.dart';
 import 'market_index_page.dart';
 import 'package:frontend/screens/notification_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import 'components/stock_newsComponent.dart';
 
 class StockMainPage extends StatefulWidget {
   const StockMainPage({super.key});

@@ -3,9 +3,6 @@ import 'package:frontend/api/stock_api/my_page_api.dart';
 import 'package:frontend/screens/stock_main/components/in_contract_component.dart';
 import 'package:frontend/screens/stock_main/ranking.dart';
 import 'package:frontend/screens/stock_main/stock_detail_page.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 
 class MyPage extends StatefulWidget {
@@ -18,7 +15,6 @@ class MyPage extends StatefulWidget {
 class _MyPageState extends State<MyPage> {
   late Future<Map<String, dynamic>> _userDataFuture;
   late Future<List<Map<String, dynamic>>> _stockHelds;
-  static String apiServerUrl = dotenv.get("API_SERVER_URL");
 
   @override
   void initState() {
