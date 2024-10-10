@@ -4,7 +4,6 @@ class News {
   final String title;
   final String createDate;
   final String date;
-
   final String content;
   final String press;
   final String imageUrl;
@@ -52,5 +51,30 @@ class News {
       'imageUrl': imageUrl,
       'category': category,
     };
+  }
+
+  // copyWith 메서드 추가
+  News copyWith({
+    String? newsId,
+    int? scrapId,
+    String? title,
+    String? createDate,
+    String? date,
+    String? content,
+    String? press,
+    String? imageUrl,
+    String? category,
+  }) {
+    return News(
+      newsId: newsId ?? this.newsId,
+      scrapId: scrapId ?? this.scrapId,
+      title: title ?? this.title,
+      createDate: createDate ?? this.createDate,
+      date: date ?? this.date,
+      content: content ?? this.content,
+      press: press ?? this.press,
+      imageUrl: imageUrl ?? this.imageUrl,
+      category: category ?? this.category,
+    );
   }
 }

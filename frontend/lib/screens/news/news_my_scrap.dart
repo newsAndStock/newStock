@@ -153,8 +153,7 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
                       ),
                     ),
                     // 스크랩된 뉴스 리스트
-                    Container(
-                      height: 400, // 원하는 높이로 설정
+                    Expanded(
                       child: FutureBuilder<List<News>>(
                         future: scrapedNewsFuture,
                         builder: (context, snapshot) {
@@ -185,8 +184,13 @@ class _NewsMyScrapScreenState extends State<NewsMyScrapScreen> {
                               snapshot.data!.isNotEmpty) {
                             final scrapedNews = snapshot.data!;
                             return ListView.builder(
-                              itemCount: scrapedNews.length,
+                              itemCount:
+                                  scrapedNews.length + 1, // 마지막에 여백 추가를 위해 +1
                               itemBuilder: (context, index) {
+                                if (index == scrapedNews.length) {
+                                  // 리스트 마지막에 여백 추가
+                                  return const SizedBox(height: 80);
+                                }
                                 final news = scrapedNews[index];
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
