@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +51,15 @@ public class TradingController {
     @PostMapping("/sell-limit")
     public ResponseEntity<Void> sellByLimit(@Valid @RequestBody TradeRequest sellRequest,
                                          @LoginMember Long memberId){
+        LocalTime now = LocalTime.now();
+        LocalTime start = LocalTime.of(9, 0);      // 9:00 AM
+        LocalTime end = LocalTime.of(15, 30);      // 3:30 PM
+
+        if (now.isBefore(start) || now.isAfter(end)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(null);  // Forbidden status with no body
+        }
+
         Member member = memberService.findById(memberId);
         try {
             tradingService.sellByLimit(member, sellRequest);
@@ -83,6 +93,16 @@ public class TradingController {
     @PostMapping("/buy-limit")
     public ResponseEntity<Void> buyByLimit(@Valid @RequestBody TradeRequest buyRequest,
                                            @LoginMember Long memberId) {
+
+        LocalTime now = LocalTime.now();
+        LocalTime start = LocalTime.of(9, 0);      // 9:00 AM
+        LocalTime end = LocalTime.of(15, 30);      // 3:30 PM
+
+        if (now.isBefore(start) || now.isAfter(end)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(null);  // Forbidden status with no body
+        }
+        
         Member member = memberService.findById(memberId);
         try {
             tradingService.buyByLimit(member, buyRequest);
