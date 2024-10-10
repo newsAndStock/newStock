@@ -6,10 +6,10 @@ class FixedPriceApi {
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
 
   //지정가 매도
-  static Future<Map<String, dynamic>> sellMarket({
+  static Future<void> sellMarket({
     required String token,
     required String stockCode,
-    required double bid,
+    required int bid,
     required int quantity,
     required String orderTime,
   }) async {
@@ -24,32 +24,33 @@ class FixedPriceApi {
         },
         body: jsonEncode({
           'stockCode': stockCode,
-          'bid': bid,
+          'bid': bid, // double을 int로 변환
           'quantity': quantity,
           'orderTime': orderTime,
         }),
       );
 
-      if (response.statusCode == 201) {
-        Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
-        return data;
-      } else {
-        throw Exception('');
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode != 201) {
+        throw Exception('지정가 매도 신청에 실패했습니다. 상태 코드: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('');
+      print('Error in sellMarket: $e');
+      rethrow;
     }
   }
 
   // 지정가 매수
-  static Future<Map<String, dynamic>> buyMarket({
+  static Future<void> buyMarket({
     required String token,
     required String stockCode,
     required double bid,
     required int quantity,
     required String orderTime,
   }) async {
-    final url = Uri.parse('$apiServerUrl/buy-market');
+    final url = Uri.parse('$apiServerUrl/buy-limit');
 
     try {
       final response = await http.post(
@@ -65,14 +66,11 @@ class FixedPriceApi {
           'orderTime': orderTime,
         }),
       );
-      if (response.statusCode == 201) {
-        Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
-        return data;
-      } else {
-        throw Exception('');
+      if (response.statusCode != 201) {
+        throw Exception('지정가 매수 신청에 실패했습니다.');
       }
     } catch (e) {
-      throw Exception('');
+      throw Exception('지정가 매수 신청 중 오류가 발생했습니다: ${e.toString()}');
     }
   }
 }
