@@ -1,7 +1,5 @@
-import 'dart:async'; // Timer 사용을 위한 라이브러리
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // SystemNavigator.pop() 사용을 위해 추가
 import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
 import 'package:flutter_client_sse/flutter_client_sse.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -29,41 +27,18 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final storage = const FlutterSecureStorage();
-  StreamController<Member> _memberStreamController = StreamController<Member>();
+  late Future<Member> memberInfoFuture;
   static String apiServerUrl = dotenv.get("API_SERVER_URL");
   final NotificationService _notificationService = NotificationService();
   String sseData = "데이터가 없습니다";
 
-  bool _isExitWarningShown = false; // 뒤로가기 버튼에 대한 경고 플래그
-  Timer? _exitTimer; // 뒤로가기 타이머
-
   @override
   void initState() {
     super.initState();
-    _startRefreshingMemberInfo(); // 1초마다 데이터 갱신
+    memberInfoFuture = _loadMemberInfo();
     requestNotificationPermission();
     startSseConnection();
     _notificationService.initialize();
-  }
-
-  @override
-  void dispose() {
-    _memberStreamController.close(); // StreamController 종료
-    _exitTimer?.cancel(); // 타이머 취소
-    SSEClient.unsubscribeFromSSE();
-    super.dispose();
-  }
-
-  // 1초마다 데이터를 갱신하는 스트림 생성
-  void _startRefreshingMemberInfo() {
-    Timer.periodic(Duration(seconds: 1), (timer) async {
-      try {
-        final memberInfo = await _loadMemberInfo();
-        _memberStreamController.add(memberInfo); // 새로운 데이터를 스트림에 추가
-      } catch (e) {
-        print('Error refreshing member info: $e');
-      }
-    });
   }
 
   void startSseConnection() async {
@@ -115,6 +90,12 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    SSEClient.unsubscribeFromSSE();
+    super.dispose();
+  }
+
   Future<void> requestNotificationPermission() async {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
@@ -148,306 +129,283 @@ class _MainScreenState extends State<MainScreen> {
     return formatter.format(amount);
   }
 
-  // 뒤로가기를 두 번 눌러야 앱 종료
-  Future<bool> _onWillPop() async {
-    if (_isExitWarningShown) {
-      _exitTimer?.cancel(); // 두 번째 클릭 시 타이머를 취소하고 앱 종료
-      return true;
-    } else {
-      _isExitWarningShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('한 번 더 누르면 앱이 종료됩니다.')),
-      );
-
-      // 2초 후에 경고 플래그 초기화
-      _exitTimer = Timer(Duration(seconds: 2), () {
-        _isExitWarningShown = false;
-      });
-
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop, // 뒤로가기 버튼 이벤트
-      child: Scaffold(
-        backgroundColor: const Color(0xFF3A2E6A),
-        body: Stack(
-          children: [
-            StreamBuilder<Member>(
-              stream: _memberStreamController.stream, // Stream 사용
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return const Positioned(
-                    top: 80,
-                    left: 30,
-                    child: Text(
-                      'Failed to load member info',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                  );
-                } else if (snapshot.hasData) {
-                  final member = snapshot.data!;
-                  // 이미지 결정 로직
-                  String assetImage;
-                  double roiValue =
-                      double.tryParse(member.roi) ?? 0; // 문자열을 숫자로 변환, 실패 시 0
+    return Scaffold(
+      backgroundColor: const Color(0xFF3A2E6A),
+      body: Stack(
+        children: [
+          FutureBuilder<Member>(
+            future: memberInfoFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return const Positioned(
+                  top: 80,
+                  left: 30,
+                  child: Text(
+                    'Failed to load member info',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                );
+              } else if (snapshot.hasData) {
+                final member = snapshot.data!;
+                // 이미지 결정 로직
+                String assetImage;
+                double roiValue =
+                    double.tryParse(member.roi) ?? 0; // 문자열을 숫자로 변환, 실패 시 0
 
-                  if (roiValue > 0) {
-                    assetImage = 'assets/images/up.png';
-                  } else if (roiValue < 0) {
-                    assetImage = 'assets/images/down.png';
-                  } else {
-                    assetImage = 'assets/images/default.png';
-                  }
-
-                  return Stack(
-                    children: [
-                      Positioned(
-                        top: 80,
-                        left: 30,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _getFormattedDate(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const MyPage(),
-                                  ),
-                                );
-                              },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${member.nickname}님의 자산',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${_formatCurrency(member.totalPrice)}원',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 35,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    '수익률 ${member.roi}%\n랭킹 ${member.rank}위',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 이미지 표시
-                      Positioned(
-                        top: 200,
-                        right: -30,
-                        child: Image.asset(
-                          assetImage,
-                          height: 400,
-                        ),
-                      ),
-                    ],
-                  );
+                if (roiValue > 0) {
+                  assetImage = 'assets/images/up.png';
+                } else if (roiValue < 0) {
+                  assetImage = 'assets/images/down.png';
                 } else {
-                  return const SizedBox();
+                  assetImage = 'assets/images/default.png';
                 }
-              },
-            ),
 
-            // 출석 챌린지 및 퀴즈 챌린지 버튼 (메인 화면)
-            Positioned(
-              bottom: 120,
-              left: 20,
-              right: 20,
-              child: Column(
-                children: [
-                  ImageButton(
-                    title: '출석 챌린지',
-                    subscription: '룰렛 돌리고 랜덤포인트 받자!',
-                    imagePath: 'assets/images/checkin.png',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AttendanceScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ImageButton(
-                    title: '퀴즈 챌린지',
-                    subscription: '퀴즈 풀고 포인트 받자!',
-                    imagePath: 'assets/images/quiz.png',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const QuizScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            DraggableScrollableSheet(
-              initialChildSize: 0.08,
-              minChildSize: 0.08,
-              maxChildSize: 0.95,
-              builder: (context, scrollController) {
                 return Stack(
                   children: [
-                    // 스크롤 가능한 컨텐츠
-                    Positioned.fill(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(40)),
-                        ),
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 30),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 70), // 힌트와 로고 아래 공간 확보
-                              // 주식 모의투자 카드
-                              CardButton(
-                                description: '뉴스톡에서 쉽고 안전하게',
-                                title: '주식 모의투자',
-                                imagePath: 'assets/images/stock.png',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const StockMainPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 30),
-                              // 경제신문 읽기 카드
-                              CardButton(
-                                description: '뉴스톡과 함께하는',
-                                title: '경제신문 읽기',
-                                imagePath: 'assets/images/news.png',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const NewsMainScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 30),
-                              // 로그아웃 버튼
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      await storage.delete(key: "accessToken");
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const SigninScreen()),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      backgroundColor: const Color(0xFF3A2E6A),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 15),
-                                    ),
-                                    child: const Text("로그아웃",
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 16)),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // 드래그 힌트 (회색 바)와 뉴스톡 로고는 상단에 고정
                     Positioned(
-                      top: 10,
-                      left: 0,
-                      right: 0,
+                      top: 80,
+                      left: 30,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Center(
-                            child: Container(
-                              width: 120,
-                              height: 5,
-                              margin: const EdgeInsets.only(bottom: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+                          Text(
+                            _getFormattedDate(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 30),
-                              child: Image.asset(
-                                'assets/images/NEWstock.png',
-                                height: 20,
-                              ),
+                          const SizedBox(height: 30),
+                          GestureDetector(
+                            onTap: () {
+                              // 페이지 이동
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyPage(),
+                                ),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${member.nickname}님의 자산',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${_formatCurrency(member.totalPrice)}원',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 35,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  '수익률 ${member.roi}%\n랭킹 ${member.rank}위',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
+
+                    // 이미지 표시
+                    Positioned(
+                      top: 200,
+                      right: -30,
+                      child: Image.asset(
+                        assetImage,
+                        height: 400,
+                      ),
+                    ),
                   ],
                 );
-              },
+              } else {
+                return const SizedBox();
+              }
+            },
+          ),
+
+          // 출석 챌린지 및 퀴즈 챌린지 버튼 (메인 화면)
+          Positioned(
+            bottom: 120,
+            left: 20,
+            right: 20,
+            child: Column(
+              children: [
+                ImageButton(
+                  title: '출석 챌린지',
+                  subscription: '룰렛 돌리고 랜덤포인트 받자!',
+                  imagePath: 'assets/images/checkin.png',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AttendanceScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                ImageButton(
+                  title: '퀴즈 챌린지',
+                  subscription: '퀴즈 풀고 포인트 받자!',
+                  imagePath: 'assets/images/quiz.png',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          DraggableScrollableSheet(
+            initialChildSize: 0.08,
+            minChildSize: 0.08,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return Stack(
+                children: [
+                  // 스크롤 가능한 컨텐츠
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(40)),
+                      ),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 70), // 힌트와 로고 아래 공간 확보
+                            // 주식 모의투자 카드
+                            CardButton(
+                              description: '뉴스톡에서 쉽고 안전하게',
+                              title: '주식 모의투자',
+                              imagePath: 'assets/images/stock.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const StockMainPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 30),
+                            // 경제신문 읽기 카드
+                            CardButton(
+                              description: '뉴스톡과 함께하는',
+                              title: '경제신문 읽기',
+                              imagePath: 'assets/images/news.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NewsMainScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 30),
+                            // 로그아웃 버튼
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    await storage.delete(key: "accessToken");
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SigninScreen()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    backgroundColor: const Color(0xFF3A2E6A),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 15),
+                                  ),
+                                  child: const Text("로그아웃",
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 16)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 드래그 힌트 (회색 바)와 뉴스톡 로고는 상단에 고정
+                  Positioned(
+                    top: 10,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 120,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30),
+                            child: Image.asset(
+                              'assets/images/NEWstock.png',
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }

@@ -19,7 +19,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'components/stock_newsComponent.dart';
 
 class StockMainPage extends StatefulWidget {
-  const StockMainPage({Key? key}) : super(key: key);
+  const StockMainPage({super.key});
 
   @override
   _StockMainPageState createState() => _StockMainPageState();
@@ -33,7 +33,7 @@ class _StockMainPageState extends State<StockMainPage> {
   bool _isLoadingFavStock = true;
   List<Map<String, dynamic>> _marketIndices = [];
   bool _isLoadingMarketIndex = true;
-  final FlutterSecureStorage storage = FlutterSecureStorage();
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
   final GlobalKey<NewsPageComponentState> _newsPageKey =
       GlobalKey<NewsPageComponentState>();
 
@@ -158,11 +158,11 @@ class _StockMainPageState extends State<StockMainPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MainScreen(),
+                      builder: (context) => const MainScreen(),
                     ),
                   );
                 },
-                child: Container(
+                child: SizedBox(
                   height: 20,
                   child: Image.asset(
                     'assets/images/NEWstock.png',
@@ -175,11 +175,11 @@ class _StockMainPageState extends State<StockMainPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => NotificationScreen(),
+                      builder: (context) => const NotificationScreen(),
                     ),
                   );
                 },
-                child: Container(
+                child: const SizedBox(
                   height: 30,
                   child: Icon(
                     Icons.notifications_outlined,
@@ -195,7 +195,7 @@ class _StockMainPageState extends State<StockMainPage> {
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -204,7 +204,7 @@ class _StockMainPageState extends State<StockMainPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -218,12 +218,13 @@ class _StockMainPageState extends State<StockMainPage> {
                       ),
                     ),
                     const SizedBox(height: 25),
-                    AccountSummary(),
+                    const AccountSummary(),
                     const SizedBox(height: 25),
                     _isLoadingMarketIndex
-                        ? Center(child: CircularProgressIndicator())
+                        ? const Center(child: CircularProgressIndicator())
                         : _marketIndices.isEmpty
-                            ? Center(child: Text('No market data available'))
+                            ? const Center(
+                                child: Text('No market data available'))
                             : FractionallySizedBox(
                                 widthFactor: 1.16,
                                 child: MarketIndex(
@@ -246,18 +247,18 @@ class _StockMainPageState extends State<StockMainPage> {
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: _isLoadingFavStock
-                    ? Center(child: CircularProgressIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : FavoriteStocks(
                         stocksData: _favoriteStockData,
                         onStockTap: _navigateToStockDetail,
                       ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text('관련 뉴스',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
@@ -276,24 +277,24 @@ class _StockMainPageState extends State<StockMainPage> {
                   });
                 },
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text('국내 실시간 랭킹',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     SizedBox(
                       height: 470,
                       child: StockPageComponent(),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                   ],
                 ),
               ),
