@@ -1048,16 +1048,15 @@ class _StockTradingPageState extends State<StockTradingPage>
                 try {
                   String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
                       .format(DateTime.now());
-                  Map<String, dynamic> result;
                   if (_isMarketOrder) {
-                    result = await MarketPriceApi.buyMarket(
+                    await MarketPriceApi.buyMarket(
                       token: accessToken,
                       stockCode: widget.stockCode,
                       quantity: _quantity,
                       orderTime: orderTime,
                     );
                   } else {
-                    result = await FixedPriceApi.buyMarket(
+                    await FixedPriceApi.buyMarket(
                       token: accessToken,
                       stockCode: widget.stockCode,
                       bid: _limitPrice,
@@ -1065,7 +1064,10 @@ class _StockTradingPageState extends State<StockTradingPage>
                       orderTime: orderTime,
                     );
                   }
-                  _showResultBottomSheet(result, true, _isMarketOrder);
+                  _showSuccessMessage(_isMarketOrder
+                      ? '시장가 매수 신청이 완료되었습니다.'
+                      : '지정가 매수 신청이 완료되었습니다.');
+                  Navigator.of(context).pop(); // 현재 화면을 닫습니다.
                 } catch (e) {
                   _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
                 }
@@ -1079,81 +1081,81 @@ class _StockTradingPageState extends State<StockTradingPage>
     );
   }
 
-  Widget _buildSellButton() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF3A2E6A),
-          minimumSize: Size(double.infinity, 50),
-        ),
-        onPressed: () {
-          if (_quantity <= 0 || _quantity > _holdingCounts) {
-            _showErrorDialog('입력 오류', '주문 수량이 올바르지 않거나 보유 주식 수를 초과합니다.');
-          } else {
-            _showConfirmationBottomSheet(
-              isBuy: false,
-              isMarketOrder: _isMarketOrder,
-              onConfirm: () async {
-                String? accessToken = await storage.read(key: 'accessToken');
-                if (accessToken == null) {
-                  throw Exception('No access token found');
-                }
-                try {
-                  String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
-                      .format(DateTime.now());
-                  Map<String, dynamic> result;
-                  if (_isMarketOrder) {
-                    result = await MarketPriceApi.sellMarket(
-                      token: accessToken,
-                      stockCode: widget.stockCode,
-                      quantity: _quantity,
-                      orderTime: orderTime,
-                    );
-                  } else {
-                    result = await FixedPriceApi.sellMarket(
-                      token: accessToken,
-                      stockCode: widget.stockCode,
-                      bid: _limitPrice,
-                      quantity: _quantity,
-                      orderTime: orderTime,
-                    );
-                  }
-                  _showResultBottomSheet(result, false, _isMarketOrder);
-                } catch (e) {
-                  _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
-                }
-              },
-            );
-          }
-        },
-        child:
-            Text('매도하기', style: TextStyle(fontSize: 18, color: Colors.white)),
-      ),
-    );
-  }
-
-  Widget _buildBottomButton() {
-    return _tabController.index == 0 ? _buildBuyButton() : _buildSellButton();
-  }
+  // Widget _buildSellButton() {
+  //   return Container(
+  //     padding: EdgeInsets.all(16),
+  //     child: ElevatedButton(
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: Color(0xFF3A2E6A),
+  //         minimumSize: Size(double.infinity, 50),
+  //       ),
+  //       onPressed: () {
+  //         if (_quantity <= 0 || _quantity > _holdingCounts) {
+  //           _showErrorDialog('입력 오류', '주문 수량이 올바르지 않거나 보유 주식 수를 초과합니다.');
+  //         } else {
+  //           _showConfirmationBottomSheet(
+  //             isBuy: false,
+  //             isMarketOrder: _isMarketOrder,
+  //             onConfirm: () async {
+  //               String? accessToken = await storage.read(key: 'accessToken');
+  //               if (accessToken == null) {
+  //                 throw Exception('No access token found');
+  //               }
+  //               try {
+  //                 String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
+  //                     .format(DateTime.now());
+  //                 Map<String, dynamic> result;
+  //                 if (_isMarketOrder) {
+  //                   result = await MarketPriceApi.sellMarket(
+  //                     token: accessToken,
+  //                     stockCode: widget.stockCode,
+  //                     quantity: _quantity,
+  //                     orderTime: orderTime,
+  //                   );
+  //                 } else {
+  //                   result = await FixedPriceApi.sellMarket(
+  //                     token: accessToken,
+  //                     stockCode: widget.stockCode,
+  //                     bid: _limitPrice,
+  //                     quantity: _quantity,
+  //                     orderTime: orderTime,
+  //                   );
+  //                 }
+  //                 _showResultBottomSheet(result, false, _isMarketOrder);
+  //               } catch (e) {
+  //                 _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
+  //               }
+  //             },
+  //           );
+  //         }
+  //       },
+  //       child:
+  //           Text('매도하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+  //     ),
+  //   );
+  // }
 
   // Widget _buildBottomButton() {
-  //   if (_tabController.index == 0) {
-  //     // 매수 탭
-  //     if (_isMarketOrder) {
-  //       return _buildMarketBuyButton();
-  //     } else {
-  //       return _buildLimitBuyButton();
-  //     }
-  //   } else {
-  //     // 매도 탭
-  //     if (_isMarketOrder) {
-  //       return _buildMarketSellButton();
-  //     } else {
-  //       return _buildLimitSellButton();
-  //     }
-  //   }
+  //   return _tabController.index == 0 ? _buildBuyButton() : _buildSellButton();
   // }
+
+  Widget _buildBottomButton() {
+    if (_tabController.index == 0) {
+      // 매수 탭
+      if (_isMarketOrder) {
+        return _buildMarketBuyButton();
+      } else {
+        return _buildLimitBuyButton();
+      }
+    } else {
+      // 매도 탭
+      if (_isMarketOrder) {
+        return _buildMarketSellButton();
+      } else {
+        return _buildLimitSellButton();
+      }
+    }
+  }
 
   void _showConfirmationBottomSheet({
     required bool isBuy,
@@ -1299,7 +1301,7 @@ class _StockTradingPageState extends State<StockTradingPage>
                     child: Text('확인'),
                     style: confirmButtonStyle,
                     onPressed: () {
-                      Navigator.push(
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const StockMainPage(),
@@ -1405,16 +1407,16 @@ class _StockTradingPageState extends State<StockTradingPage>
                 try {
                   String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
                       .format(DateTime.now());
-                  Map<String, dynamic> result = await FixedPriceApi.buyMarket(
+                  await FixedPriceApi.buyMarket(
                     token: accessToken,
                     stockCode: widget.stockCode,
                     bid: _limitPrice,
                     quantity: _quantity,
                     orderTime: orderTime,
                   );
-                  _showResultBottomSheet(result, true, false);
+                  _showSuccessMessage('지정가 매수 신청이 완료되었습니다.');
                 } catch (e) {
-                  _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
+                  _showErrorDialog('오류', e.toString());
                 }
               },
             );
@@ -1423,6 +1425,12 @@ class _StockTradingPageState extends State<StockTradingPage>
         child:
             Text('매수하기', style: TextStyle(fontSize: 18, color: Colors.white)),
       ),
+    );
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -1496,8 +1504,8 @@ class _StockTradingPageState extends State<StockTradingPage>
           minimumSize: Size(double.infinity, 50),
         ),
         onPressed: () {
-          if (_quantity <= 0 || _quantity > _totalHoldingQuantity) {
-            _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
+          if (_quantity <= 0 || _quantity > _holdingCounts) {
+            _showErrorDialog('입력 오류', '주문 수량이 올바르지 않거나 보유 주식 수를 초과합니다.');
           } else {
             _showConfirmationBottomSheet(
               isBuy: false,
@@ -1505,21 +1513,31 @@ class _StockTradingPageState extends State<StockTradingPage>
               onConfirm: () async {
                 String? accessToken = await storage.read(key: 'accessToken');
                 if (accessToken == null) {
-                  throw Exception('No access token found');
+                  _showErrorDialog('오류', '로그인 정보를 찾을 수 없습니다.');
+                  return;
                 }
                 try {
+                  print('Preparing to send sell order:'); // 디버그 로그
+                  print('Stock Code: ${widget.stockCode}');
+                  print('Limit Price: $_limitPrice');
+                  print('Quantity: $_quantity');
+
                   String orderTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss")
                       .format(DateTime.now());
-                  Map<String, dynamic> result = await FixedPriceApi.sellMarket(
+                  await FixedPriceApi.sellMarket(
                     token: accessToken,
                     stockCode: widget.stockCode,
-                    bid: _limitPrice,
+                    bid: _limitPrice.toInt(),
                     quantity: _quantity,
                     orderTime: orderTime,
                   );
-                  _showResultBottomSheet(result, false, false);
+                  print('Sell order sent successfully'); // 성공 로그
+                  _showSuccessMessage('지정가 매도 신청이 완료되었습니다.');
+                  Navigator.of(context).pop();
                 } catch (e) {
-                  _showErrorDialog('오류', '주문 처리 중 오류가 발생했습니다: ${e.toString()}');
+                  print('Error during sell order: $e'); // 에러 로그
+                  _showErrorDialog(
+                      '주문 처리 오류', '지정가 매도 신청 중 문제가 발생했습니다: ${e.toString()}');
                 }
               },
             );

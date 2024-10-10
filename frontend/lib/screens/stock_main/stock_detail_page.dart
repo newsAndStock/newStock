@@ -978,7 +978,7 @@ class _StockDetailPageState extends State<StockDetailPage>
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => NewsDetailScreen(
@@ -1226,7 +1226,7 @@ class _StockDetailPageState extends State<StockDetailPage>
           style: TextStyle(color: Colors.white),
         ),
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => StockTradingPage(
