@@ -23,6 +23,8 @@ public class WebClientUtil {
     private final WebClient webClient;
     private final KisService kisService;
 
+
+
     public String sendRequest(String path, Map<String, String> queryParams, Map<String, String> additionalHeaders) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath(path);
         queryParams.forEach(uriBuilder::queryParam);
@@ -40,7 +42,7 @@ public class WebClientUtil {
 
         return uriSpec.retrieve()
                 .bodyToMono(String.class)
-                .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(200)))
+                .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(400)))
                 .block();
     }
 }

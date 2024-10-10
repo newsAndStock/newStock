@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.newstock.kis.domain.ProdToken;
+import com.ssafy.newstock.kis.domain.ProdToken2;
 import com.ssafy.newstock.kis.repository.ProdTokenRepository;
+import com.ssafy.newstock.kis.repository.ProdTokenRepository2;
 import com.ssafy.newstock.trading.domain.OrderType;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
@@ -36,6 +38,7 @@ public class KisService {
 
     private static final Logger log = LoggerFactory.getLogger(KisService.class);
     private String token;
+    private String token2;
 
     @Value("${kis.prod-appkey}")
     private String appKey;
@@ -43,13 +46,21 @@ public class KisService {
     @Value("${kis.prod-appsecret}")
     private String appSecret;
 
+    @Value("${kis.prod-appkey2}")
+    private String appKey2;
+
+    @Value("${kis.prod-appsecret2}")
+    private String appSecret2;
+
     private final WebClient webClient;
     private final ProdTokenRepository prodTokenRepository;
+    private final ProdTokenRepository2 prodTokenRepository2;
 
-    public KisService(WebClient webClient, ProdTokenRepository prodTokenRepository) {
+    public KisService(WebClient webClient, ProdTokenRepository prodTokenRepository, ProdTokenRepository2 prodTokenRepository2) {
 
         this.webClient = webClient;
         this.prodTokenRepository=prodTokenRepository;
+        this.prodTokenRepository2 = prodTokenRepository2;
     }
 
 
@@ -57,9 +68,13 @@ public class KisService {
     public void initToken() {
         // 서버가 시작될 때 DB에서 토큰 불러오기
         Optional<ProdToken> prodTokens = prodTokenRepository.findLatest();
-        if (!prodTokens.isEmpty()) {
-            token = prodTokens.get().getValue(); // 최신 토큰의 값 가져오기
-        }
+        // 최신 토큰의 값 가져오기
+        prodTokens.ifPresent(prodToken -> token = prodToken.getValue());
+
+        Optional<ProdToken2> prodToken2 = prodTokenRepository2.findLatest();
+        prodToken2.ifPresent(value -> token2 = value.getValue());
+        System.out.println(prodTokens);
+        System.out.println(prodToken2);
     }
 
     @Scheduled(cron = "0 0 0 * * *")
@@ -90,6 +105,42 @@ public class KisService {
 
             token = parseResponseToken(jsonResponse, "access_token");
             log.info("token: {}, 발급일: {}", token, LocalDate.now());
+            prodTokenRepository.save(new ProdToken(token,LocalDate.now()));
+
+        } catch (Exception e) {
+            // 예외 발생 시 로그 출력 또는 알림 전송
+            System.err.println("Failed to retrieve token at scheduled time: " + e.getMessage());
+            // 예외가 발생해도 서버가 중단되지 않도록 조치
+        }
+    }
+    @Scheduled(cron = "0 1 0 * * *")
+    private void getProdToken2() {
+        String url = "/oauth2/tokenP";
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("grant_type", "client_credentials");
+        requestBody.put("appkey", appKey2);
+        requestBody.put("appsecret", appSecret2);
+
+        try {
+            String jsonResponse = webClient
+                    .post()
+                    .uri(url)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .onStatus(
+                            status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> {
+                                return clientResponse.createException()
+                                        .flatMap(error -> Mono.error(new RuntimeException("Error occurred while calling the API: " + error.getMessage())));
+                            }
+                    )
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10)) // 타임아웃 설정
+                    .retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(5)))
+                    .block();
+
+            token = parseResponseToken(jsonResponse, "access_token");
+            log.info("token2: {}, 발급일: {}", token, LocalDate.now());
             prodTokenRepository.save(new ProdToken(token,LocalDate.now()));
 
         } catch (Exception e) {
@@ -135,14 +186,14 @@ public class KisService {
                         .queryParam("fid_cond_mrkt_div_code", "J")
                         .queryParam("fid_input_iscd", stockCode)
                         .build())
-                .header("authorization", "Bearer " + token)
-                .header("appkey", appKey)
-                .header("appsecret", appSecret)
+                .header("authorization", "Bearer " + token2)
+                .header("appkey", appKey2)
+                .header("appsecret", appSecret2)
                 .header("tr_id", "FHKST01010100")
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.ofMillis(200)) // 타임아웃 설정
-                .retryWhen(Retry.fixedDelay(10, Duration.ofMillis(200)))
+                .timeout(Duration.ofMillis(800)) // 타임아웃 설정
+                .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(800)))
                 .block();
 
         return parseResponse(jsonResponse,"stck_prpr");
@@ -159,14 +210,14 @@ public class KisService {
                         .queryParam("fid_cond_mrkt_div_code", "J")
                         .queryParam("fid_input_iscd", stockCode)
                         .build())
-                .header("authorization", "Bearer " + token)
-                .header("appkey", appKey)
-                .header("appsecret", appSecret)
+                .header("authorization", "Bearer " + token2)
+                .header("appkey", appKey2)
+                .header("appsecret", appSecret2)
                 .header("tr_id", "FHKST01010200")
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.ofMillis(200)) // 타임아웃 설정
-                .retryWhen(Retry.fixedDelay(10, Duration.ofMillis(200)))
+                .timeout(Duration.ofMillis(800)) // 타임아웃 설정
+                .retryWhen(Retry.fixedDelay(5, Duration.ofMillis(800)))
                 .block();
 
         return getQuantity(jsonResponse,orderType,price);
