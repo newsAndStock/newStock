@@ -2,7 +2,7 @@ package com.ssafy.newstock.stock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.newstock.common.util.WebClientUtil;
+import com.ssafy.newstock.common.util.WebClientUtil2;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
@@ -22,7 +22,6 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +30,7 @@ public class FavoriteStockService {
     private final FavoriteStockRepository favoriteStockRepository;
     private final StockRepository stockRepository;
     private final MemberRepository memberRepository;
-    private final ObjectMapper objectMapper;
-    private final WebClientUtil webClientUtil;
+    private final WebClientUtil2 webClientUtil;
     private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
 
     //관심 주식 추가

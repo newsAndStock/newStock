@@ -2,7 +2,7 @@ package com.ssafy.newstock.stock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.newstock.common.util.WebClientUtil;
+import com.ssafy.newstock.common.util.WebClientUtil2;
 import com.ssafy.newstock.member.domain.Member;
 import com.ssafy.newstock.member.repository.MemberRepository;
 import com.ssafy.newstock.news.controller.response.NewsSearchResponse;
@@ -35,7 +35,7 @@ public class StockSearchService {
     private final StockRecentSearchWordRepository recentSearchWordRepository;
     private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
-    private final WebClientUtil webClientUtil;
+    private final WebClientUtil2 webClientUtil;
     private final StockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final NewsRepositoryQuerydsl newsRepositoryQuerydsl;
