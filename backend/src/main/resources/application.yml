@@ -43,9 +43,10 @@ server:
 
 kis:
   prod: ${PROD}
-  cano-real: ${CANO_REAL}
   prod-appkey: ${PROD_APPKEY}
   prod-appsecret: ${PROD_APPSECRET}
+  prod-appkey2: ${PROD_APPKEY2}
+  prod-appsecret2: ${PROD_APPSECRET2}
 
 twelvedata:
   api:
