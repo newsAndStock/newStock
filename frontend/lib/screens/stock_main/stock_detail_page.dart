@@ -1224,19 +1224,28 @@ class _StockDetailPageState extends State<StockDetailPage>
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StockTradingPage(
-                stockName: widget.stockName,
-                stockCode: widget.stockCode,
-                currentPrice: 74500, // Replace with actual current price
-                priceChange: 300, // Replace with actual price change
-                priceChangePercentage: 0.4, // Replace with actual percentage
-                totalHoldingQuantity: 30, //일단 임의의 숫자를 넣어놨음 api연결해서 수정해야함
+          if (_currentStockPriceNotifier.value != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockTradingPage(
+                  stockName: widget.stockName,
+                  stockCode: widget.stockCode,
+                  currentPrice:
+                      double.parse(_currentStockPriceNotifier.value!.stckPrpr),
+                  priceChange:
+                      double.parse(_currentStockPriceNotifier.value!.prdyVrss),
+                  priceChangePercentage:
+                      double.parse(_currentStockPriceNotifier.value!.prdyCtrt),
+                  totalHoldingQuantity: 0,
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('현재 주가 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.')),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3A2E6A),
