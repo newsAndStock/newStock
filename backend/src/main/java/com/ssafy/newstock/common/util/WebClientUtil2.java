@@ -13,11 +13,11 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class WebClientUtil {
-    @Value("${kis.prod-appkey}")
+public class WebClientUtil2 {
+    @Value("${kis.prod-appkey2}")
     private String appKey;
 
-    @Value("${kis.prod-appsecret}")
+    @Value("${kis.prod-appsecret2}")
     private String appSecret;
 
     private final WebClient webClient;
@@ -30,7 +30,7 @@ public class WebClientUtil {
 
         WebClient.RequestHeadersUriSpec<?> uriSpec = webClient.get();
         uriSpec.uri(uri)
-                .header("authorization", "Bearer " + kisService.getToken())
+                .header("authorization", "Bearer " + kisService.getToken2())
                 .header("appkey", appKey)
                 .header("appsecret", appSecret);
 
