@@ -1465,7 +1465,7 @@ class _StockTradingPageState extends State<StockTradingPage>
           minimumSize: Size(double.infinity, 50),
         ),
         onPressed: () {
-          if (_quantity <= 0 || _quantity > _totalHoldingQuantity) {
+          if (_quantity <= 0 || _quantity > _holdingCounts) {
             _showErrorDialog('입력 오류', '올바른 수량을 입력해주세요.');
           } else {
             _showConfirmationBottomSheet(
