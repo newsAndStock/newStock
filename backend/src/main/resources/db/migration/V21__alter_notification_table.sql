@@ -1,0 +1,3 @@
+ALTER TABLE notification
+    ADD COLUMN order_type VARCHAR(10) NOT NULL,
+ADD COLUMN price INT NOT NULL;

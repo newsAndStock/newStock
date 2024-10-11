@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: newstock
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+  sql:
+    init:
+      mode: always
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME}
+    password: ${GMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
+
+
+
+  profiles:
+    active: local
+    group:
+      local: local, common, secret
+      blue: blue,common, secret
+      green: green, common, secret
+
+jwt:
+  secret-key: ${SECRET_KEY}
+  refresh-key: ${REFRESH_KEY}
+
+
+server:
+  env: blue
+
+kis:
+  prod: ${PROD}
+  prod-appkey: ${PROD_APPKEY}
+  prod-appsecret: ${PROD_APPSECRET}
+  prod-appkey2: ${PROD_APPKEY2}
+  prod-appsecret2: ${PROD_APPSECRET2}
+
+twelvedata:
+  api:
+    key: ${TWELVEDATA_API_KEY}
+
+
+marketindex:
+  api:
+    key: ${MARKETINDEX_API_KEY}
