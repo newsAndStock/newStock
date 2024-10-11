@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    environment:
+      - TZ=Asia/Seoul  # 한국 시간대로 설정
+    network_mode: host  # Host 모드 사용
+    volumes:
+      - /home/ubuntu/redis.conf:/etc/redis/redis.conf
+      - redisVolume:/data  # redisVolume을 /data에 마운트
+    command: ["redis-server", "/etc/redis/redis.conf"]  # 설정 파일 로드
+    logging:
+      driver: "none"  # 로그를 비활성화합니다.
+  blue:
+    image: ${imageTag}
+    container_name: blue
+    ports:
+            - "8082:8082"
+    environment:
+            - PROFILES=blue
+            - ENV=blue
+            - DEV_NAME=${DEV_NAME}
+            - DEV_PASSWORD=${DEV_PASSWORD}
+            - GMAIL_PASSWORD=${GMAIL_PASSWORD}
+            - GMAIL_USERNAME=${GMAIL_USERNAME}
+            - REFRESH_KEY=${REFRESH_KEY}
+            - SECRET_KEY=${SECRET_KEY}
+            - PROD=${PROD}
+            - PROD_APPKEY=${PROD_APPKEY}
+            - PROD_APPSECRET=${PROD_APPSECRET}
+            - PROD_APPKEY2=${PROD_APPKEY2}
+            - PROD_APPSECRET2=${PROD_APPSECRET2}
+            - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
+            - MARKETINDEX_API_KEY=${MARKETINDEX_API_KEY}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+    network_mode: host  # Host 모드 사용
+    
+
+volumes:
+  redisVolume: {}  # Redis 볼륨 정의
