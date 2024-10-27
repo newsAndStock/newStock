@@ -20,14 +20,15 @@
 ### 주식 페이지
 <img src="asset/buy.gif" height="500"/> <img src="asset/selll.gif"  height="500"/> <img src="asset/graph.gif" height="500"/></br>
 <img src="asset/stock_main.gif" height="500"/> <img src="asset/mypage.gif"  height="500"/> </br>
-- 주식 시장 데이터를 기반으로 한 모의 투자 기능
+- 실제 주식 시장 데이터를 기반으로 한 모의 투자 기능
 - **우선순위 큐** 및 스케줄링을 통한 투자 관리 기능
 
 ### 뉴스 페이지
 <img src="asset/news_main.gif" height="500"/> <img src="asset/search_scrap.gif"  height="500"/></br>
 - 최신 경제 뉴스를 실시간으로 제공
-- 텍스트 마이닝 및 분산 처리 기반 뉴스 분석 기능
+- **Spark**를 활용한 뉴스 본문 경제 단어 추출 텍스트 마이닝 분산처리(1master, 2worker)
 - **Querydsl**을 사용하여 빠른 검색 지원
+- 뉴스 스크랩 기능
 
 ### 퀴즈 페이지
 <img src="asset/quiz.gif" height="500"/> </br>
