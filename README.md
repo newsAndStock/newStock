@@ -98,7 +98,7 @@
 <table>
 <tr>
     <td align="center"><a href="https://github.com/boeunyoon"><b>👑윤보은</b></a></td>
-    <td align="center"><a href="https://github.com/dw8870"><b>강도원</b></a></td>
+    <td align="center"><a href="https://github.com/Do1K"><b>강도원</b></a></td>
     <td align="center"><a href="https://github.com/kimsw0516"><b>김성원</b></a></td>
     <td align="center"><a href="https://github.com/zhzzang"><b>이주희</b></a></td>
     <td align="center"><a href="https://github.com/aswe0409"><b>정석영</b></a></td>
@@ -106,7 +106,7 @@
   </tr>
  <tr>
     <td align="center"><a href="https://github.com/boeunyoon"><img src="https://avatars.githubusercontent.com/boeunyoon" width="130px;" alt=""></a></td>
-       <td align="center"><a href="https://github.com/dw8870"><img src="https://avatars.githubusercontent.com/ssuinh" width="130px;" alt=""></a></td>
+       <td align="center"><a href="https://github.com/Do1K"><img src="https://avatars.githubusercontent.com/Do1K" width="130px;" alt=""></a></td>
     <td align="center"><a href="https://github.com/kimsw0516"><img src="https://avatars.githubusercontent.com/seungminleeee" width="130px;" alt=""></a></td>
     <td align="center"><a href="https://github.com/zhzzang"><img src="https://avatars.githubusercontent.com/zhzzang" width="130px;" alt=""></a></td>
     <td align="center"><a href="https://github.com/aswe0409"><img src="https://avatars.githubusercontent.com/aswe0409" width="130px;" alt=""></a></td>
