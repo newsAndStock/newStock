@@ -208,47 +208,72 @@ public class KisServiceSocket {
 
 
     private void sellTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> sellItems){
-        if(sellItems.isEmpty())return;
-        while(tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())){
-            TradeItem removed=sellItems.poll();
-            tradingHandleService.cancelComplete(removed.getTrading().getId());
-            log.info("<{}> [{}]님 매수거래취소", stockCode, removed.getMember().getNickname());
-        }
-        if(socketItem.getPrice()>=sellItems.peek().getBid()){
+        TradeItem complete = null;
 
-            if(socketItem.getPrice()==sellItems.peek().getBid()){
-                sellItems.peek().trade(socketItem.getMount());
-            }else{
-                sellItems.peek().complete();
+        synchronized (sellItems) {
+            if (sellItems.isEmpty()) return;
+
+            while (!sellItems.isEmpty() && tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())) {
+                TradeItem removed = sellItems.poll();
+                tradingHandleService.cancelComplete(removed.getTrading().getId());
+                log.info("<{}> [{}]님 매수거래취소", stockCode, removed.getMember().getNickname());
             }
-            if(sellItems.peek().getRemaining()>0)return;
-            TradeItem complete=sellItems.poll();
-            sellComplete(stockCode,complete);
-            log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
 
+            if (sellItems.isEmpty()) return;
+
+            if (socketItem.getPrice() >= sellItems.peek().getBid()) {
+                if (socketItem.getPrice() == sellItems.peek().getBid()) {
+                    sellItems.peek().trade(socketItem.getMount());
+                } else {
+                    sellItems.peek().complete();
+                }
+
+                if (sellItems.peek().getRemaining() > 0) return;
+
+                complete = sellItems.poll();
+            }
+        }
+
+
+        if (complete != null) {
+            sellComplete(stockCode, complete);
+            log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
         }
     }
 
     private void buyTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> buyItems){
-        if(buyItems.isEmpty())return;
-        while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
-            TradeItem removed=buyItems.poll();
-            tradingHandleService.cancelComplete(removed.getTrading().getId());
-            log.info("<{}> [{}]님 매도거래취소", stockCode, removed.getMember().getNickname());
-        }
-        if(socketItem.getPrice()<=buyItems.peek().getBid()){
+        TradeItem complete = null;
 
-            if(socketItem.getPrice()==buyItems.peek().getBid()){
-                buyItems.peek().trade(socketItem.getMount());
-            }else{
-                buyItems.peek().complete();
+        synchronized (buyItems) {
+            if(buyItems.isEmpty())return;
+            while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
+                TradeItem removed=buyItems.poll();
+                tradingHandleService.cancelComplete(removed.getTrading().getId());
+                log.info("<{}> [{}]님 매도거래취소", stockCode, removed.getMember().getNickname());
             }
-            if(buyItems.peek().getRemaining()>0)return;
-            TradeItem complete=buyItems.poll();
+
+            if (buyItems.isEmpty()) return;
+
+            if(socketItem.getPrice()<=buyItems.peek().getBid()){
+
+                if(socketItem.getPrice()==buyItems.peek().getBid()){
+                    buyItems.peek().trade(socketItem.getMount());
+                }else{
+                    buyItems.peek().complete();
+                }
+                if(buyItems.peek().getRemaining()>0)return;
+                complete=buyItems.poll();
+
+
+            }
+
+        }
+        if(complete != null) {
             buyComplete(stockCode,complete);
             log.info("<{}> [{}]님 매수거래완료", stockCode, complete.getMember().getNickname());
-
         }
+
+
     }
 
     private void sellComplete(String stockCode, TradeItem complete){
