@@ -277,21 +277,11 @@ public class KisServiceSocket {
     }
 
     private void sellComplete(String stockCode, TradeItem complete){
-        memberStocksService.sellComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
-        memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.SELL);
-        Trading trading=tradingService.findById(complete.getTrading().getId());
-        trading.tradeComplete(LocalDateTime.now());
-        tradingService.save(trading);
-        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.SELL,complete.getBid());
+        tradingService.finalizeSellTrade(complete,stockCode);
     }
 
     private void buyComplete(String stockCode, TradeItem complete){
-        memberStocksService.buyComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
-        //memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.BUY);
-        Trading trading=tradingService.findById(complete.getTrading().getId());
-        trading.tradeComplete(LocalDateTime.now());
-        tradingService.save(trading);
-        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.BUY,complete.getBid());
+        tradingService.finalizeBuyTrade(complete,stockCode);
 
     }
 
