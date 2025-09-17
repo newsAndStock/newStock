@@ -14,10 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,9 +36,26 @@ public class RankService {
     public void makeRank(){
         List<Member> members=memberService.findAllMember();
         redisTemplateRank.delete("memberRank");
+
+        // 1. 필요한 모든 주식 코드를 수집 (중복 제거)
+        Set<String> allStockCodes = members.stream()
+                .flatMap(member -> memberStocksService.findByMember_Id(member.getId()).stream())
+                .map(MemberStock::getStockCode)
+                .collect(Collectors.toSet());
+
+        // 2. 각 주식의 현재가를 한번씩만 조회하여 캐싱
+        Map<String, Integer> currentPriceCache = new HashMap<>();
+        for (String stockCode : allStockCodes) {
+            try {
+                currentPriceCache.put(stockCode, Integer.parseInt(kisService.getCurrentStockPrice(stockCode)));
+            } catch (NumberFormatException e) {
+                currentPriceCache.put(stockCode, 0);
+            }
+        }
+
         for(Member member:members){
             if(memberStocksService.getMemberStocks(member.getId()).isEmpty())continue;
-            double ROI=memberROI(member.getId());
+            double ROI=memberROI(member.getId(),currentPriceCache);
             redisService.addMemberRank(member.getId(),ROI);
         }
         redisService.setRankTime();
@@ -60,13 +75,17 @@ public class RankService {
         }
     }
 
-    private double memberROI(Long memberId){
+    private double memberROI(Long memberId, Map<String, Integer> currentPriceCache){
         long oldPrice=0L;
         long newPrice=0L;
         List<MemberStock> memberStocks=memberStocksService.findByMember_Id(memberId);
         for(MemberStock memberStock:memberStocks){
             String stockCode=memberStock.getStockCode();
-            int currentPrice=Integer.parseInt(kisService.getCurrentStockPrice(stockCode));
+            int currentPrice = currentPriceCache.getOrDefault(stockCode, 0);
+
+            newPrice += (long) currentPrice * memberStock.getHoldings();
+            oldPrice += memberStock.getAveragePrice() * memberStock.getHoldings();
+
             newPrice+=currentPrice*memberStock.getHoldings();
             oldPrice+=memberStock.getAveragePrice()*memberStock.getHoldings();
         }
