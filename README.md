@@ -349,7 +349,7 @@ private final Set<Long> canceledTrading= Collections.synchronizedSet(new HashSet
     }
 ```
 
-### #### 2단계: 백그라운드에서의 취소 확인 및 정리
+### 2단계: 백그라운드에서의 취소 확인 및 정리
 
 `KisServiceSocket`의 거래 처리 루프는 DB에 매번 접근하는 대신, 메모리의 `canceledTrading` Set을 통해 매우 빠르게 취소 여부를 확인하고 해당 주문을 대기열에서 제거합니다.
 
@@ -528,7 +528,7 @@ public RankResponse allRank(){
 
 ---
 
-## ## 💡 회고 및 개선 방향
+## 💡 회고 및 개선 방향
 
 - **배운 점**: 대용량 데이터의 순위를 실시간으로 처리하는 문제에서 왜 Redis Sorted Set이 강력한 도구인지 체감할 수 있었습니다. 또한, 무심코 작성한 루프 내의 API 호출이 얼마나 큰 성능 저하를 일으키는지, 그리고 이를 어떻게 최적화할 수 있는지에 대한 중요한 경험을 얻었습니다.
 - **개선 방향**:
