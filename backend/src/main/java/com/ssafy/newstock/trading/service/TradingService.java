@@ -214,39 +214,6 @@ public class TradingService {
         }
     }
 
-    @Transactional
-    public void finalizeSellTrade(TradeItem complete, String stockCode) {
-        Trading trading = tradingRepository.findById(complete.getTrading().getId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        if (trading.isCanceled()) {
-            log.warn("이미 취소된 거래(ID: {})에 대한 체결 시도가 감지되어 중단합니다.", trading.getId());
-            return;
-        }
-
-        memberStocksService.sellComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
-        memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.SELL);
-        trading.tradeComplete(LocalDateTime.now());
-        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.SELL,complete.getBid());
-    }
-
-    @Transactional
-    public void finalizeBuyTrade(TradeItem complete, String stockCode) {
-
-        Trading trading = tradingRepository.findById(complete.getTrading().getId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        if (trading.isCanceled()) {
-            log.warn("이미 취소된 거래(ID: {})에 대한 체결 시도가 감지되어 중단합니다.", trading.getId());
-            return;
-        }
-
-        memberStocksService.buyComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
-        memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.BUY);
-        trading.tradeComplete(LocalDateTime.now());
-        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.BUY,complete.getBid());
-    }
-
 
 
 }

@@ -208,80 +208,65 @@ public class KisServiceSocket {
 
 
     private void sellTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> sellItems){
-        TradeItem complete = null;
-
-        synchronized (sellItems) {
-            if (sellItems.isEmpty()) return;
-
-            while (!sellItems.isEmpty() && tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())) {
-                TradeItem removed = sellItems.poll();
-                tradingHandleService.cancelComplete(removed.getTrading().getId());
-                log.info("<{}> [{}]님 매수거래취소", stockCode, removed.getMember().getNickname());
-            }
-
-            if (sellItems.isEmpty()) return;
-
-            if (socketItem.getPrice() >= sellItems.peek().getBid()) {
-                if (socketItem.getPrice() == sellItems.peek().getBid()) {
-                    sellItems.peek().trade(socketItem.getMount());
-                } else {
-                    sellItems.peek().complete();
-                }
-
-                if (sellItems.peek().getRemaining() > 0) return;
-
-                complete = sellItems.poll();
-            }
+        if(sellItems.isEmpty())return;
+        while(tradingHandleService.isCanceled(sellItems.peek().getTrading().getId())){
+            TradeItem removed=sellItems.poll();
+            tradingHandleService.cancelComplete(removed.getTrading().getId());
+            log.info("<{}> [{}]님 매수거래취소", stockCode, removed.getMember().getNickname());
         }
+        if(socketItem.getPrice()>=sellItems.peek().getBid()){
 
-
-        if (complete != null) {
-            sellComplete(stockCode, complete);
+            if(socketItem.getPrice()==sellItems.peek().getBid()){
+                sellItems.peek().trade(socketItem.getMount());
+            }else{
+                sellItems.peek().complete();
+            }
+            if(sellItems.peek().getRemaining()>0)return;
+            TradeItem complete=sellItems.poll();
+            sellComplete(stockCode,complete);
             log.info("<{}> [{}]님 매도거래완료", stockCode, complete.getMember().getNickname());
+
         }
     }
 
     private void buyTrade(SocketItem socketItem, String stockCode, Queue<TradeItem> buyItems){
-        TradeItem complete = null;
-
-        synchronized (buyItems) {
-            if(buyItems.isEmpty())return;
-            while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
-                TradeItem removed=buyItems.poll();
-                tradingHandleService.cancelComplete(removed.getTrading().getId());
-                log.info("<{}> [{}]님 매도거래취소", stockCode, removed.getMember().getNickname());
-            }
-
-            if (buyItems.isEmpty()) return;
-
-            if(socketItem.getPrice()<=buyItems.peek().getBid()){
-
-                if(socketItem.getPrice()==buyItems.peek().getBid()){
-                    buyItems.peek().trade(socketItem.getMount());
-                }else{
-                    buyItems.peek().complete();
-                }
-                if(buyItems.peek().getRemaining()>0)return;
-                complete=buyItems.poll();
-
-
-            }
-
+        if(buyItems.isEmpty())return;
+        while(tradingHandleService.isCanceled(buyItems.peek().getTrading().getId())){
+            TradeItem removed=buyItems.poll();
+            tradingHandleService.cancelComplete(removed.getTrading().getId());
+            log.info("<{}> [{}]님 매도거래취소", stockCode, removed.getMember().getNickname());
         }
-        if(complete != null) {
+        if(socketItem.getPrice()<=buyItems.peek().getBid()){
+
+            if(socketItem.getPrice()==buyItems.peek().getBid()){
+                buyItems.peek().trade(socketItem.getMount());
+            }else{
+                buyItems.peek().complete();
+            }
+            if(buyItems.peek().getRemaining()>0)return;
+            TradeItem complete=buyItems.poll();
             buyComplete(stockCode,complete);
             log.info("<{}> [{}]님 매수거래완료", stockCode, complete.getMember().getNickname());
+
         }
-
-
     }
 
     private void sellComplete(String stockCode, TradeItem complete){
-        tradingService.finalizeSellTrade(complete,stockCode);
+        memberStocksService.sellComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
+        memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.SELL);
+        Trading trading=tradingService.findById(complete.getTrading().getId());
+        trading.tradeComplete(LocalDateTime.now());
+        tradingService.save(trading);
+        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.SELL,complete.getBid());
     }
 
     private void buyComplete(String stockCode, TradeItem complete){
-        tradingService.finalizeBuyTrade(complete,stockCode);
+        memberStocksService.buyComplete(complete.getMember().getId(),stockCode,complete.getQuantity(),complete.getBid());
+        //memberService.updateDeposit(complete.getMember().getId(), (long) (complete.getQuantity()*complete.getBid()), OrderType.BUY);
+        Trading trading=tradingService.findById(complete.getTrading().getId());
+        trading.tradeComplete(LocalDateTime.now());
+        tradingService.save(trading);
+        notificationService.send(complete.getMember().getId(),stockCode, (long) complete.getQuantity(),OrderType.BUY,complete.getBid());
 
     }
 
